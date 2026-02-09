@@ -409,18 +409,6 @@ metrics:
         - "Formula: 100 * (prod_t (1 + r_t/100) - 1) over months in the attributed term window."
 
   # Stock index levels (price-only)
-  - id: sp500_level_end
-    family: stock_levels
-    primary: false
-    label: "S&P 500 level (end-of-window)"
-    inputs:
-      series: sp500_sp500_index
-    period_transform:
-      kind: identity
-    term_aggregation:
-      kind: last
-      units: "index"
-
   - id: sp500_term_pct_change
     family: stock_levels
     primary: false
@@ -449,18 +437,6 @@ metrics:
       units: "percent"
       notes:
         - "Uses start/end levels and actual elapsed time to annualize."
-
-  - id: djia_level_end
-    family: stock_levels
-    primary: false
-    label: "Dow Jones Industrial Average level (end-of-window)"
-    inputs:
-      series: djia_dow_jones
-    period_transform:
-      kind: identity
-    term_aggregation:
-      kind: last
-      units: "index"
 
   - id: djia_term_pct_change
     family: stock_levels
