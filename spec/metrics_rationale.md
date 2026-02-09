@@ -70,9 +70,8 @@ Price index levels (Dow and S&P):
 - These are **price-only** indices (exclude dividends), so they are not directly comparable to total return measures. We treat them as alternates for public-facing level claims, not the primary return metric.
 
 Level-style term metrics included:
-- End-of-window level: `sp500_level_end`, `djia_level_end`
 - Term total percent change (end vs start): `sp500_term_pct_change`, `djia_term_pct_change`
-- Term CAGR (annualized from start/end using elapsed time): `sp500_term_cagr_pct`, `djia_term_cagr_pct`
+- Term percent change per year (CAGR, annualized from start/end using elapsed time): `sp500_term_cagr_pct`, `djia_term_cagr_pct`
 
 MoM/QoQ/YoY:
 - MoM is the monthly return itself.
