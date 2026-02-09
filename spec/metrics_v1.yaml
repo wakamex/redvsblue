@@ -1,0 +1,376 @@
+version: 1
+name: metrics_v1
+created: "2026-02-09"
+description: >
+  v1 metric registry for the initial D-vs-R scoreboard. This file defines:
+  (1) base series pulled from online sources, and (2) derived metrics and
+  term-level aggregations.
+
+  Notes:
+  - All percent units are in "percentage points" unless otherwise stated.
+  - For growth/return metrics, we prefer log-diff annualization unless noted.
+  - Term attribution (e.g., inauguration lag) is configured elsewhere; this file
+    only specifies metric definitions.
+
+sources:
+  fred:
+    kind: csv
+    url_template: "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+    notes:
+      - "No API key required for fredgraph.csv downloads."
+  nber:
+    kind: json
+    url: "https://data.nber.org/data/cycles/business_cycle_dates.json"
+  ken_french_ff_factors:
+    kind: zip_csv
+    url: "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip"
+    encoding: latin-1
+    notes:
+      - "Monthly Fama/French factors; includes Mkt-RF and RF in percent."
+
+series:
+  # Macro: output
+  gdpc1_real_gdp:
+    source: fred
+    series_id: GDPC1
+    frequency: Q
+    units: "billions of chained dollars (SAAR)"
+    description: "Real Gross Domestic Product (BEA)."
+  a939rx0q048sbea_real_gdp_per_capita:
+    source: fred
+    series_id: A939RX0Q048SBEA
+    frequency: Q
+    units: "chained dollars per person"
+    description: "Real GDP per capita (BEA)."
+
+  # Labor market
+  payems_payroll_employment:
+    source: fred
+    series_id: PAYEMS
+    frequency: M
+    units: "thousands of persons"
+    description: "All Employees: Total Nonfarm Payrolls (BLS CES, SA)."
+  ce16ov_household_employment:
+    source: fred
+    series_id: CE16OV
+    frequency: M
+    units: "thousands of persons"
+    description: "Civilian Employment Level (BLS CPS)."
+  unrate_unemployment_rate:
+    source: fred
+    series_id: UNRATE
+    frequency: M
+    units: "percent"
+    description: "Civilian Unemployment Rate (BLS CPS, SA)."
+
+  # Prices
+  cpiaucsl_cpi:
+    source: fred
+    series_id: CPIAUCSL
+    frequency: M
+    units: "index"
+    description: "CPI-U: All Items (BLS, SA)."
+  pcepi_pce_price_index:
+    source: fred
+    series_id: PCEPI
+    frequency: M
+    units: "index"
+    description: "PCE Price Index (BEA, SA)."
+
+  # Business cycle labels
+  usrec_recession_indicator:
+    source: fred
+    series_id: USREC
+    frequency: M
+    units: "0/1 indicator"
+    description: "NBER based Recession Indicators for the United States."
+  nber_business_cycle_dates:
+    source: nber
+    frequency: irregular
+    units: "peaks/troughs"
+    description: "NBER business cycle chronology (peaks/troughs)."
+
+  # Fiscal (note: some fiscal series are annual/fiscal-year based)
+  gfdegdq188s_federal_debt_pct_gdp:
+    source: fred
+    series_id: GFDEGDQ188S
+    frequency: Q
+    units: "percent of GDP"
+    description: "Federal Debt: Total Public Debt as Percent of GDP."
+  fyfsgda188s_federal_surplus_deficit_pct_gdp:
+    source: fred
+    series_id: FYFSGDA188S
+    frequency: A
+    units: "percent of GDP"
+    description: "Federal Surplus or Deficit [-] as Percent of GDP (annual)."
+
+  # Finance (returns)
+  ff_factors_monthly:
+    source: ken_french_ff_factors
+    dataset: "F-F_Research_Data_Factors"
+    frequency: M
+    units: "percent"
+    columns:
+      mkt_rf: "Mkt-RF"
+      rf: "RF"
+    description: "Fama/French Research Factors (monthly)."
+
+metrics:
+  # GDP growth
+  - id: gdp_growth_real_qoq_ann_logdiff
+    family: gdp_growth
+    primary: true
+    label: "Real GDP growth (QoQ annualized, log diff)"
+    inputs:
+      series: gdpc1_real_gdp
+    period_transform:
+      kind: growth_rate
+      method: logdiff
+      lag: 1
+      annualize_periods_per_year: 4
+      scale: 100
+      notes:
+        - "Formula: 100 * 4 * ln(GDPC1_t / GDPC1_{t-1})."
+    term_aggregation:
+      kind: mean
+
+  - id: gdp_growth_real_percap_qoq_ann_logdiff
+    family: gdp_growth
+    primary: false
+    label: "Real GDP per capita growth (QoQ annualized, log diff)"
+    inputs:
+      series: a939rx0q048sbea_real_gdp_per_capita
+    period_transform:
+      kind: growth_rate
+      method: logdiff
+      lag: 1
+      annualize_periods_per_year: 4
+      scale: 100
+      notes:
+        - "Formula: 100 * 4 * ln(RGDPPC_t / RGDPPC_{t-1})."
+    term_aggregation:
+      kind: mean
+
+  - id: gdp_growth_real_term_cagr
+    family: gdp_growth
+    primary: false
+    label: "Real GDP growth (term CAGR from start/end)"
+    inputs:
+      series: gdpc1_real_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      periods_per_year: 4
+      scale: 100
+      notes:
+        - "Uses first/last observation in the attributed window."
+
+  # Employment
+  - id: payroll_jobs_change_total
+    family: jobs
+    primary: true
+    label: "Payroll employment change (total, end minus start)"
+    inputs:
+      series: payems_payroll_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "thousands of persons"
+
+  - id: payroll_jobs_change_per_year
+    family: jobs
+    primary: false
+    label: "Payroll employment change (per year, end minus start divided by term years)"
+    inputs:
+      series: payems_payroll_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "thousands of persons per year"
+
+  - id: household_employment_change_total
+    family: jobs
+    primary: false
+    label: "Household employment change (CPS, total, end minus start)"
+    inputs:
+      series: ce16ov_household_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "thousands of persons"
+
+  # Unemployment
+  - id: unemployment_rate_mean
+    family: unemployment
+    primary: true
+    label: "Unemployment rate (mean during term)"
+    inputs:
+      series: unrate_unemployment_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: unemployment_rate_change_pp
+    family: unemployment
+    primary: false
+    label: "Unemployment rate change (percentage points, end minus start)"
+    inputs:
+      series: unrate_unemployment_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "percentage points"
+
+  # Inflation
+  - id: cpi_inflation_yoy_mean
+    family: inflation
+    primary: true
+    label: "CPI inflation (YoY, mean during term)"
+    inputs:
+      series: cpiaucsl_cpi
+    period_transform:
+      kind: pct_change
+      lag: 12
+      scale: 100
+      notes:
+        - "Formula: 100 * (CPI_t / CPI_{t-12} - 1)."
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: pce_inflation_yoy_mean
+    family: inflation
+    primary: false
+    label: "PCE inflation (YoY, mean during term)"
+    inputs:
+      series: pcepi_pce_price_index
+    period_transform:
+      kind: pct_change
+      lag: 12
+      scale: 100
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: cpi_inflation_mom_ann_logdiff_mean
+    family: inflation
+    primary: false
+    label: "CPI inflation (MoM annualized, log diff, mean during term)"
+    inputs:
+      series: cpiaucsl_cpi
+    period_transform:
+      kind: growth_rate
+      method: logdiff
+      lag: 1
+      annualize_periods_per_year: 12
+      scale: 100
+      notes:
+        - "Formula: 100 * 12 * ln(CPI_t / CPI_{t-1})."
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  # Stock returns (excess)
+  - id: ff_mkt_excess_return_ann_compound
+    family: stock_returns
+    primary: true
+    label: "Stock market excess return (annualized, compounded; Ken French Mkt-RF)"
+    inputs:
+      table: ff_factors_monthly
+      column: mkt_rf
+    period_transform:
+      kind: identity
+      notes:
+        - "Input is percent simple return per month."
+    term_aggregation:
+      kind: compound_annualized
+      periods_per_year: 12
+      input_units: "percent"
+      output_units: "percent"
+
+  - id: ff_mkt_excess_return_ann_arith
+    family: stock_returns
+    primary: false
+    label: "Stock market excess return (annualized, arithmetic; Ken French Mkt-RF)"
+    inputs:
+      table: ff_factors_monthly
+      column: mkt_rf
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean_times_periods_per_year
+      periods_per_year: 12
+      units: "percent"
+
+  # Recessions
+  - id: recession_month_share
+    family: recessions
+    primary: true
+    label: "Recession share of months (USREC mean)"
+    inputs:
+      series: usrec_recession_indicator
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean
+      post_scale: 100
+      units: "percent of months"
+
+  - id: recession_start_count
+    family: recessions
+    primary: false
+    label: "Recession starts (count of 0->1 transitions in USREC)"
+    inputs:
+      series: usrec_recession_indicator
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: count_transitions
+      from_value: 0
+      to_value: 1
+      units: "count"
+
+  # Fiscal
+  - id: federal_debt_pct_gdp_mean
+    family: fiscal
+    primary: true
+    label: "Federal debt (%GDP, mean; GFDEGDQ188S)"
+    inputs:
+      series: gfdegdq188s_federal_debt_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean
+      units: "percent of GDP"
+
+  - id: federal_debt_pct_gdp_end
+    family: fiscal
+    primary: false
+    label: "Federal debt (%GDP, end-of-term value; GFDEGDQ188S)"
+    inputs:
+      series: gfdegdq188s_federal_debt_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: last
+      units: "percent of GDP"
+
+  - id: federal_surplus_deficit_pct_gdp_mean
+    family: fiscal
+    primary: false
+    label: "Federal surplus/deficit (%GDP, mean; FYFSGDA188S)"
+    inputs:
+      series: fyfsgda188s_federal_surplus_deficit_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean
+      units: "percent of GDP"
+
