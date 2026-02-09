@@ -70,6 +70,14 @@ series:
     frequency: M
     units: "index"
     description: "CPI-U: All Items (BLS, SA)."
+    seasonal_adjustment: SA
+  cpiaucns_cpi_unadjusted:
+    source: fred
+    series_id: CPIAUCNS
+    frequency: M
+    units: "index"
+    description: "CPI-U: All Items (BLS, not seasonally adjusted)."
+    seasonal_adjustment: NSA
   pcepi_pce_price_index:
     source: fred
     series_id: PCEPI
@@ -235,10 +243,26 @@ metrics:
   # Inflation
   - id: cpi_inflation_yoy_mean
     family: inflation
-    primary: true
-    label: "CPI inflation (YoY, mean during term)"
+    primary: false
+    label: "CPI inflation (YoY, mean during term; based on SA CPI index)"
     inputs:
       series: cpiaucsl_cpi
+    period_transform:
+      kind: pct_change
+      lag: 12
+      scale: 100
+      notes:
+        - "Formula: 100 * (CPI_t / CPI_{t-12} - 1)."
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: cpi_inflation_yoy_mean_nsa
+    family: inflation
+    primary: true
+    label: "CPI inflation (YoY, mean during term; based on unadjusted CPI index)"
+    inputs:
+      series: cpiaucns_cpi_unadjusted
     period_transform:
       kind: pct_change
       lag: 12

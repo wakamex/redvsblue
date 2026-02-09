@@ -15,7 +15,7 @@ This document explains the key measurement choices in `spec/metrics_v1.yaml`. Th
 
 Question: should we use precomputed MoM/QoQ/YoY series vs computing from price levels?
 
-Choice (v1): **compute inflation from price index levels** (e.g., CPI, PCEPI).
+Choice (v1): **compute inflation from price index levels** (e.g., CPI, PCEPI), and explicitly support both seasonally adjusted (SA) and not seasonally adjusted (NSA) CPI where it matters.
 
 Rationale:
 - CPI/PCE are published as **index levels**, not SAAR levels. "SAAR" is an annualization convention typically applied to growth rates (and to some BEA flow/level series like GDP levels), not to CPI levels.
@@ -23,15 +23,18 @@ Rationale:
 - Many "precomputed inflation" series are either not available as plain downloads without special API parameters, or embed transformation assumptions we still need to document.
 
 We include multiple inflation definitions because people argue about them:
-- `cpi_inflation_yoy_mean` (primary): YoY inflation from CPI, averaged over the attributed window.
-  - Pros: less sensitive to seasonality and month-to-month noise.
+- `cpi_inflation_yoy_mean_nsa` (primary): YoY inflation from the **unadjusted** CPI index, averaged over the attributed window.
+  - Pros: YoY does not require seasonal adjustment; avoids annual revision of seasonally adjusted CPI levels due to seasonal factor updates.
+- `cpi_inflation_yoy_mean` (alternate): YoY inflation from the **seasonally adjusted** CPI index, averaged over the attributed window.
+  - Pros: included for completeness; should be very close to the NSA YoY in most periods.
 - `cpi_inflation_mom_ann_logdiff_mean` (alternate): MoM annualized log-diff inflation, averaged over the window.
   - Pros: faster-moving signal; matches common "annualized monthly inflation" discussions.
+  - Note: for MoM measures, we prefer SA CPI because NSA MoM is dominated by seasonal patterns.
 - `pce_inflation_yoy_mean` (alternate): PCE-based inflation.
 
 Seasonal adjustment:
-- For MoM/QoQ type measures, **seasonal adjustment matters**; we prefer SA series when available (e.g., `CPIAUCSL`).
-- For YoY measures, SA vs NSA is usually less important, but we still keep the primary on SA series for consistency.
+- The BLS produces **both unadjusted and seasonally adjusted CPI data**; SA data are intended for short-term trend analysis, while unadjusted data are widely used for escalation/indexation and other applications.
+- SA CPI series are revised when seasonal factors are updated (typically revising recent history), so “latest data” pulls can change SA values in the recent window; caching raw downloads keeps our runs reproducible, but we still surface this as a choice.
 
 ## Output (GDP)
 
@@ -90,4 +93,3 @@ Notes:
 
 - Whether to add a FRED-based stock price index series (e.g., S&P 500) and how to downsample daily data (end-of-month vs average).
 - Whether to support point-in-time/vintage data for key series (ALFRED) to avoid revision effects in historical reproducibility.
-
