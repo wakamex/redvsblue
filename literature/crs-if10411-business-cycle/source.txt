@@ -1,0 +1,237 @@
+Introduction to U.S. Economy: The Business Cycle and Growth
+
+Updated October 3, 2024
+
+On July 19, 2021, the National Bureau of Economic
+Research (NBER), an independent, nonprofit research
+group, announced that economic activity in the United
+States reached a post-COVID-19 pandemic onset trough in
+April 2020 and subsequently exited a two-month recession.
+NBER has not announced any peaks in economic activity in
+the intervening years. This In Focus discusses the business
+cycle, how recessions are determined, and potential causes
+and effects of these fluctuations in the economy.
+
+What Is the Business Cycle?
+Over time, economic activity tends to fluctuate between
+periods of increasing economic activity, known as
+economic expansions, and periods of decreasing economic
+activity, known as recessions. Real gross domestic product
+(GDP)—total economic output adjusted for inflation—is
+the broadest measure of economic activity. The economy’s
+movement through these alternating periods of growth and
+contraction is known as the business cycle. The business
+cycle has four phases: expansion, peak, contraction, and
+trough, as shown in Figure 1.
+
+Figure 1. Stylized Depiction of the Business Cycle
+
+Source: Congressional Research Service.
+
+As the economy moves through the business cycle, a
+number of additional economic indicators tend to shift
+alongside GDP. During an economic expansion, economy-
+wide employment, incomes, industrial production, and sales
+all tend to increase alongside the rising real GDP.
+Additionally, over the course of an economic expansion, the
+rate of inflation tends to increase, although the 2009-2020
+expansion showed that inflation can remain low while the
+economy is growing. During a recession, the opposite tends
+to occur. All of these indicators do not shift simultaneously,
+but they tend to shift around the same time.
+
+Although these fluctuations in economic activity are
+referred to as a “cycle,” the economy generally does not
+exhibit a regular and smooth cycle as shown in Figure 1.
+Predicting recessions and expansions is notoriously difficult
+due to the irregular pattern of the business cycle; a single
+quarter of economic data can be too short to predict a trend,
+although this was not the case with COVID-19. During an
+
+expansion, there may also be short periods of decreasing
+economic activity interspersed within an expansionary
+period, and vice versa.
+
+Dating the Business Cycles
+Business cycles are dated according to the peaks and
+troughs of economic activity. A single business cycle is
+dated from peak to peak or trough to trough. NBER’s
+Business Cycle Dating Committee is generally credited
+with identifying business cycles in the United States.
+
+NBER does not define recession as two consecutive
+quarters of declining real GDP, which is a popular metric
+used by the media. Rather NBER uses a broader definition
+of recession as a period where there is a significant and
+persistent decline in economic activity that is spread across
+the economy. NBER uses a number of indicators to
+measure economic activity, including real GDP, economy-
+wide employment, real sales, and industrial production.
+
+The COVID-19 recession technically lasted just two
+months. The most recently completed recession in the
+United States prior to the COVID-19 pandemic began in
+December 2007 and ended in June 2009, a total of 18
+months. Since the 1850s, in the United States, 12 other
+recessions have lasted as long as or longer than the 2007-
+2009 recession; however, all these recessions occurred
+before the 1930s, when the Great Depression itself featured
+recessions—one of which lasted 44 months.
+
+Figure 2 presents real GDP from the first quarter of 1947
+through the second quarter of 2024, along with recessions,
+as identified by NBER, represented with gray bars. Over
+this period, real GDP grew at a 3.1% average annual rate.
+
+Figure 2. Real GDP and Recessions
+1947:Q1-2024:Q2
+
+Source: U.S. Bureau of Economic Analysis.
+Note: Gray bars represent recessions as defined by NBER.
+
+https://crsreports.congress.gov
+
+The economy tends to experience longer periods of
+expansion than contraction, especially since World War II.
+Between 1945 and 2019, the end of the most recent
+business cycle, the average expansion has lasted about 65
+months, and the average recession has lasted about 11
+months. Between the 1850s and World War II, the average
+expansion lasted less than half as long (about 26 months),
+and the average recession lasted about twice as long (about
+21 months). The 2009-2020 expansion was the longest on
+record at 128 months.
+
+However, marking the end of a recession does not mean
+that the economy has returned to its pre-recession level of
+economic activity; it takes time for the economy to recover
+from its low point. In addition, other economic conditions
+can remain distressed. For example, following the Great
+Recession, the economy did not return to what is considered
+“full employment” until summer 2015, six years after the
+end of the technical recession. On the other hand, the
+economy returned to full employment about two years after
+the COVID-19 recession, in line with the recovery of real
+GDP.
+
+Short-Term Economic Growth
+In the short term, the business cycle is primarily driven by
+fluctuations in consumer spending and business investment.
+Over the business cycle, the rate at which the economy is
+expanding or contracting can be significantly different. For
+example, during the 2009-2020 expansion, real GDP grew
+at an average pace of about 2.5% per year, whereas real
+GDP shrank at an annual rate 28.1% in the second quarter
+of 2020 before growing at an annual rate of 35.2% in the
+third quarter. Over longer periods of time, the volatility of
+the business cycle fades to reveal a pattern of growth in the
+economy.
+
+Potential Causes of the Business Cycle
+In general, the business cycle is governed by aggregate
+demand (total spending) within the economy, but recessions
+can also be caused by sudden shocks to supply, which will
+impact both aggregate supply and aggregate demand. The
+COVID-19 recession was unusual in that it displays
+elements of both demand and supply shocks. This section
+discusses these types of shocks in more detail.
+
+Demand Shocks
+Changes in consumer or business confidence can impact
+aggregate demand. If individuals believe the economy will
+perform poorly in the future, they are likely to increase how
+much they save to prepare for lean times ahead. The
+associated decrease in spending would lower aggregate
+demand. Similarly, if businesses perceive that the economy
+is about to enter a recession, they are less likely to make
+investments in new machinery or factories because
+consumers would not be able to afford their new products
+during the recession. The COVID-19 public health crisis
+contributed to the March-April 2020 recession in this
+manner. Uncertainty surrounding the virus and the state of
+the economy combined with high unemployment levels
+resulted in decreased consumption and increased saving (as
+a percentage of income) on the part of consumers and
+decreased desire to increase capital investment on the part
+of firms.
+
+Introduction to U.S. Economy: The Business Cycle and Growth
+
+Supply Shocks
+Events outside of the United States can often impact
+aggregate demand inside the United States, such as the
+1973 and 1979 oil shocks that led to increased prices across
+the U.S. economy, resulting in two recessions. The U.S.
+economy has seen several supply shocks in the past few
+years. In some ways, the COVID-19 recession was a supply
+shock: The need for social distancing halted commerce
+significantly and created challenges in supply chains. The
+Russian invasion of Ukraine also created significant supply
+disruptions in several commodities markets in 2022,
+although this did not result in recession in the United States.
+
+Policy Options
+Government policy, specifically monetary and fiscal policy,
+can impact aggregate demand either directly or indirectly.
+Congress, together with the President, is responsible for
+fiscal policy in the United States through changes in the
+level of government spending and tax revenue. Fiscal
+policy can directly increase aggregate demand by
+increasing government spending, reducing taxes, increasing
+government transfers to individuals, or a combination of the
+three. During a recession, the government typically finances
+these policies by borrowing money, referred to as deficit
+financing. The government has used fiscal stimulus tools
+during the current crisis when, for example, it sent out
+stimulus checks directly to consumers or when it
+temporarily increased unemployment benefits.
+
+Monetary policy can also be used to impact aggregate
+demand. The Federal Reserve implements monetary policy
+by changing short-term interest rates and the availability of
+credit in the economy. For example, lowering interest rates,
+which the Federal Reserve did in response to COVID-19,
+can encourage businesses to make new investments and
+individuals to buy new goods, as lower interest rates make
+it less expensive to borrow money.
+
+Fiscal and monetary policy, when implemented
+successfully, can help reduce economic volatility. When
+unsuccessful, these policies may exacerbate the fluctuations
+of the business cycle. The fiscal and monetary policy
+options discussed in this section are countercyclical
+policies, meaning they work to counter the business cycle.
+For example, countercyclical fiscal policy might include
+increasing government spending during a recession and
+decreasing government spending during an expansion.
+However, growth-oriented policies, when timed improperly,
+can cause the economy to overheat (growing at an
+unsustainable rate) and subsequently cause a downturn.
+
+CRS Resources
+CRS In Focus IF10408, Introduction to U.S. Economy:
+GDP and Economic Growth, by Mark P. Keightley and
+Lida R. Weinstock
+
+(Note: This In Focus was originally authored by Jeffrey
+Stupak, former CRS Analyst in Macroeconomic Policy.)
+
+Lida R. Weinstock, Analyst in Macroeconomic Policy
+
+IF10411
+
+https://crsreports.congress.gov
+
+Introduction to U.S. Economy: The Business Cycle and Growth
+
+Disclaimer
+This document was prepared by the Congressional Research Service (CRS). CRS serves as nonpartisan shared staff to
+congressional committees and Members of Congress. It operates solely at the behest of and under the direction of Congress.
+Information in a CRS Report should not be relied upon for purposes other than public understanding of information that has
+been provided by CRS to Members of Congress in connection with CRS’s institutional role. CRS Reports, as a work of the
+United States Government, are not subject to copyright protection in the United States. Any CRS Report may be
+reproduced and distributed in its entirety without permission from CRS. However, as a CRS Report may include
+copyrighted images or material from a third party, you may need to obtain the permission of the copyright holder if you
+wish to copy or otherwise use copyrighted material.
+
+https://crsreports.congress.gov | IF10411 · VERSION 13 · UPDATED

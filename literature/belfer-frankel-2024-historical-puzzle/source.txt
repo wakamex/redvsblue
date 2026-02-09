@@ -1,0 +1,101 @@
+We have heard much about the puzzle that US economic performance under President Joe Biden has been much stronger than voters perceive it to be.  But the current episode is just one instance of a bigger historical puzzle:  the US economy has since World War II consistently done better under Democratic presidents than under Republican presidents.  This fact is even less widely known, including among Democratic voters, than the truth about Biden’s term.  Indeed, some poll results suggest that more Americans believe the reverse, that Republican presidents are better stewards of the economy than Democrats.
+In a sense, it is not exactly surprising that so few people know that economic performance has been consistently better under one party than the other.  The proposition sounds implausible on the face of it, like the sort of blatantly partisan claim that is not even worth checking out. The puzzle is the fact itself: that it is completely true.
+The relevant statistics have been compiled  before.  But let's  update.
+
+Believe it or not
+
+Since World War II, Democrats have seen  job creation average 1.7 % per year when in office, versus 1.0 % under the GOP.  US GDP has averaged a rate of growth of 4.23 percent per annum during Democratic administrations, versus 2.36 per cent under Republicans, a remarkable difference of 1.87 percentage points. This is postwar data, covering 19 presidential terms—from Truman through Biden.  If one goes back further, to the Great Depression, to include Herbert Hoover and Franklin Roosevelt, the difference in growth rates is even larger.
+The results are similar regardless whether one assigns responsibility for the first quarter of a president’s term to him or to his predecessor.  Relatedly, the average Democratic presidential term has been in recession for 1 of its 16 quarters, whereas the average for the Republican terms has been 5 quarters, a startlingly big difference.
+
+Reasons to be skeptical
+
+Even those of us who believe that Democrats may have pursued better policies than Republicans, overall, have a hard time explaining the big observed gap in performance.  After all, many other powerful and unpredictable factors impact the economy, often dwarfing the effect of any policy levers that the president can control.
+Furthermore, many policies, good or bad, have their main effects only over a time span longer than a presidential cycle.  For example, Jimmy Carter deserves credit for appointing Paul Volcker as Chairman of the Fed in 1979 with a mandate to defeat inflation at all costs.  The subsequent disinflation was ultimately successful, helping to set the stage for the Great Moderation of the next 20 years.  But its immediate impact in 1980 was a recession.  Most economists consider the Volcker monetary contraction to have been worth the price.  But the downturn contributed to Carter’s failure to win re-election in November of that year.  Ironically, that is the one and only recession in the last 70 years that took place with a Democrat in the White House.
+
+Is it just chance?
+
+So, are these differences in outcomes just the result of random chance?  One would think so.  But the application of universally accepted statistical methodology says otherwise.
+The last five recessions all started while a Republican was in the White House (Reagan. G.H.W. Bush, G.W. Bush twice, and Trump).  Readers can check out the chronology for themselves. The odds of getting that outcome by chance, if the true probability of a recession starting during a Democrat’s presidency were equal to that during a Republican’s presidency, would be (1/2)(1/2)(1/2)(1/2)(1/2), i.e., one out of 32 = 3.1%.  Very unlikely.   The same as the odds of getting “heads” on five out of five consecutive coin-flips. Such a rejection of equality is said to be “statistically significant at the 95% level of confidence.”
+What if we go back further?    A remarkable 9 of the last 10 recessions have started when a Republican was president.  The odds that this outcome would have occurred just by chance are even more remote: one out of 100.  [That is, 10/210 = 0.0098.]
+Blinder and Watson (2016) pointed out another remarkable fact.  They considered the eight times since World War II when an incumbent from one party had handed over the White House to a leader from the other party.  We have had two more presidents by now. Let us update, by adding the records of Trump and Biden (so far).  In five of the last 10 transitions, a Democrat was succeeded by a Republican; each time the growth rate went down from one term to the next. In five of the transitions, a Republican was succeeded by a Democrat; each time the growth rate went up.  No exceptions.  Ten out of ten.  What are the odds of this happening by chance?  The answer is the same as the odds of getting heads on 10 coin tosses in a row:  ½ times itself 10 times, which is 1 out of 1,024.  In other words, the difference is statistically significant at the 99.9% level.
+So, one can safely reject claims of stronger economic performance under Republicans.  But what accounts for the surprisingly better record under Democratic presidents?  It remains a puzzle.
+
+The latest from Belfer
+
+See more
+
+Expert analysis in your inbox
+
+Subscribe
+
+Recommended citation
+
+Frankel, Jeffrey. “The Historical Puzzle of US Economic Performance under Democrats vs. Republicans.” March 28, 2024
+
+Copy to Clipboard
+
+The Historical Puzzle of US Economic Performance under Democrats vs. Republicans
+
+View Citation
+
+Print
+
+Open Section Navigation
+
+In this article
+
+Close Section Navigation
+
+Economics & Global Affairs
+
+Recommended citation
+
+Frankel, Jeffrey. “The Historical Puzzle of US Economic Performance under Democrats vs. Republicans.” March 28, 2024
+
+Copy to Clipboard
+
+Author
+
+Jeffrey Frankel
+
+Request Interview
+
+More From This Expert
+Caligula ReincarnatedWhy didn't Trump's tariffs crash the economy in 2025?
+
+Up Next
+
+Photo Credit Toggle
+AP - Silvia Izquierdo
+
+Article
+
+G20 Summit 2024: How the World is Reacting to Trump
+
+Nov. 21, 2024
+
+by Oliver Stuenkel
+
+From Middle Powers
+
+Photo Credit Toggle
+ASSOCIATED PRESS - Morry Gash
+
+Article
+
+What Robert F. Kennedy Jr's Appointment Means for Public Health
+
+Nov. 20, 2024
+
+by Syra Madad
+
+Photo Credit Toggle
+ASSOCIATED PRESS - Julia Demaree Nikhinson
+
+Article
+
+Trump Administration’s Chance to Lead on Pandemic Preparedness
+
+Nov. 8, 2024
+
+by Syra Madad

@@ -1,0 +1,281 @@
+{
+  "retrieved_timezone": "UTC",
+  "sources": [
+    {
+      "slug": "nber-w23184",
+      "url": "https://www.nber.org/system/files/working_papers/w23184/w23184.pdf",
+      "title": "Political Cycles and Stock Returns",
+      "type": "pdf",
+      "retrieved_at": "2026-02-09T19:43:07+00:00",
+      "files": {
+        "source": "literature/nber-w23184/source.pdf",
+        "text": "literature/nber-w23184/source.txt",
+        "notes": "literature/nber-w23184/notes.md"
+      },
+      "tags": [
+        "academic",
+        "nber",
+        "presidents",
+        "economy"
+      ]
+    },
+    {
+      "slug": "santa-clara-valkanov-presidential-puzzle",
+      "url": "https://www.escholarship.org/uc/item/00n6f3ph.pdf",
+      "title": "Political Cycles and the Stock Market",
+      "type": "pdf",
+      "retrieved_at": null,
+      "files": {
+        "source": "literature/santa-clara-valkanov-presidential-puzzle/source.pdf",
+        "text": "literature/santa-clara-valkanov-presidential-puzzle/source.txt",
+        "notes": "literature/santa-clara-valkanov-presidential-puzzle/notes.md"
+      },
+      "tags": [
+        "academic",
+        "finance",
+        "stocks",
+        "partisanship"
+      ]
+    },
+    {
+      "slug": "presidentialdata-org",
+      "url": "https://presidentialdata.org/",
+      "title": "Presidential Data 2024",
+      "type": "html",
+      "retrieved_at": "2026-02-09T19:43:09+00:00",
+      "files": {
+        "source": "literature/presidentialdata-org/source.html",
+        "text": "literature/presidentialdata-org/source.txt",
+        "notes": "literature/presidentialdata-org/notes.md"
+      },
+      "tags": [
+        "dataset",
+        "methodology",
+        "popular"
+      ]
+    },
+    {
+      "slug": "ca-senate-shattering-gop-economic-myth",
+      "url": "https://sd05.senate.ca.gov/news/shattering-gop-economic-myth",
+      "title": "Shattering the GOP Economic Myth | Senator Jerry McNerney",
+      "type": "html",
+      "retrieved_at": "2026-02-09T19:43:09+00:00",
+      "files": {
+        "source": "literature/ca-senate-shattering-gop-economic-myth/source.html",
+        "text": "literature/ca-senate-shattering-gop-economic-myth/source.txt",
+        "notes": "literature/ca-senate-shattering-gop-economic-myth/notes.md"
+      },
+      "tags": [
+        "popular",
+        "partisan-claims"
+      ]
+    },
+    {
+      "slug": "blinder-watson-2014-presidents-us-economy",
+      "url": "https://www.nber.org/system/files/working_papers/w20324/w20324.pdf",
+      "title": "Presidents and the U.S. Economy: An Econometric Exploration",
+      "type": "pdf",
+      "retrieved_at": null,
+      "files": {
+        "source": "literature/blinder-watson-2014-presidents-us-economy/source.pdf",
+        "text": "literature/blinder-watson-2014-presidents-us-economy/source.txt",
+        "notes": "literature/blinder-watson-2014-presidents-us-economy/notes.md"
+      },
+      "tags": [
+        "academic",
+        "econometrics",
+        "macro",
+        "partisanship"
+      ]
+    },
+    {
+      "slug": "belfer-frankel-2024-historical-puzzle",
+      "url": "https://www.belfercenter.org/publication/historical-puzzle-us-economic-performance-under-democrats-vs-republicans",
+      "title": "The Historical Puzzle of US Economic Performance under Democrats vs. Republicans | The Belfer Center for Science and International Affairs",
+      "type": "html",
+      "retrieved_at": null,
+      "files": {
+        "source": "literature/belfer-frankel-2024-historical-puzzle/source.html",
+        "text": "literature/belfer-frankel-2024-historical-puzzle/source.txt",
+        "notes": "literature/belfer-frankel-2024-historical-puzzle/notes.md"
+      },
+      "tags": [
+        "policy",
+        "academic-adjacent",
+        "summary"
+      ]
+    },
+    {
+      "slug": "belfer-2016-economy-better-democrats",
+      "url": "https://www.belfercenter.org/publication/does-economy-really-do-better-under-democratic-presidents",
+      "title": "Does the Economy Really Do Better Under Democratic Presidents? | The Belfer Center for Science and International Affairs",
+      "type": "html",
+      "retrieved_at": null,
+      "files": {
+        "source": "literature/belfer-2016-economy-better-democrats/source.html",
+        "text": "literature/belfer-2016-economy-better-democrats/source.txt",
+        "notes": "literature/belfer-2016-economy-better-democrats/notes.md"
+      },
+      "tags": [
+        "policy",
+        "academic-adjacent",
+        "summary"
+      ]
+    },
+    {
+      "slug": "aea-why-economy-better-under-democrats",
+      "url": "https://www.aeaweb.org/research/why-does-the-economy-do-better-democrats-white-house",
+      "title": "Why does the economy do better when Democrats are in the White House?",
+      "type": "html",
+      "retrieved_at": null,
+      "files": {
+        "source": "literature/aea-why-economy-better-under-democrats/source.html",
+        "text": "literature/aea-why-economy-better-under-democrats/source.txt",
+        "notes": "literature/aea-why-economy-better-under-democrats/notes.md"
+      },
+      "tags": [
+        "academic",
+        "summary",
+        "mechanisms"
+      ]
+    },
+    {
+      "slug": "epi-bivens-2024-economic-performance",
+      "url": "https://epiaction.org/wp-content/uploads/2024/08/Full-Report_Economic-performance-is-stronger-when-Democrats-hold-the-White-House.pdf",
+      "title": "Economic Performance Is Stronger When Democrats Hold the White House",
+      "type": "pdf",
+      "retrieved_at": null,
+      "files": {
+        "source": "literature/epi-bivens-2024-economic-performance/source.pdf",
+        "text": "literature/epi-bivens-2024-economic-performance/source.txt",
+        "notes": "literature/epi-bivens-2024-economic-performance/notes.md"
+      },
+      "tags": [
+        "policy",
+        "labor",
+        "distribution",
+        "partisan-claims"
+      ]
+    },
+    {
+      "slug": "jec-democrats-2024-economy-better-democrats",
+      "url": "https://www.jec.senate.gov/public/index.cfm/democrats/2024/10/the-u-s-economy-performs-better-under-democratic-presidents",
+      "title": "The U.S. Economy Performs Better Under Democratic Presidents - The U.S. Economy Performs Better Under Democratic Presidents - United States Joint Economic Committee",
+      "type": "html",
+      "retrieved_at": null,
+      "files": {
+        "source": "literature/jec-democrats-2024-economy-better-democrats/source.html",
+        "text": "literature/jec-democrats-2024-economy-better-democrats/source.txt",
+        "notes": "literature/jec-democrats-2024-economy-better-democrats/notes.md"
+      },
+      "tags": [
+        "policy",
+        "partisan-claims",
+        "summary"
+      ]
+    },
+    {
+      "slug": "factcheck-2015-economy-better-democrats",
+      "url": "https://www.factcheck.org/2015/10/clinton-economy-better-under-democrats/",
+      "title": "Clinton: Economy Better Under Democrats - FactCheck.org",
+      "type": "html",
+      "retrieved_at": null,
+      "files": {
+        "source": "literature/factcheck-2015-economy-better-democrats/source.html",
+        "text": "literature/factcheck-2015-economy-better-democrats/source.txt",
+        "notes": "literature/factcheck-2015-economy-better-democrats/notes.md"
+      },
+      "tags": [
+        "fact-check",
+        "methodology",
+        "caveats"
+      ]
+    },
+    {
+      "slug": "politifact-2016-economy-better-democrats",
+      "url": "https://www.politifact.com/factchecks/2016/apr/06/hillary-clinton/does-economy-always-do-better-under-democratic-pre/",
+      "title": "PolitiFact |  Does the economy always do better under Democratic presidents?",
+      "type": "html",
+      "retrieved_at": null,
+      "files": {
+        "source": "literature/politifact-2016-economy-better-democrats/source.html",
+        "text": "literature/politifact-2016-economy-better-democrats/source.txt",
+        "notes": "literature/politifact-2016-economy-better-democrats/notes.md"
+      },
+      "tags": [
+        "fact-check",
+        "methodology",
+        "caveats"
+      ]
+    },
+    {
+      "slug": "nber-business-cycle-dates-json",
+      "url": "https://data.nber.org/data/cycles/business_cycle_dates.json",
+      "title": "NBER Business Cycle Dates (JSON)",
+      "type": "json",
+      "retrieved_at": null,
+      "files": {
+        "source": "literature/nber-business-cycle-dates-json/source.json",
+        "text": "literature/nber-business-cycle-dates-json/source.txt",
+        "notes": "literature/nber-business-cycle-dates-json/notes.md"
+      },
+      "tags": [
+        "data-source",
+        "nber",
+        "recession-dates"
+      ]
+    },
+    {
+      "slug": "crs-if10411-business-cycle",
+      "url": "https://crsreports.congress.gov/product/pdf/IF/IF10411",
+      "title": "Introduction to U.S. Economy: The Business Cycle and Growth",
+      "type": "pdf",
+      "retrieved_at": null,
+      "files": {
+        "source": "literature/crs-if10411-business-cycle/source.pdf",
+        "text": "literature/crs-if10411-business-cycle/source.txt",
+        "notes": "literature/crs-if10411-business-cycle/notes.md"
+      },
+      "tags": [
+        "methodology",
+        "measurement",
+        "gdp",
+        "recessions"
+      ]
+    },
+    {
+      "slug": "investopedia-democrats-vs-republicans-economy",
+      "url": "https://www.investopedia.com/democrats-vs-republicans-who-had-more-national-debt-8738104",
+      "title": "Democrats vs. Republicans: Who Had More National Debt?",
+      "type": "html",
+      "retrieved_at": null,
+      "files": {
+        "source": "literature/investopedia-democrats-vs-republicans-economy/source.html",
+        "text": "literature/investopedia-democrats-vs-republicans-economy/source.txt",
+        "notes": "literature/investopedia-democrats-vs-republicans-economy/notes.md"
+      },
+      "tags": [
+        "popular",
+        "explainer",
+        "debt"
+      ]
+    },
+    {
+      "slug": "crfb-trump-biden-national-debt",
+      "url": "https://www.crfb.org/papers/trump-and-biden-national-debt",
+      "title": "Trump and Biden: The National Debt-Mon, 06/24/2024 - 12:00 | Committee for a Responsible Federal Budget",
+      "type": "html",
+      "retrieved_at": "2026-02-09T20:04:00+00:00",
+      "files": {
+        "source": "literature/crfb-trump-biden-national-debt/source.html",
+        "text": "literature/crfb-trump-biden-national-debt/source.txt",
+        "notes": "literature/crfb-trump-biden-national-debt/notes.md"
+      },
+      "tags": [
+        "nonpartisan",
+        "fiscal",
+        "debt"
+      ]
+    }
+  ]
+}

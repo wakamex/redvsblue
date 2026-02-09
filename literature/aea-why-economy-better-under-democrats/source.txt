@@ -1,0 +1,67 @@
+Research Highlights Article
+
+June 20, 2016
+
+Why does the economy do better when Democrats are in the White House?
+
+Interpreting the post-war economic growth gap
+
+Tim Hyde
+
+President Gerald Ford faces challenger Jimmy Carter in a debate in Philadelphia, September 23, 1976.
+White House Photograph/Gerald R. Ford Library
+
+With a presidential election less than five months away, the daily torrent of polls, gaffes, and attack ads tends to get all the attention. But history suggests that following the latest macroeconomic developments – like last month’s disappointing jobs report or this week’s Fed decision to hold off on interest rate hikes – gives us a better indication about who will prevail in November.
+A large political science literature has found that better economic performance in the runup to an election is closely associated with the political fate of the incumbent party. It seems that on some level voters hold presidents responsible for the economy, even though most observers think the president actually has relatively little control over it.
+Sure, presidents have a few tools at their disposal: they can appoint pliant Fed chairs, push for changes to taxes and regulations, and try to negotiate new trade deals. But their control is naturally limited by the power of Congress, long-term economic trends outside their control, and the potential for disruptions coming from abroad.
+Then again, the historical record shows that the economy has done quite a bit better under Democratic presidents since World War II, with faster GDP growth, more reductions in unemployment, greater industrial production, and higher corporate profits. Is this just statistical noise, or is it actually evidence that Democratic presidents (and policies) are better for the American economy?  A study appearing in the April issue of the American Economic Review tries to find the root cause of the economic growth gap between Democrats and Republicans.
+In Presidents and the U.S. Economy: An Econometric Exploration (PDF), authors Alan Blinder and Mark Watson compare the economic records of Republican and Democratic presidential administrations, focusing on the period since World War II when data on gross domestic product and employment have been collected in a consistent manner. They find GDP tends to grow much faster under Democratic presidents (averaging 4.33% per year) than Republican presidents (averaging 2.54% per year).
+The authors note that this 1.8 point GDP growth gap between the parties is quite large -- roughly equivalent to the 2.0 point gap between the booming 1990’s and the much rockier economy of the last ten years.
+
+GDP growth over the last 16 presidential terms
+Comparison of U.S. real gross domestic product growth during nine Republican and seven Democratic presidential terms, 1949–2013. Economic growth has been consistently higher under Democratic presidents during this period.
+
+View full size chart
+
+Source: U.S. Federal Reserve FRED database
+
+There are other ways to measure the health of the economy besides GDP, but almost no matter which one is used, the economy seems to do better under Democratic presidents.
+The Democratic advantage persists for unemployment (especially changes in unemployment), wage and productivity growth, and stock market returns, although the differences are not as stark as they are for GDP. The economy is in recession about 7% of the time under Democrats as compared to 28% of the time under Republicans. Republican presidents do tend to preside over lower inflation at least, but that is mostly to be expected given the generally more sluggish economic conditions during their terms.
+So the Democratic advantage is clear, but what about the sample size problem? There were only 16 presidential terms between 1949 and 2013, and only 12 different people who served as president. Can that small number of data points be remotely conclusive?
+To answer this question, the authors propose a thought experiment where they ignore the historical party affiliation of each president and reassign each presidential term randomly to one party or the other (making sure there are a total of nine for Republicans and seven for Democrats). Then they scramble the political party assignments over and over to get a sense for how likely it is for one party to outperform another by 1.8 points of GDP growth.
+In one draw, Republicans might get credit for the roaring wartime economy during Truman’s second term while Democrats are saddled with the 2008 financial crisis during Bush’s. In another draw, Democrats might get to claim the late 1980s expansion while Republicans are assigned the oil crisis years of the Carter administration.
+There are over 11,000 ways that post-war political history can be scrambled in this way. If the party that gets lucky with its assignments routinely outperforms the other party by huge margins, that is a sign that the sample size is too small for strong conclusions to be drawn. If that’s the case, we may just be living in a world where Democrats had more opportune timing. It could just have easily been Republicans with the advantage if the political cycle had been a little different.
+But the authors do not find that one party routinely outperforms the other in these imaginary histories – usually, they come out pretty close. In real life, Democrats have a 1.8 point advantage over Republicans, but there is only a gap that big between the parties about 1% of the time during these simulations. Either Democratic presidents were extraordinarily lucky, or there is actually something to the connection between Democratic administrations and economic performance.
+Still, this doesn’t necessarily vindicate Democratic economy policy. The authors find other historical data series to see what factors were associated with economic boom times, and to see whether these things could reasonably be attributed to a president’s decisions.
+
+Democrats would probably like to attribute a large portion of the [GDP] growth gap to better fiscal (and perhaps monetary) policies, but the data do not support such a claim. If anything, and we would not make much of such small differences, both fiscal and monetary policy actions seem to be a bit more pro-growth when a Republican is president.
+Blinder & Watson (2016)
+
+The authors find two important factors that might be expected to matter but don’t: fiscal policy and monetary policy. The GDP growth gap cannot be simply explained by higher government spending during Democratic presidencies or wiser policy coming from the Fed; if anything, Republican presidents may have gotten slightly more economic growth when they had their preferred fiscal and monetary policies in place.
+Instead, developments from abroad seemed to do the most to help explain the growth gap: oil price shocks, and war (through its effect on defense spending). Oil prices cooperated during the early years of the period under study, including the Truman, Kennedy, and Johnson presidencies. But rising prices held the economy back during the mid 1970s, early 1990s, and mid 2000s when Republicans were in power.
+Wartime mobilization may be an even bigger factor in explaining the gap, especially given the differential timing for Democrats and Republicans. Truman and Johnson oversaw increases in defense spending during the wars in Korea and Vietnam, while Eisenhower and Nixon oversaw the drawdowns. The authors show that if they eliminate just the Truman and first Eisenhower terms from the analysis, the GDP gap shrinks by about 20%.
+Greater productivity growth (possibly reflecting a quicker pace of technological change), more consumer confidence, and faster economic growth in Europe during Democratic terms also contributed to the gap to varying degrees over this period.
+The authors note that these factors are less obviously related to economic policy levers, but they could still reflect aspects of presidential influence.
+The price of oil, the global economy, overseas events that lead to wartime mobilization -- all could be responding in part to U.S. foreign policy, so some of the GDP gap may be a reflection of how Democratic and Republican presidents have conducted diplomacy abroad. Productivity gains, too, could potentially result from systematically different policy decisions about regulation, innovation, and basic research, although the authors don’t focus on finding specific policy choices that might explain the gap.
+Furthermore, as much as 45% of the GDP gap isn’t explained by any of the factors listed above, so the authors conclude with an invitation for others to try to deduce other factors that can explain the divergent economic performance of Democratic and Republican presidents. ♦
+“Presidents and the U.S. Economy: An Econometric Exploration” appears in the April 2016 issue of the American Economic Review.
+
+Does media bias matter in elections?
+
+How politicians and voters respond to slanted media coverage
+
+Can trade policy drive economic development?
+
+The role of trade in South Korea’s economic growth miracle
+
+View All Highlights
+
+Follow on X
+
+Follow on Bluesky
+
+Follow on Facebook
+
+Get Email Digest
+
+RSS Feed

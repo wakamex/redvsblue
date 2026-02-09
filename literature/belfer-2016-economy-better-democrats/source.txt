@@ -1,0 +1,64 @@
+Hillary Clinton has been saying that the US economy does much better when a Democrat is president than when a Republican is.  When the press goes to fact-check the claim, they can be forgiven for having  a presumption that it can’t be 100 per cent true.  After all, if it were completely true, then wouldn’t we all already know it?Well, there is no other way to say this: The claim is 100 per cent true.The qualifier is that the president is only one of many influences of what happens to the economy.   Luck of course plays a big role.  Hillary’s speeches don’t include footnotes making this obvious point.  But that doesn’t justify a rating of only “half true” for Clinton’s claim, as some fact-checkers proclaim.  And the surprising reality is that the difference in economic performance between Democratic and Republican presidents is sufficiently systematic that it cannot be statistically attributed to mere chance alone.The gap in economic performanceShe says (e.g., June 5, 2016), “It is a fact that the economy does better when we have a Democrat in the White House.”  What is the evidence for this claim?A timely and careful statistical study was published in April in the American Economic Review[106(4): 1015-45] by Alan Blinder and Mark Watson of Princeton University:  “Presidents and the US Economy: An Econometric Exploration.”   The starting point, the central fact, is that the rate of growth of GDP has averaged 4.3 percent during Democratic administrations versus 2.5 under Republicans, a remarkable difference of 1.8 percentage points.  This is postwar data, covering 16 complete presidential terms—from Truman through Obama.  If one goes back further, before World War II, to include Hoover and Roosevelt, the difference in growth rates is even stronger.The results are similar regardless whether one assigns responsibility for the first quarter of a president’s term (or the first few quarters), to him or to his predecessor.Of course many political actors in Washington influence the course of events.  Blinder and Watson find that the economy does a bit better if the Democrats have appointed the Federal Reserve chairman or if they control the Congress.  But these conditions are not necessary for the central result:  it is the party of the presidency that makes the big difference.Furthermore, over the 256 quarters in these 16 presidential terms, the US economy was in recession for 1.1 quarters during the average Democratic presidency and 4.6 quarters during the Republican terms, a startlingly big difference.  These gaps in performance are highly significant statistically.  The odds that they are the result of mere chance are 1 in a 100 or less.The two Princeton economists find superior results by other measures as well, including the change in unemployment during the president’s term and the performance of the stock market.  The unemployment rate fell by 0.8 percentage points under Democrats on average and rose by 1.1 under Republicans, a significant gap of 1.9 percentage points. Perhaps better known than the other economic statistics, returns in the S&P 500 have been higher under Democrats:  8.4% versus 2.7 % for a differential of 5.7% (though this differential is not as significant statistically, because stock market prices are so volatile).  Also the structural budget deficit is smaller under Democratic presidents (1.5% of potential GDP) than Republicans (2.2%). But the authors mainly focus on GDP.Could it be chance?One does not need to understand fancy econometrics to understand how unlikely it is that chance alone could have produced such big differences in outcomes.  Economists use sophisticated econometrics when publishing an article in the AER, the top peer-reviewed journal; but sometimes simpler calculations are more effective.  Consider some very simple facts, which anyone can easily check for themselves.  The last four recessions all started while a Republican was in the White House. If the chances of a recessions starting during a Democrat’s term were equal to that of a Republican’s term, the odds of getting that outcome would be (1/2)(1/2)(1/2)(1/2), i.e., one out of 16.  Just like the odds of getting “heads” on four out of four coin-flips.  Not especially likely.Still, four data points constitute a very small sample.  So let’s go back ten business cycles.  By my count nine of the last ten recessions have started under Republican presidents.   The odds of the Democrats doing that well just by chance are about 1 in a hundred.  (Anyone can easily check the recession dates for themselves, at the site of the NBER Business Cycle Dating Committee.)An even more startling fact emerges from a review of the last 8 times when an incumbent from one party handed over the White House to a president from the other party.  In four of these transitions, a Democrat was succeeded by a Republican; each time the growth rate went down from one term to the next.  In four of the transitions, a Republican was succeeded by a Democrat; each time the growth rate went up.  No exceptions, as Blinder and Watson point out.  Eight out of eight.  What are the odds of this happening by chance?   The answer is the same as the odds of getting heads on 8 coin tosses in a row:    ½ times itself 8 times, which is 1 out of 256.  I.e., ¼ of 1 percent.  Very unlikely.Fact-checkersGiven the strength of these results, it is surprising that Hillary Clinton’s claims have been rated as only “half true” by some media, including the Pulitzer Prize-winning PolitFact. Its source appears to be a particular fact-checker in Arizona.  (I feel a personal stake in setting the record straight, because I am inexplicably quoted as supporting this finding that the claim is only “half-true.”  I had told the Arizona interviewer that the claim of a performance gap was clearly true, even though finding the gap was not the same as proving its cause.)  The “false balance” syndrome strikes again.The first half of the Blinder-Watson paper reports the aforementioned numbers showing the difference in how the economy has behaved under the two parties. This difference seems incontrovertible.  The second half of the paper tries econometrically to identify causes for the gap.  Here the authors are less successful, because it is inherently a much harder task.  The precise reasons  for the surprisingly big differential are unknown.They find some evidence of four or five factors that may together explain 56% of the gap between growth rates under the two parties:  oil shocks, productivity growth, defense spending, foreign economic growth, and consumer confidence.  It is impossible to know whether some of these five factors may have been influenced by the policies of US presidents.  We know still less about the channels that might explain the remaining 44% of the gap.  Thus it is impossible to say to what extent specific policies adopted by presidents are responsible for the difference in economic performance.This is the reason that the fact-checkers give for rating Hillary’s claim as only half true.  But her claim was that the gap in performance exists, not what were the specific causal channels.  The claim that a gap exists is not the same thing as a claim to have identified the policies that contributed to the gap, let alone a claim that they explain the entire gap.The fact-checkers also make much of a finding by Blinder and Watson that, contrary to widespread assumptions, fiscal and monetary policies are not more “pro-growth” (i.e., expansionary) under Democrats than under Republican presidents, and therefore can’t explain any of the performance differential.  But, in the first place, presidents make lots of policy decisions beyond fiscal and monetary stimulus, including energy, anti-trust, regulation, trade, labor, foreign policy, and much more.   There is no way to test econometrically this myriad of policies.In the second place, leading Republican politicians claim to believe that easy money and highspending hurt the economy rather than helping it.   At least, they claim to believe that when they are out of office, and especially if the economy is weak, as in the post-2008 environment.  (When they are in office, they tend to find that they rather like spending money, even if the economy doesn’t need it.  Remember, for example, when Vice President Richard Cheney reportedly said “Reagan proved that deficits don’t matter.”   It should not be news that Ronald Reagan and George W. Bush cut taxes and increased spending, whereas Bill Clinton acted to bring the budget deficit down.)Regardless, let’s be clear about the central finding.  Hillary Clinton’s claim that the economy does better on average when a Democrat is in the White House is true, judging from past history.  And the difference is large enough that it cannot be attributed to pure chance.
+
+The latest from Belfer
+
+See more
+
+Recommended citation
+
+Frankel, Jeffrey. “Does the Economy Really Do Better Under Democratic Presidents?.” June 27, 2016
+
+Copy to Clipboard
+
+Does the Economy Really Do Better Under Democratic Presidents?
+
+View Citation
+
+Print
+
+China's Economy
+Economic Policy
+Economics & Global Affairs
+Governance
+U.S. domestic politics
+
+Recommended citation
+
+Frankel, Jeffrey. “Does the Economy Really Do Better Under Democratic Presidents?.” June 27, 2016
+
+Copy to Clipboard
+
+Author
+
+Jeffrey Frankel
+
+Request Interview
+
+More From This Expert
+Caligula ReincarnatedWhy didn't Trump's tariffs crash the economy in 2025?
+
+Up Next
+
+Blog Post
+
+Caligula Reincarnated
+
+Feb. 6, 2026
+
+by Jeffrey Frankel
+
+Blog Post
+
+Why didn't Trump's tariffs crash the economy in 2025?
+
+Dec. 31, 2025
+
+by Jeffrey Frankel
+
+Blog Post
+
+Abundance
+
+Nov. 2, 2025
+
+by Jeffrey Frankel
