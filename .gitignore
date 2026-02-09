@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Large vendored deps; re-install via literature/_scripts/requirements.txt when needed.
+literature/_scripts/_vendor/
+
