@@ -127,6 +127,20 @@ series:
         units: "percent"
     description: "Fama/French Research Factors (monthly)."
 
+  # Finance (index levels; price-only, excludes dividends)
+  sp500_sp500_index:
+    source: fred
+    series_id: SP500
+    frequency: D
+    units: "index"
+    description: "S&P 500 index level (daily; price index, excludes dividends)."
+  djia_dow_jones:
+    source: fred
+    series_id: DJIA
+    frequency: D
+    units: "index"
+    description: "Dow Jones Industrial Average index level (daily; price index, excludes dividends)."
+
 metrics:
   # GDP growth
   - id: gdp_growth_real_qoq_ann_logdiff
@@ -215,6 +229,18 @@ metrics:
       kind: end_minus_start
       units: "thousands of persons"
 
+  - id: household_employment_change_per_year
+    family: jobs
+    primary: false
+    label: "Household employment change (CPS, per year, end minus start divided by term years)"
+    inputs:
+      series: ce16ov_household_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "thousands of persons per year"
+
   # Unemployment
   - id: unemployment_rate_mean
     family: unemployment
@@ -239,6 +265,18 @@ metrics:
     term_aggregation:
       kind: end_minus_start
       units: "percentage points"
+
+  - id: unemployment_rate_change_pp_per_year
+    family: unemployment
+    primary: false
+    label: "Unemployment rate change (percentage points per year, end minus start divided by term years)"
+    inputs:
+      series: unrate_unemployment_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "percentage points per year"
 
   # Inflation
   - id: cpi_inflation_yoy_mean
@@ -370,6 +408,89 @@ metrics:
       notes:
         - "Formula: 100 * (prod_t (1 + r_t/100) - 1) over months in the attributed term window."
 
+  # Stock index levels (price-only)
+  - id: sp500_level_end
+    family: stock_levels
+    primary: false
+    label: "S&P 500 level (end-of-window)"
+    inputs:
+      series: sp500_sp500_index
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: last
+      units: "index"
+
+  - id: sp500_term_pct_change
+    family: stock_levels
+    primary: false
+    label: "S&P 500 percent change (term total, end vs start)"
+    inputs:
+      series: sp500_sp500_index
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: sp500_term_cagr_pct
+    family: stock_levels
+    primary: false
+    label: "S&P 500 CAGR (term annualized from start/end)"
+    inputs:
+      series: sp500_sp500_index
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+      notes:
+        - "Uses start/end levels and actual elapsed time to annualize."
+
+  - id: djia_level_end
+    family: stock_levels
+    primary: false
+    label: "Dow Jones Industrial Average level (end-of-window)"
+    inputs:
+      series: djia_dow_jones
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: last
+      units: "index"
+
+  - id: djia_term_pct_change
+    family: stock_levels
+    primary: false
+    label: "Dow Jones Industrial Average percent change (term total, end vs start)"
+    inputs:
+      series: djia_dow_jones
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: djia_term_cagr_pct
+    family: stock_levels
+    primary: false
+    label: "Dow Jones Industrial Average CAGR (term annualized from start/end)"
+    inputs:
+      series: djia_dow_jones
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+      notes:
+        - "Uses start/end levels and actual elapsed time to annualize."
+
   # Recessions
   - id: recession_month_share
     family: recessions
@@ -422,6 +543,30 @@ metrics:
     term_aggregation:
       kind: last
       units: "percent of GDP"
+
+  - id: federal_debt_pct_gdp_change_pp
+    family: fiscal
+    primary: false
+    label: "Federal debt (%GDP, change in percentage points, end minus start; GFDEGDQ188S)"
+    inputs:
+      series: gfdegdq188s_federal_debt_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "percentage points"
+
+  - id: federal_debt_pct_gdp_change_pp_per_year
+    family: fiscal
+    primary: false
+    label: "Federal debt (%GDP, change in percentage points per year; GFDEGDQ188S)"
+    inputs:
+      series: gfdegdq188s_federal_debt_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "percentage points per year"
 
   - id: federal_surplus_deficit_pct_gdp_mean
     family: fiscal

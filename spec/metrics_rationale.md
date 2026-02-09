@@ -63,6 +63,17 @@ Metrics included:
 - `ff_mkt_total_return_ann_compound` (alternate): annualized compound total return (Mkt-RF + RF).
 - `ff_mkt_total_return_term_total` (alternate): compounded total return over the term window (end/start in percent terms).
 
+Price index levels (Dow and S&P):
+- For popular/press-style “the market went up/down under X” claims, we also include **price index levels** from FRED:
+  - `SP500` (S&P 500)
+  - `DJIA` (Dow Jones Industrial Average)
+- These are **price-only** indices (exclude dividends), so they are not directly comparable to total return measures. We treat them as alternates for public-facing level claims, not the primary return metric.
+
+Level-style term metrics included:
+- End-of-window level: `sp500_level_end`, `djia_level_end`
+- Term total percent change (end vs start): `sp500_term_pct_change`, `djia_term_pct_change`
+- Term CAGR (annualized from start/end using elapsed time): `sp500_term_cagr_pct`, `djia_term_cagr_pct`
+
 MoM/QoQ/YoY:
 - MoM is the monthly return itself.
 - QoQ/YoY are rolling compounded returns over 3/12 months. We have not made these primary scoreboard metrics yet; they are better suited for plots/diagnostics because they overlap heavily over time.
@@ -71,7 +82,7 @@ MoM/QoQ/YoY:
 
 Question: why include `end_minus_start_per_year`?
 
-Choice (v1): keep **total change** as primary and per-year as an alternate.
+Choice (v1): keep **total change** as primary and per-year as an alternate, and apply the same pairing across comparable series to avoid cherry-picking accusations.
 
 Rationale:
 - Total change (`end_minus_start`) is the most direct answer to “how many jobs were added during this window.”
@@ -80,7 +91,11 @@ Rationale:
   - we want a rough rate comparable across terms.
 - Per-year implicitly assumes linearity; it’s not a structural model. We treat it as a convenience view, not the canonical truth.
 
-We also include a household employment alternate to reflect the CES vs CPS measurement split.
+Anti-cherry-picking policy:
+- If we include a per-year version for a metric family, we also include the total-change version (and vice versa).
+- Reports should display both side-by-side for the same underlying series to prevent “we picked the normalization that looks best” critiques.
+
+We include both payroll (CES) and household (CPS) employment series to reflect the measurement split in labor statistics.
 
 ## Fiscal: Percent of GDP vs Dollars
 
