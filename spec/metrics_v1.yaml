@@ -113,6 +113,10 @@ series:
     columns:
       mkt_rf: "Mkt-RF"
       rf: "RF"
+    derived_columns:
+      mkt_total:
+        expr: "mkt_rf + rf"
+        units: "percent"
     description: "Fama/French Research Factors (monthly)."
 
 metrics:
@@ -309,6 +313,39 @@ metrics:
       periods_per_year: 12
       units: "percent"
 
+  - id: ff_mkt_total_return_ann_compound
+    family: stock_returns
+    primary: false
+    label: "Stock market total return (annualized, compounded; Ken French Mkt-RF + RF)"
+    inputs:
+      table: ff_factors_monthly
+      column: mkt_total
+    period_transform:
+      kind: identity
+      notes:
+        - "Derived monthly total return: (Mkt-RF + RF), in percent simple return per month."
+    term_aggregation:
+      kind: compound_annualized
+      periods_per_year: 12
+      input_units: "percent"
+      output_units: "percent"
+
+  - id: ff_mkt_total_return_term_total
+    family: stock_returns
+    primary: false
+    label: "Stock market total return (term total, compounded; Ken French Mkt-RF + RF)"
+    inputs:
+      table: ff_factors_monthly
+      column: mkt_total
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: compound_total
+      input_units: "percent"
+      output_units: "percent"
+      notes:
+        - "Formula: 100 * (prod_t (1 + r_t/100) - 1) over months in the attributed term window."
+
   # Recessions
   - id: recession_month_share
     family: recessions
@@ -373,4 +410,3 @@ metrics:
     term_aggregation:
       kind: mean
       units: "percent of GDP"
-
