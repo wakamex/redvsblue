@@ -84,6 +84,7 @@ series:
     frequency: M
     units: "index"
     description: "PCE Price Index (BEA, SA)."
+    seasonal_adjustment: SA
 
   # Business cycle labels
   usrec_recession_indicator:
