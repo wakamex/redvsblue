@@ -35,6 +35,7 @@ We include multiple inflation definitions because people argue about them:
 Seasonal adjustment:
 - The BLS produces **both unadjusted and seasonally adjusted CPI data**; SA data are intended for short-term trend analysis, while unadjusted data are widely used for escalation/indexation and other applications.
 - SA CPI series are revised when seasonal factors are updated (typically revising recent history), so “latest data” pulls can change SA values in the recent window; caching raw downloads keeps our runs reproducible, but we still surface this as a choice.
+- For the PCE price index (`PCEPI`), the monthly series in FRED is **seasonally adjusted**. We compute YoY from that level series; if we later want a non-seasonally-adjusted PCE price index, FRED provides other formats (e.g., annual NSA) but those are not a drop-in replacement for monthly term windows.
 
 ## Output (GDP)
 
