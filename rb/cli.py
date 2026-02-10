@@ -117,6 +117,12 @@ def _parse_args() -> argparse.Namespace:
         help="Output CSV of regime summaries grouped by (P,H,S).",
     )
     regimes.add_argument(
+        "--output-alignment-summary",
+        type=Path,
+        default=Path("reports/regime_alignment_summary_v1.csv"),
+        help="Output CSV of regime summaries grouped by president alignment with House/Senate.",
+    )
+    regimes.add_argument(
         "--output-party-summary",
         type=Path,
         default=Path("reports/regime_party_summary_v1.csv"),
@@ -235,6 +241,7 @@ def main() -> int:
             output_windows_presidents_csv=args.output_windows_presidents,
             output_window_metrics_csv=args.output_window_metrics,
             output_regime_summary_csv=args.output_regime_summary,
+            output_alignment_summary_csv=args.output_alignment_summary,
             output_party_summary_csv=args.output_party_summary,
         )
         return 0

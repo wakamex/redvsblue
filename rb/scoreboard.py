@@ -159,6 +159,95 @@ def _compute_unified_summary(
     return groups
 
 
+def _compute_alignment_summary(
+    *,
+    window_metrics_csv: Path,
+    window_labels_csv: Path,
+) -> dict[tuple[str, str, str], dict[str, Any]]:
+    # Returns (metric_id, pres_party, alignment_label) -> aggregate dict.
+    # alignment_label ∈ {"aligned_both","aligned_house_only","aligned_senate_only","aligned_none"}.
+    labels = _load_window_labels(window_labels_csv)
+
+    groups: dict[tuple[str, str, str], dict[str, Any]] = {}
+    with window_metrics_csv.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for r in rdr:
+            wid = (r.get("term_id") or "").strip()
+            metric_id = (r.get("metric_id") or "").strip()
+            if not wid or not metric_id:
+                continue
+
+            lab = labels.get(wid)
+            if not lab:
+                continue
+
+            v = _parse_float(r.get("value") or "")
+            if v is None:
+                continue
+
+            pres_party = (lab.get("pres_party") or "").strip()
+            if pres_party not in {"D", "R"}:
+                continue
+
+            house = (lab.get("house_majority") or "").strip()
+            senate = (lab.get("senate_majority") or "").strip()
+            days = _parse_int(lab.get("window_days") or "") or 0
+
+            aligned_house = "1" if house == pres_party else "0"
+            aligned_senate = "1" if senate == pres_party else "0"
+            aligned_chambers = int(aligned_house) + int(aligned_senate)
+
+            if aligned_chambers == 2:
+                alignment = "aligned_both"
+            elif aligned_house == "1":
+                alignment = "aligned_house_only"
+            elif aligned_senate == "1":
+                alignment = "aligned_senate_only"
+            else:
+                alignment = "aligned_none"
+
+            k = (metric_id, pres_party, alignment)
+            g = groups.get(k)
+            if g is None:
+                g = {
+                    "metric_id": metric_id,
+                    "metric_label": (r.get("metric_label") or "").strip(),
+                    "metric_family": (r.get("metric_family") or "").strip(),
+                    "metric_primary": (r.get("metric_primary") or "").strip(),
+                    "agg_kind": (r.get("agg_kind") or "").strip(),
+                    "units": (r.get("units") or "").strip(),
+                    "pres_party": pres_party,
+                    "alignment": alignment,
+                    "aligned_house": aligned_house,
+                    "aligned_senate": aligned_senate,
+                    "aligned_chambers": aligned_chambers,
+                    "n_windows": 0,
+                    "total_days": 0,
+                    "sum": 0.0,
+                    "values": [],
+                    "w_sum": 0.0,
+                    "w": 0.0,
+                }
+                groups[k] = g
+
+            g["n_windows"] += 1
+            g["total_days"] += days
+            g["sum"] += v
+            g["values"].append(v)
+            if days > 0:
+                g["w_sum"] += v * days
+                g["w"] += days
+
+    # Finalize means.
+    for g in groups.values():
+        n = int(g["n_windows"])
+        g["mean_unweighted"] = (g["sum"] / n) if n else None
+        w = float(g["w"])
+        g["mean_weighted_by_days"] = (g["w_sum"] / w) if w > 0 else None
+
+    return groups
+
+
 def write_scoreboard_md(
     *,
     spec_path: Path,
@@ -233,6 +322,7 @@ def write_scoreboard_md(
 
     if window_metrics_csv and window_labels_csv and window_metrics_csv.exists() and window_labels_csv.exists():
         groups = _compute_unified_summary(window_metrics_csv=window_metrics_csv, window_labels_csv=window_labels_csv)
+        align_groups = _compute_alignment_summary(window_metrics_csv=window_metrics_csv, window_labels_csv=window_labels_csv)
 
         lines.append("")
         lines.append("## Unified vs Divided Government (Regime Windows)")
@@ -272,6 +362,47 @@ def write_scoreboard_md(
         lines.append("Caution: for window-aggregations that are *totals* (e.g., `end_minus_start`),")
         lines.append("day-weighting the window-level totals is not always meaningful; prefer per-year / CAGR variants for regime comparisons.")
 
+        lines.append("")
+        lines.append("## President Alignment With Congress (House vs Senate)")
+        lines.append("")
+        lines.append("Breakout by whether the president's party controls: both chambers, only House, only Senate, or neither.")
+        lines.append("")
+        lines.append("| Metric | Units | P party | Alignment | Mean (day-weighted) | Mean (unweighted) | n(windows) | total_days |")
+        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|")
+
+        alignment_order = ("aligned_both", "aligned_house_only", "aligned_senate_only", "aligned_none")
+        alignment_label = {
+            "aligned_both": "both",
+            "aligned_house_only": "house only",
+            "aligned_senate_only": "senate only",
+            "aligned_none": "neither",
+        }
+
+        for mid in metric_ids:
+            for pres_party in ("D", "R"):
+                for a in alignment_order:
+                    g = align_groups.get((mid, pres_party, a))
+                    if not g:
+                        continue
+                    label = (g.get("metric_label") or mid).replace("|", "\\|")
+                    units = (g.get("units") or "").replace("|", "\\|")
+                    lines.append(
+                        "| "
+                        + " | ".join(
+                            [
+                                label,
+                                units,
+                                pres_party,
+                                alignment_label.get(a, a),
+                                _fmt(g.get("mean_weighted_by_days")),
+                                _fmt(g.get("mean_unweighted")),
+                                str(int(g.get("n_windows") or 0)),
+                                str(int(g.get("total_days") or 0)),
+                            ]
+                        )
+                        + " |"
+                    )
+
     lines.append("")
     lines.append("## Data Appendix")
     lines.append("")
@@ -294,4 +425,3 @@ def write_scoreboard_md(
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     write_text_atomic(out_path, "\n".join(lines) + "\n")
-

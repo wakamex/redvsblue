@@ -275,6 +275,140 @@ def compute_regime_summary(
     tmp.replace(out_csv)
 
 
+def compute_regime_alignment_summary(
+    *,
+    window_metrics_csv: Path,
+    window_labels_csv: Path,
+    out_csv: Path,
+) -> None:
+    # Load labels.
+    labels: dict[str, dict[str, Any]] = {}
+    with window_labels_csv.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for row in rdr:
+            labels[row["window_id"]] = row
+
+    # Aggregate per (metric_id, pres_party, aligned_house, aligned_senate).
+    groups: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    with window_metrics_csv.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for row in rdr:
+            win_id = row.get("term_id", "") or ""
+            lab = labels.get(win_id)
+            if not lab:
+                continue
+            v = _parse_float(row.get("value", "") or "")
+            if v is None:
+                continue
+
+            pres_party = (lab.get("pres_party") or "").strip()
+            if pres_party not in {"D", "R"}:
+                continue
+
+            house = (lab.get("house_majority") or "").strip()
+            senate = (lab.get("senate_majority") or "").strip()
+            days = int(lab.get("window_days") or "0")
+
+            aligned_house = "1" if house == pres_party else "0"
+            aligned_senate = "1" if senate == pres_party else "0"
+            aligned_chambers = int(aligned_house) + int(aligned_senate)
+            if aligned_chambers == 2:
+                alignment = "aligned_both"
+            elif aligned_house == "1":
+                alignment = "aligned_house_only"
+            elif aligned_senate == "1":
+                alignment = "aligned_senate_only"
+            else:
+                alignment = "aligned_none"
+
+            k = (row.get("metric_id", "") or "", pres_party, aligned_house, aligned_senate)
+            g = groups.get(k)
+            if g is None:
+                g = {
+                    "metric_id": row.get("metric_id", ""),
+                    "metric_family": row.get("metric_family", ""),
+                    "metric_primary": row.get("metric_primary", ""),
+                    "metric_label": row.get("metric_label", ""),
+                    "agg_kind": row.get("agg_kind", ""),
+                    "units": row.get("units", ""),
+                    "pres_party": pres_party,
+                    "aligned_house": aligned_house,
+                    "aligned_senate": aligned_senate,
+                    "aligned_chambers": aligned_chambers,
+                    "alignment": alignment,
+                    "n_windows": 0,
+                    "total_days": 0,
+                    "values": [],
+                    "sum": 0.0,
+                    "w_sum": 0.0,
+                    "w": 0.0,
+                }
+                groups[k] = g
+
+            g["n_windows"] += 1
+            g["total_days"] += days
+            g["values"].append(v)
+            g["sum"] += v
+            if days > 0:
+                g["w_sum"] += v * days
+                g["w"] += days
+
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    header = [
+        "metric_id",
+        "metric_family",
+        "metric_primary",
+        "metric_label",
+        "agg_kind",
+        "units",
+        "pres_party",
+        "aligned_house",
+        "aligned_senate",
+        "aligned_chambers",
+        "alignment",
+        "n_windows",
+        "total_days",
+        "mean_unweighted",
+        "median_unweighted",
+        "mean_weighted_by_days",
+    ]
+    rows: list[dict[str, Any]] = []
+    for _, g in sorted(groups.items(), key=lambda kv: (kv[0][0], kv[0][1], kv[0][2], kv[0][3])):
+        n = int(g["n_windows"])
+        mean = (g["sum"] / n) if n else None
+        med = _median(list(g["values"]))
+        w = float(g["w"])
+        wmean = (g["w_sum"] / w) if w > 0 else None
+        rows.append(
+            {
+                "metric_id": g["metric_id"],
+                "metric_family": g["metric_family"],
+                "metric_primary": g["metric_primary"],
+                "metric_label": g["metric_label"],
+                "agg_kind": g["agg_kind"],
+                "units": g["units"],
+                "pres_party": g["pres_party"],
+                "aligned_house": g["aligned_house"],
+                "aligned_senate": g["aligned_senate"],
+                "aligned_chambers": str(int(g["aligned_chambers"])),
+                "alignment": g["alignment"],
+                "n_windows": str(n),
+                "total_days": str(int(g["total_days"])),
+                "mean_unweighted": "" if mean is None else f"{mean:.6f}",
+                "median_unweighted": "" if med is None else f"{med:.6f}",
+                "mean_weighted_by_days": "" if wmean is None else f"{wmean:.6f}",
+            }
+        )
+
+    tmp = out_csv.with_suffix(out_csv.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8", newline="") as handle:
+        w = csv.DictWriter(handle, fieldnames=header)
+        w.writeheader()
+        for r in rows:
+            w.writerow(r)
+    tmp.replace(out_csv)
+
+
 def ensure_regime_pipeline(
     *,
     refresh: bool,
@@ -288,6 +422,7 @@ def ensure_regime_pipeline(
     output_windows_presidents_csv: Path,
     output_window_metrics_csv: Path,
     output_regime_summary_csv: Path,
+    output_alignment_summary_csv: Path,
     output_party_summary_csv: Path,
 ) -> None:
     if not presidents_csv.exists():
@@ -316,4 +451,10 @@ def ensure_regime_pipeline(
         window_metrics_csv=output_window_metrics_csv,
         window_labels_csv=output_windows_labels_csv,
         out_csv=output_regime_summary_csv,
+    )
+
+    compute_regime_alignment_summary(
+        window_metrics_csv=output_window_metrics_csv,
+        window_labels_csv=output_windows_labels_csv,
+        out_csv=output_alignment_summary_csv,
     )
