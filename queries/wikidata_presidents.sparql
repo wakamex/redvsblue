@@ -1,0 +1,11 @@
+SELECT ?person ?personLabel ?party ?partyLabel ?start ?end WHERE {
+  # Exclude fictional/non-human "presidents" that appear in Wikidata.
+  ?person wdt:P31 wd:Q5 .
+  ?person p:P39 ?posStmt .
+  ?posStmt ps:P39 wd:Q11696 .
+  ?posStmt pq:P580 ?start .
+  OPTIONAL { ?posStmt pq:P582 ?end . }
+  OPTIONAL { ?person wdt:P102 ?party . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+ORDER BY ?start
