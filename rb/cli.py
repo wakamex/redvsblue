@@ -9,6 +9,8 @@ from rb.ingest import ingest_from_spec
 from rb.metrics import compute_term_metrics
 from rb.presidents import ensure_presidents
 from rb.regimes import ensure_regime_pipeline
+from rb.scoreboard import write_scoreboard_md
+from rb.validate import validate_all
 
 PRESIDENT_SOURCES = ("congress_legislators", "wikidata")
 PRESIDENT_GRANULARITY = ("tenure", "term")
@@ -147,6 +149,46 @@ def _parse_args() -> argparse.Namespace:
     compute.add_argument("--output-party", type=Path, default=Path("reports/party_summary_v1.csv"), help="Output CSV (party-level).")
     compute.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
+    validate = sub.add_parser("validate", help="Run basic validation checks on derived data + reports.")
+    validate.add_argument("--presidents", type=Path, default=Path("data/derived/presidents.csv"), help="Presidents windows CSV.")
+    validate.add_argument(
+        "--congress-control",
+        type=Path,
+        default=Path("data/derived/congress_control/congress_control.csv"),
+        help="Congress control CSV (optional; validated if present).",
+    )
+    validate.add_argument("--term-metrics", type=Path, default=Path("reports/term_metrics_v1.csv"), help="Term metrics CSV (optional; validated if present).")
+    validate.add_argument("--party-summary", type=Path, default=Path("reports/party_summary_v1.csv"), help="Party summary CSV (optional; validated if present).")
+    validate.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
+    scoreboard = sub.add_parser("scoreboard", help="Render a simple markdown scoreboard from computed CSVs.")
+    scoreboard.add_argument("--spec", type=Path, default=Path("spec/metrics_v1.yaml"), help="Metric registry spec YAML.")
+    scoreboard.add_argument("--party-summary", type=Path, default=Path("reports/party_summary_v1.csv"), help="Party summary CSV.")
+    scoreboard.add_argument(
+        "--output",
+        type=Path,
+        default=Path("reports/scoreboard.md"),
+        help="Output markdown path.",
+    )
+    scoreboard.add_argument(
+        "--all-metrics",
+        action="store_true",
+        help="Include non-primary metrics in addition to primary metrics.",
+    )
+    scoreboard.add_argument(
+        "--window-metrics",
+        type=Path,
+        default=Path("reports/regime_window_metrics_v1.csv"),
+        help="Regime-window metrics CSV (optional; adds unified-vs-divided section if present).",
+    )
+    scoreboard.add_argument(
+        "--window-labels",
+        type=Path,
+        default=Path("data/derived/regimes/regime_windows_labels.csv"),
+        help="Regime-window labels CSV (optional; adds unified-vs-divided section if present).",
+    )
+    scoreboard.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
     return p.parse_args()
 
 
@@ -211,6 +253,29 @@ def main() -> int:
             presidents_csv=args.presidents,
             output_terms_csv=args.output_terms,
             output_party_csv=args.output_party,
+        )
+        return 0
+
+    if args.cmd == "validate":
+        status, out = validate_all(
+            presidents_csv=args.presidents,
+            congress_control_csv=args.congress_control if args.congress_control.exists() else None,
+            term_metrics_csv=args.term_metrics if args.term_metrics.exists() else None,
+            party_summary_csv=args.party_summary if args.party_summary.exists() else None,
+        )
+        print(out)
+        return status
+
+    if args.cmd == "scoreboard":
+        if not args.party_summary.exists():
+            raise FileNotFoundError(f"Missing {args.party_summary}; run `rb compute` first.")
+        write_scoreboard_md(
+            spec_path=args.spec,
+            party_summary_csv=args.party_summary,
+            out_path=args.output,
+            primary_only=not bool(args.all_metrics),
+            window_metrics_csv=args.window_metrics if args.window_metrics.exists() else None,
+            window_labels_csv=args.window_labels if args.window_labels.exists() else None,
         )
         return 0
 

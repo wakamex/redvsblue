@@ -196,6 +196,7 @@ metrics:
         - "Formula: 100 * 4 * ln(GDPC1_t / GDPC1_{t-1})."
     term_aggregation:
       kind: mean
+      units: "percent"
 
   - id: gdp_growth_real_percap_qoq_ann_logdiff
     family: gdp_growth
@@ -213,6 +214,7 @@ metrics:
         - "Formula: 100 * 4 * ln(RGDPPC_t / RGDPPC_{t-1})."
     term_aggregation:
       kind: mean
+      units: "percent"
 
   - id: gdp_growth_real_term_cagr
     family: gdp_growth
@@ -226,6 +228,7 @@ metrics:
       kind: cagr_from_levels
       periods_per_year: 4
       scale: 100
+      units: "percent"
       notes:
         - "Uses first/last observation in the attributed window."
 
