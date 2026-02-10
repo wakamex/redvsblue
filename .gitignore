@@ -5,6 +5,8 @@ __pycache__/
 data/
 reports/
 *.egg-info/
+build/
+dist/
 
 # Large vendored deps; re-install via literature/_scripts/requirements.txt when needed.
 literature/_scripts/_vendor/
