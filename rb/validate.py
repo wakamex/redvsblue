@@ -167,6 +167,7 @@ def validate_term_metrics_csv(path: Path, *, expected_metrics: int | None = None
     dup = 0
     err_cnt = 0
     err_kinds: dict[str, int] = {}
+    err_by_metric: dict[str, int] = {}
     metrics: set[str] = set()
     terms: set[str] = set()
 
@@ -186,6 +187,7 @@ def validate_term_metrics_csv(path: Path, *, expected_metrics: int | None = None
             err_cnt += 1
             err = (r.get("error") or "").strip()
             err_kinds[err] = err_kinds.get(err, 0) + 1
+            err_by_metric[metric_id] = err_by_metric.get(metric_id, 0) + 1
 
         # Quick numeric sanity (value is allowed to be blank if error).
         v = (r.get("value") or "").strip()
@@ -202,7 +204,15 @@ def validate_term_metrics_csv(path: Path, *, expected_metrics: int | None = None
 
     if err_cnt:
         top = sorted(err_kinds.items(), key=lambda kv: (-kv[1], kv[0]))[:5]
-        issues.append(ValidationIssue("WARN", f"term_metrics: {err_cnt}/{len(rows)} rows have errors; top={top}"))
+        top_metrics = sorted(err_by_metric.items(), key=lambda kv: (-kv[1], kv[0]))[:8]
+        issues.append(
+            ValidationIssue(
+                "WARN",
+                "term_metrics: "
+                f"{err_cnt}/{len(rows)} rows have errors; top_errors={top}; top_metrics={top_metrics}. "
+                "This is usually expected when presidents.csv spans eras earlier than a series' data coverage.",
+            )
+        )
 
     # If the file exists at all, it should cover at least D and R terms for D/R comparisons.
     if "D" not in {(r.get('party_abbrev') or '').strip() for r in rows}:
@@ -281,4 +291,3 @@ def validate_all(
     body = _format_issues(issues)
     out = header if not body else (header + "\n" + body)
     return status, out
-
