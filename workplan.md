@@ -36,7 +36,9 @@ Phase 0: Repo Scaffolding
 Phase 1: Data Ingestion (Online, Reproducible)
 
 1. Implement source connectors with consistent interfaces and caching:
-    - FRED “download CSV” endpoints (often work without API keys), e.g. https://fred.stlouisfed.org/graph/fredgraph.csv?id=GDPC1.
+    - FRED:
+        - Preferred: official FRED API (requires `FRED_API_KEY`; provides metadata + supports ALFRED vintages).
+        - Fallback: `fredgraph.csv` downloads (no key; less stable; minimal metadata).
     - NBER business cycle dates JSON (already in literature/).
     - Ken French data library (market factors / portfolio returns) if accessible.
     - Stooq CSV for stock index levels (S&P 500, DJIA).

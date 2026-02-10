@@ -12,6 +12,9 @@ This document explains the key measurement choices in `spec/metrics_v1.yaml`. Th
 - Term attribution (lag rules, inauguration/boundary handling, etc.) is **not** a metric decision; it is controlled by the join/attribution config and recorded in the run manifest.
   - We formalize these rules in `spec/attribution_v1.yaml` so “start/end” are deterministic across implementations.
   - Term-aggregation semantics are formalized in `spec/aggregation_kinds_v1.yaml` so the metric engine is testable.
+- Data fetching:
+  - For FRED series, prefer the official FRED API when an API key is configured (metadata, stability, vintage support).
+  - Fall back to `fredgraph.csv` only when an API key is unavailable; always cache raw downloads and record retrieval metadata.
 
 ## Prices / Inflation (MoM, QoQ, YoY, SAAR)
 

@@ -15,10 +15,14 @@ description: >
 
 sources:
   fred:
-    kind: csv
-    url_template: "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+    kind: fred
+    api_base_url: "https://api.stlouisfed.org/fred"
+    api_key_env: FRED_API_KEY
+    api_default_file_type: json
+    graph_csv_url_template: "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
     notes:
-      - "No API key required for fredgraph.csv downloads."
+      - "Prefer the official FRED API when FRED_API_KEY is available; fall back to graph CSV when it is not."
+      - "FRED API requires an api_key; graph CSV usually does not, but is less stable and has less metadata."
   nber:
     kind: json
     url: "https://data.nber.org/data/cycles/business_cycle_dates.json"
