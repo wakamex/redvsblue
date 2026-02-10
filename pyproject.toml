@@ -11,3 +11,15 @@ dependencies = [
 
 [project.scripts]
 rb = "rb.cli:main"
+
+[tool.uv]
+# Make `uv sync` install this project (and its entrypoints) into `.venv/`.
+package = true
+
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["rb*"]
