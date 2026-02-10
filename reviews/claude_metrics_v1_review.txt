@@ -1,0 +1,268 @@
+
+
+# Metric Spec Review: `metrics_v1.yaml` + `metrics_rationale.md`
+
+---
+
+## Top Issues / Suggestions
+
+### High Severity
+
+- **H1: No term/attribution boundary spec — "start" and "end" are undefined.**
+  The spec repeatedly says term attribution is "configured elsewhere," but every `end_minus_start`, `cagr_from_levels`, `last`, and `compound_annualized` aggregation depends critically on which observation counts as "start" and "end." Without pinning this down (or at least cross-referencing the companion spec by name/version), two implementations of this same YAML will produce different numbers. At minimum the spec should declare: (a) are boundary observations inclusive or exclusive at each end? (b) for mixed-frequency series (Q GDP vs M employment), how is the nearest observation selected (e.g., "last observation on or before the boundary date")? (c) what happens when the boundary falls on a non-observation date (inauguration day is Jan 20, a daily/monthly/quarterly date that may not align)?
+
+- **H2: Frequency alignment / down-sampling rules are absent.**
+  Daily series (SP500, DJIA) are mixed with monthly (CPI, payrolls) and quarterly (GDP). The spec never says how daily data are reduced to term endpoints. "End of month"? "Closest trading day to inauguration"? "Average of first/last N days"? For daily equity indices this can swing results by several percent in volatile periods (e.g., Jan 20 2009 vs Jan 21 2009 for Obama's start). The rationale doc even flags this as a "v2" decision, but it is needed for v1 because SP500/DJIA metrics are already defined.
+
+- **H3: Primary inflation metric uses NSA CPI — defensible but surprising, and the rationale is incomplete.**
+  `cpi_inflation_yoy_mean_nsa` is marked `primary: true`. The rationale correctly notes that YoY differencing largely removes seasonality, but it omits that the BLS's headline number is the SA series, and most economic research defaults to SA. More importantly, if the term window does not start and end on the same calendar month, the NSA YoY average will carry a residual seasonal bias. This should either (a) be documented as a known limitation, (b) include a test that the SA and NSA primary metrics agree within some tolerance, or (c) swap the primary flag to the SA version.
+
+- **H4: No schema for `term_aggregation.kind` values — implementers must reverse-engineer semantics.**
+  The spec uses at least 11 distinct `kind` values (`mean`, `end_minus_start`, `end_minus_start_per_year`, `cagr_from_levels`, `compound_annualized`, `compound_total`, `mean_times_periods_per_year`, `pct_change_from_levels`, `last`, `count_transitions`, plus `post_scale`). None of these are formally defined with input/output contracts, edge-case behavior, or reference formulas. This is the single largest barrier to testable, reproducible implementations.
+
+- **H5: `inputs` schema is inconsistent — `series` vs `table`/`column`.**
+  Some metrics reference `inputs.series` (a key in the `series` block); the French-factor metrics reference `inputs.table` and `inputs.column`. The `table` value `ff_factors_monthly` matches a series key, but `column: mkt_total` references a `derived_columns` entry. There is no schema describing which input shape applies when, and the derived-column expression (`mkt_rf + rf`) has no evaluation spec (operator precedence, NaN handling, column-name resolution).
+
+### Medium Severity
+
+- **M1: Cherry-picking risk — no "inherited conditions" or counterfactual framing.**
+  The anti-cherry-picking policy (rationale §Employment) is good but narrow: it only covers normalization variants. The larger cherry-pick risk is *metric family selection*: the spec includes GDP, jobs, inflation, stocks, fiscal, and recessions, but omits wages/income, inequality, trade, and housing — areas where the D-vs-R story may flip. The spec should either (a) explicitly list the omitted families with a rationale for deferral, or (b) include a "limitations / known omissions" section so consumers don't assume the scoreboard is comprehensive.
+
+- **M2: No handling of data revisions / vintage pinning.**
+  GDP (GDPC1) is revised for years after initial release; employment benchmarks are revised annually; CPI seasonal factors are recalculated. The spec says results should be reproducible from cached artifacts, but never defines *which vintage* to cache. If two runs happen a month apart and FRED has revised Q3 GDP, they get different numbers from the same YAML. The rationale doc punts this to "likely v2" but it affects v1 reproducibility claims. At minimum, specify that the download date is recorded in the manifest and that cached files are never silently overwritten.
+
+- **M3: FRED `fredgraph.csv` endpoint is undocumented/unsupported and may break or violate TOS.**
+  The `url_template` uses the graph-export CSV endpoint, not the official FRED API (`api.stlouisfed.org`). This endpoint has no stability guarantee, has changed format before, and the FRED TOS requires an API key for programmatic access. The spec's note "No API key required" is technically true today but is exploiting an unintended loophole. This is a supply-chain risk: a format change or rate-limit will silently break the pipeline. Recommend adding the official API as a fallback source and documenting the TOS assessment.
+
+- **M4: Ken French data — file format is fragile and undocumented in the spec.**
+  The French data library CSV inside the zip has a non-standard header (descriptive text before the data rows, a blank-line separator between monthly and annual tables). The spec says `kind: zip_csv` and `encoding: latin-1` but does not specify skip-rows logic, how to detect the end of the monthly table, or how to parse the date column (YYYYMM integer). Any implementation will need bespoke parsing; this should be documented or the spec should include a `parse_hints` block.
+
+- **M5: `recession_start_count` attribution is ambiguous for recessions spanning inaugurations.**
+  A 0→1 transition in USREC that falls in the month of a presidential transition could be attributed to either president depending on the lag rule. The spec doesn't address this, and for a metric with very small counts (0–2 per term), one-off attribution errors dominate the result. This should be flagged as highly sensitive to the attribution config.
+
+- **M6: No volatility / risk metric for stock returns.**
+  Annualized return alone is a cherry-pick magnet. A president could "win" on returns purely because of a recovery from a crash they inherited. Including annualized volatility (standard deviation of monthly returns) or a Sharpe-ratio metric alongside returns would substantially improve interpretive integrity. This is low-cost given the French factor data is already ingested.
+
+- **M7: Fiscal year vs calendar year mismatch is flagged but not resolved.**
+  `FYFSGDA188S` (surplus/deficit) is annual on a *fiscal year* basis (Oct–Sep). The spec notes "mapping to presidential windows requires extra care" but provides no guidance. For a president inaugurated in January, the first ~9 months of their first fiscal year were set by their predecessor's budget. This is a well-known distortion that should at minimum be documented quantitatively, and ideally addressed with a lag or alternate attribution rule.
+
+- **M8: Missing `period_transform` for YoY metrics — first 12 months of each series produce NaN.**
+  For `cpi_inflation_yoy_mean` and similar lag-12 metrics, the first 12 observations of the raw series yield no computed value. If a term window starts at the beginning of the data, or if attribution windows are short, the effective sample is truncated. The spec should declare how NaN/missing values from the transform are handled in the aggregation (drop? error? minimum-observation threshold?).
+
+### Low Severity
+
+- **L1: `post_scale` on `recession_month_share` is ad-hoc.**
+  The `mean` aggregation kind suddenly gains a `post_scale: 100` parameter on one metric. This suggests the aggregation-kind schema is being overloaded. Better to define a separate `kind: mean_scaled` or make `scale` a standard optional parameter on all aggregation kinds, documented in the schema.
+
+- **L2: No explicit `null`/missing-data policy.**
+  What happens if a FRED series has gaps (e.g., SP500 during market closures, or discontinued series)? The spec should declare a global policy (forward-fill, error, interpolation) or require per-series annotation.
+
+- **L3: `family` field is useful but has no controlled vocabulary or documented purpose.**
+  Is `family` used for grouping in reports? For anti-cherry-picking pairing? For test selection? Defining its role would improve implementability.
+
+- **L4: Rationale doc references "202512 CRSP database" — this is a point-in-time detail that will rot.**
+  Move this to a manifest/changelog rather than a rationale document that is supposed to explain durable design choices.
+
+- **L5: No wage/income metrics at all.**
+  Real median household income, real average hourly earnings, or similar metrics are among the most politically cited economic indicators. Their absence is notable and should be justified or queued for v1.1.
+
+- **L6: SP500 series on FRED (`SP500`) only starts 2013-12-31 for daily frequency.**
+  For historical presidents (pre-2013), this series will have no data. The spec doesn't note this limitation. Either use a longer series (e.g., Shiller data, or the French factors for level reconstruction) or document the coverage gap.
+
+---
+
+## Proposed Spec Edits
+
+### 1. Add a top-level `aggregation_kinds` schema block
+
+```yaml
+aggregation_kinds:
+  mean:
+    description: "Arithmetic mean of all non-null observations in the attributed window."
+    formula: "sum(x_i) / N"
+    params:
+      post_scale: { type: float, default: 1.0, description: "Multiply result by this factor." }
+    min_observations: 1
+    null_policy: drop
+
+  end_minus_start:
+    description: "Last observation minus first observation in the attributed window."
+    formula: "x_last - x_first"
+    boundary_rule: "Nearest observation on or before the boundary date."
+    null_policy: error_if_boundary_missing
+
+  cagr_from_levels:
+    description: "Compound annual growth rate from first to last observation."
+    formula: "100 * ((x_last / x_first)^(periods_per_year / N_periods) - 1)"
+    params:
+      periods_per_year: { type: int, required: true }
+      use_actual_time: { type: bool, default: false, description: "If true, use calendar days / 365.25 instead of period count." }
+
+  compound_annualized:
+    description: "Geometric mean return, annualized."
+    formula: "100 * (prod(1 + r_i/100)^(periods_per_year / N) - 1)"
+    params:
+      periods_per_year: { type: int, required: true }
+
+  compound_total:
+    description: "Cumulative compounded return over the window."
+    formula: "100 * (prod(1 + r_i/100) - 1)"
+
+  count_transitions:
+    description: "Count of transitions from from_value to to_value in the series."
+    params:
+      from_value: { type: number, required: true }
+      to_value: { type: number, required: true }
+
+  # ... (similarly for end_minus_start_per_year, mean_times_periods_per_year,
+  #      pct_change_from_levels, last)
+```
+
+**Rationale:** Makes every aggregation testable in isolation with synthetic data. Eliminates ambiguity about formulas and edge cases.
+
+### 2. Add a `boundary_rules` top-level block (or cross-reference)
+
+```yaml
+boundary_rules:
+  _note: >
+    Term boundary resolution is defined in spec/attribution_v1.yaml (not yet created).
+    Until that spec exists, the following defaults apply:
+  default_observation_selection: "last_on_or_before"
+  daily_to_monthly_downsampling: "last_trading_day_of_month"
+  quarterly_alignment: "period_end_date"
+  min_observations_for_aggregation: 2
+  missing_boundary_policy: "error"
+```
+
+**Rationale:** Addresses H1 and H2 without requiring the full attribution spec to exist. Gives implementers enough to write deterministic code.
+
+### 3. Add `coverage` metadata to each series
+
+```yaml
+sp500_sp500_index:
+    source: fred
+    series_id: SP500
+    frequency: D
+    units: "index"
+    coverage:
+      start: "2013-12-31"
+      note: "FRED daily SP500 only available from late 2013. Not usable for pre-2014 terms."
+    description: "S&P 500 index level (daily; price index, excludes dividends)."
+```
+
+**Rationale:** Addresses L6. Prevents silent failures when the pipeline tries to compute metrics for Kennedy or Reagan.
+
+### 4. Add `parse_hints` to Ken French source
+
+```yaml
+ken_french_ff_factors:
+    kind: zip_csv
+    url: "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip"
+    encoding: latin-1
+    parse_hints:
+      inner_filename_pattern: "F-F_Research_Data_Factors.CSV"
+      skip_rows_until: "regex:^\\s*\\d{6}"
+      date_format: "%Y%m"
+      date_column: 0
+      table_separator: "blank_line"
+      use_table: 0  # first table = monthly
+      missing_values: ["-99.99", "-999"]
+```
+
+**Rationale:** Addresses M4. The French CSV format breaks naive parsers; these hints make the spec self-contained.
+
+### 5. Swap primary inflation metric (or document the choice more explicitly)
+
+```yaml
+  - id: cpi_inflation_yoy_mean
+    family: inflation
+    primary: true  # <-- swap to primary
+    label: "CPI inflation (YoY, mean during term; based on SA CPI index)"
+    ...
+
+  - id: cpi_inflation_yoy_mean_nsa
+    family: inflation
+    primary: false  # <-- demote to alternate
+    label: "CPI inflation (YoY, mean during term; based on unadjusted CPI index)"
+    ...
+```
+
+**Rationale (if swapping):** SA CPI is the BLS headline convention and the default in virtually all economic research. If the decision is to keep NSA as primary, add a rationale note explaining the residual-seasonality risk when term windows don't align to full calendar years, and add a validation test that SA and NSA YoY means agree within ±0.15 pp for each term.
+
+### 6. Add volatility and risk-adjusted return metrics
+
+```yaml
+  - id: ff_mkt_excess_return_volatility_ann
+    family: stock_returns
+    primary: false
+    label: "Stock market excess return volatility (annualized std dev; Ken French Mkt-RF)"
+    inputs:
+      table: ff_factors_monthly
+      column: mkt_rf
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: annualized_std
+      periods_per_year: 12
+      input_units: "percent"
+      output_units: "percent"
+
+  - id: ff_mkt_sharpe_ratio_ann
+    family: stock_returns
+    primary: false
+    label: "Stock market Sharpe ratio (annualized; Ken French Mkt-RF)"
+    inputs:
+      table: ff_factors_monthly
+      column: mkt_rf
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: sharpe_ratio_annualized
+      periods_per_year: 12
+      notes:
+        - "mean(Mkt-RF) * 12 / (std(Mkt-RF) * sqrt(12))"
+```
+
+**Rationale:** Addresses M6. Returns without risk context are misleading. Sharpe ratio is standard and trivial to compute from the same data.
+
+### 7. Add a `known_omissions` section
+
+```yaml
+known_omissions:
+  - family: wages_income
+    reason: "Deferred to v2. Series candidates: MEHOINUSA672N (real median household income, annual), CES0500000003 (average hourly earnings)."
+  - family: trade
+    reason: "Deferred to v2. Series candidates: BOPGSTB (trade balance)."
+  - family: housing
+    reason: "Deferred to v2. Series candidates: CSUSHPISA (Case-Shiller), HOUST (housing starts)."
+  - family: inequality
+    reason: "Deferred to v2. No standard high-frequency series; Gini/percentile data are annual with long lags."
+  - family: interest_rates
+    reason: "Deferred to v2. Series candidates: FEDFUNDS, GS10, T10Y2Y (yield curve)."
+```
+
+**Rationale:** Addresses M1. Makes the scope boundary explicit and invites reviewers to propose additions rather than assuming omissions are accidental.
+
+---
+
+## Questions Before Implementation
+
+1. **Attribution spec dependency:** Is there an existing `attribution_v1.yaml` or equivalent? If not, what are the inauguration-lag rules for v1? (e.g., 0-month, 1-quarter, 6-month lag?) This blocks every metric that uses `end_minus_start` or `cagr_from_levels`.
+
+2. **Boundary observation semantics:** For a quarterly series like GDPC1 where dates are period-end (e.g., 2021-01-01 = Q1 2021), and the term boundary is Jan 20, 2021 — is the "start" observation Q4 2020 (last before inauguration) or Q1 2021 (first period partially under the new president)? This choice alone can shift GDP growth results by 1+ pp.
+
+3. **FRED data access strategy:** Is there an institutional FRED API key available? If the project intends to scale beyond a handful of series, the `fredgraph.csv` scraping approach will become a maintenance burden. What is the fallback if FRED blocks or changes that endpoint?
+
+4. **Reproducibility contract:** What does "reproducible" mean for this project? (a) Bit-identical from cached artifacts, (b) bit-identical from fresh downloads on the same day, or (c) "close enough" across data vintages? This determines whether we need ALFRED vintage support in v1 or not.
+
+5. **How will the "primary" flag be consumed?** Is it for a default dashboard view, for headline claims in a report, or for statistical tests? If it drives public-facing headlines, the primary selections need more scrutiny (especially the NSA inflation choice and the omission of total return as primary for stocks).
+
+6. **Ken French data licensing:** The French data library is free for academic use. Is this project academic, journalistic, or commercial? The answer may affect whether we can redistribute cached copies or derived datasets.
+
+7. **Partial terms:** How are incomplete terms handled (e.g., current sitting president, or a president who resigned/died mid-term)? Are they included with a flag, excluded, or prorated? This affects several aggregation kinds (especially `compound_annualized` which can produce extreme values from short windows).
+
+8. **Multiple terms for the same president:** Some presidents served two terms. Are terms aggregated per-president, per-term, or per-party? The metric spec is silent on this, and it changes the statistical interpretation significantly (n=~12 terms per party vs n=~6 presidents per party).
+
+9. **Statistical inference:** Will the project report confidence intervals, p-values, or any significance tests? If so, the metric spec should flag which aggregation kinds produce a single scalar per term (making n ≈ 12 per party — too small for most frequentist tests) vs which produce a time series that could support richer inference.
+
+10. **Test oracle data:** Is there an existing "known good" reference table (e.g., from Blinder-Watson 2016 or similar published research) that implementations should match within tolerance? Having even 2–3 validated term-metric pairs would massively accelerate verification.

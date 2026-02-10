@@ -1,0 +1,72 @@
+I will list the `spec` directory to verify the file names and then read `spec/metrics_v1.yaml` and `spec/metrics_rationale.md` to confirm their contents.
+Here is the review of `spec/metrics_v1.yaml` and `spec/metrics_rationale.md`.
+
+### Top issues/suggestions
+
+*   **Daily Series Aggregation (High)**: The `sp500` and `djia` series are Daily, but the spec does not define how to sample them for a "term" (e.g., inauguration date vs. nearest trading day). Without an explicit aggregation rule (e.g., `resample: M, method: last`), results will depend on implementation details of the joiner.
+    *   *Rationale*: Start/End dates (Jan 20) rarely fall on month-ends. Comparing daily price changes to monthly/quarterly flows requires a strict alignment rule.
+*   **Missing Real Wages (Med)**: The spec covers jobs and GDP but misses "Real Wages" (purchasing power), a critical component of "better economy" arguments.
+    *   *Rationale*: GDP per capita includes corporate profits; real median wages `LES1252881600Q` (quarterly) or `AHETPI` (monthly, nominal) adjusted by CPI would track typical voter experience better.
+*   **Annual Series Attribution (Med)**: `fyfsgda188s` (Deficit % GDP) is Annual. Presidential terms do not align with calendar years or fiscal years (which shifted in 1976).
+    *   *Rationale*: Using annual data requires a documented decision on "Fiscal Year attribution" (e.g., "President X inherits FY of inauguration year").
+*   **Cumulative Inflation Metric (Low)**: The primary inflation metric is `cpi_inflation_yoy_mean_nsa` (average annual rate). A "Total Price Level Change" (Cumulative % rise) would be more intuitive for "prices went up X% under President Y".
+
+### Proposed spec edits
+
+```yaml
+series:
+  # ... existing ...
+  # [SUGGESTION] Add Real Wages
+  les1252881600q_real_wages:
+    source: fred
+    series_id: LES1252881600Q
+    frequency: Q
+    units: "chained dollars"
+    description: "Employed full time: Median usual weekly real earnings (1982-84 CPI adjusted)."
+
+metrics:
+  # ... existing ...
+  # [SUGGESTION] Add Real Wage Growth
+  - id: real_wage_growth_term_cagr
+    family: wages
+    primary: true
+    label: "Real median wage growth (term CAGR)"
+    inputs:
+      series: les1252881600q_real_wages
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      periods_per_year: 4
+      scale: 100
+
+  # [SUGGESTION] Add Cumulative Inflation
+  - id: cpi_price_level_change_total
+    family: inflation
+    primary: false
+    label: "CPI Price Level Change (Total % during term)"
+    inputs:
+      series: cpiaucns_cpi_unadjusted
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  # [SUGGESTION] Clarify Daily Aggregation for Stocks
+  - id: sp500_term_pct_change
+    # ...
+    inputs:
+      series: sp500_sp500_index
+      # Explicit sampling rule for daily data
+      resample:
+        frequency: D  # or 'nearest_trading_day'
+        method: nearest
+```
+
+### Questions for implementation
+
+1.  **Daily Alignment**: For `sp500` start/end, should we use the "closing price of Inauguration Day" (if trading) or "closing price of the day *before* Inauguration"? (Standard finance convention is often $P_{start}$ is close of $t-1$).
+2.  **Fiscal Year Lag**: For `fyfsgda188s` (Annual), should we attribute the year of inauguration to the *outgoing* or *incoming* president? (Budget is usually set prior).
+3.  **Recession Definition**: Does `recession_month_share` count a month as 1.0 if *any* day is recession, or only if the NBER peak happened before the 15th? (Using `USREC` monthly averages implies we accept the FRED monthly classification).

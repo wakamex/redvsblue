@@ -1,0 +1,62 @@
+version: 1
+name: attribution_v1
+created: "2026-02-10"
+description: >
+  Rules for attributing time-series observations to presidential terms (and
+  later: Congress control regimes). This spec is separate from metric
+  definitions so disagreements about "inherited economy" and boundary choices
+  are explicit, parameterized, and auditable.
+
+defaults:
+  term_window:
+    start_inclusive: true
+    end_inclusive: false
+    notes:
+      - "Windows are [start, end) in calendar time unless an override is specified."
+
+  # How to convert days into years for per-year normalizations.
+  year_basis_days: 365.25
+
+  # For period-valued macro series (M/Q/A), prefer majority-of-days attribution
+  # within the period rather than naive use of the observation timestamp.
+  period_attribution:
+    rule: majority_of_days_in_period
+    tie_breaker: president_on_period_end
+
+  # For daily market series used as levels, define boundary selection rules.
+  daily_boundary_rule:
+    start: last_trading_day_strictly_before
+    end: last_trading_day_strictly_before
+    notes:
+      - "Avoids time-of-day ambiguity on inauguration day and matches close-to-close conventions."
+
+frequency_semantics:
+  D:
+    kind: instant
+    notes:
+      - "Observation timestamp is treated as the day it is reported for."
+  M:
+    kind: period
+    period: calendar_month
+    notes:
+      - "FRED monthly series typically timestamp values at the first day of the month; we treat them as month-period values."
+  Q:
+    kind: period
+    period: calendar_quarter
+    notes:
+      - "FRED quarterly series are treated as quarter-period values regardless of timestamp (often quarter start)."
+  A:
+    kind: period
+    period: calendar_year
+
+series_overrides:
+  # Fiscal-year series need explicit rules. FYFSGDA188S is on a federal fiscal
+  # year basis (Oct-Sep).
+  fyfsgda188s_federal_surplus_deficit_pct_gdp:
+    frequency: A
+    kind: period
+    period: us_fiscal_year
+    fiscal_year_start_month: 10
+    fiscal_year_start_day: 1
+    notes:
+      - "Attribution for fiscal-year values should be treated as a sensitivity dimension (e.g., majority-days vs president-at-FY-end)."

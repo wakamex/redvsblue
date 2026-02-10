@@ -1,3 +1,18 @@
+You are reviewing a metric specification for a reproducible pipeline that compares US economic/market performance under Democratic vs Republican presidents.
+
+Please review the spec for:
+1) Ambiguities / missing assumptions (frequency alignment, annualization, start/end choices, etc.).
+2) Cherry-picking risks and how to mitigate (paired metrics, alternates, reporting conventions).
+3) Data-source pitfalls (revisions, seasonal adjustment, coverage, licensing/TOS constraints).
+4) Missing key metrics or better defaults for v1.
+5) Spec structure improvements that make implementations/testability easier.
+
+Output format:
+- Top issues/suggestions (High/Med/Low severity) with a short rationale.
+- Proposed spec edits (concrete YAML/rationale changes).
+- Questions you would ask before implementation.
+
+=== spec/metrics_v1.yaml ===
 version: 1
 name: metrics_v1
 created: "2026-02-09"
@@ -9,9 +24,8 @@ description: >
   Notes:
   - All percent units are in "percentage points" unless otherwise stated.
   - For growth/return metrics, we prefer log-diff annualization unless noted.
-  - Term attribution (e.g., inauguration/boundary rules, lag rules) is specified
-    in `spec/attribution_v1.yaml`; this file only specifies metric definitions.
-  - Term aggregation semantics are specified in `spec/aggregation_kinds_v1.yaml`.
+  - Term attribution (e.g., inauguration lag) is configured elsewhere; this file
+    only specifies metric definitions.
 
 sources:
   fred:
@@ -26,25 +40,8 @@ sources:
     kind: zip_csv
     url: "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip"
     encoding: latin-1
-    parse_hints:
-      inner_filename_regex: "(?i)^F-F_Research_Data_Factors.*\\.csv$"
-      skip_rows_until: "regex:^\\s*\\d{6}"
-      date_format: "%Y%m"
-      date_column_index: 0
-      table_separator: "blank_line"
-      use_table_index: 0
-      missing_values:
-        - "-99.99"
-        - "-999"
     notes:
       - "Monthly Fama/French factors; includes Mkt-RF and RF in percent."
-      - "CSV is not a simple header+data file; it contains descriptive preamble text and multiple tables (monthly then annual)."
-  stooq:
-    kind: csv
-    url_template: "https://stooq.com/q/d/l/?s={symbol}&i=d"
-    notes:
-      - "Stooq provides historical quotes as CSV with columns: Date,Open,High,Low,Close,Volume."
-      - "Index symbols are prefixed with '^' (e.g., ^spx, ^dji)."
 
 series:
   # Macro: output
@@ -80,14 +77,6 @@ series:
     frequency: M
     units: "percent"
     description: "Civilian Unemployment Rate (BLS CPS, SA)."
-
-  # Wages
-  les1252881600q_real_median_weekly_earnings:
-    source: fred
-    series_id: LES1252881600Q
-    frequency: Q
-    units: "1982-84 dollars per week"
-    description: "Employed full time: Median usual weekly real earnings (CPS; CPI-adjusted)."
 
   # Prices
   cpiaucsl_cpi:
@@ -156,23 +145,17 @@ series:
 
   # Finance (index levels; price-only, excludes dividends)
   sp500_sp500_index:
-    source: stooq
-    symbol: "^spx"
+    source: fred
+    series_id: SP500
     frequency: D
     units: "index"
-    column: Close
-    description: "S&P 500 index level (close; price index, excludes dividends)."
-    filters:
-      start_date: "1957-01-02"
-    notes:
-      - "Stooq's ^spx download includes earlier monthly values; we drop observations before 1957-01-02 (S&P 500 inception)."
+    description: "S&P 500 index level (daily; price index, excludes dividends)."
   djia_dow_jones:
-    source: stooq
-    symbol: "^dji"
+    source: fred
+    series_id: DJIA
     frequency: D
     units: "index"
-    column: Close
-    description: "Dow Jones Industrial Average index level (close; price index, excludes dividends)."
+    description: "Dow Jones Industrial Average index level (daily; price index, excludes dividends)."
 
 metrics:
   # GDP growth
@@ -311,36 +294,6 @@ metrics:
       kind: end_minus_start_per_year
       units: "percentage points per year"
 
-  # Wages
-  - id: real_median_weekly_earnings_term_pct_change
-    family: wages
-    primary: true
-    label: "Real median weekly earnings percent change (term total, end vs start; LES1252881600Q)"
-    inputs:
-      series: les1252881600q_real_median_weekly_earnings
-    period_transform:
-      kind: identity
-    term_aggregation:
-      kind: pct_change_from_levels
-      scale: 100
-      units: "percent"
-
-  - id: real_median_weekly_earnings_term_cagr_pct
-    family: wages
-    primary: false
-    label: "Real median weekly earnings CAGR (term annualized from start/end; LES1252881600Q)"
-    inputs:
-      series: les1252881600q_real_median_weekly_earnings
-    period_transform:
-      kind: identity
-    term_aggregation:
-      kind: cagr_from_levels
-      scale: 100
-      use_actual_time: true
-      units: "percent"
-      notes:
-        - "Uses start/end levels and actual elapsed time to annualize."
-
   # Inflation
   - id: cpi_inflation_yoy_mean
     family: inflation
@@ -404,33 +357,6 @@ metrics:
         - "Formula: 100 * 12 * ln(CPI_t / CPI_{t-1})."
     term_aggregation:
       kind: mean
-      units: "percent"
-
-  - id: cpi_price_level_term_pct_change_nsa
-    family: inflation
-    primary: false
-    label: "CPI price level percent change (term total, end vs start; CPIAUCNS)"
-    inputs:
-      series: cpiaucns_cpi_unadjusted
-    period_transform:
-      kind: identity
-    term_aggregation:
-      kind: pct_change_from_levels
-      scale: 100
-      units: "percent"
-
-  - id: cpi_price_level_term_cagr_pct_nsa
-    family: inflation
-    primary: false
-    label: "CPI price level CAGR (term annualized from start/end; CPIAUCNS)"
-    inputs:
-      series: cpiaucns_cpi_unadjusted
-    period_transform:
-      kind: identity
-    term_aggregation:
-      kind: cagr_from_levels
-      scale: 100
-      use_actual_time: true
       units: "percent"
 
   # Stock returns (excess)
@@ -497,37 +423,6 @@ metrics:
       output_units: "percent"
       notes:
         - "Formula: 100 * (prod_t (1 + r_t/100) - 1) over months in the attributed term window."
-
-  - id: ff_mkt_excess_return_volatility_ann
-    family: stock_returns
-    primary: false
-    label: "Stock market excess return volatility (annualized std dev; Ken French Mkt-RF)"
-    inputs:
-      table: ff_factors_monthly
-      column: mkt_rf
-    period_transform:
-      kind: identity
-    term_aggregation:
-      kind: annualized_std
-      periods_per_year: 12
-      input_units: "percent"
-      output_units: "percent"
-
-  - id: ff_mkt_excess_return_sharpe_ann
-    family: stock_returns
-    primary: false
-    label: "Stock market Sharpe ratio (annualized; Ken French Mkt-RF)"
-    inputs:
-      table: ff_factors_monthly
-      column: mkt_rf
-    period_transform:
-      kind: identity
-    term_aggregation:
-      kind: sharpe_ratio_annualized
-      periods_per_year: 12
-      units: "ratio"
-      notes:
-        - "Formula: mean(Mkt-RF)*12 / (std(Mkt-RF)*sqrt(12))."
 
   # Stock index levels (price-only)
   - id: sp500_term_pct_change
@@ -677,12 +572,116 @@ metrics:
       kind: mean
       units: "percent of GDP"
 
-known_omissions:
-  - family: housing
-    reason: "Deferred to v2 (candidates: CSUSHPISA, HOUST)."
-  - family: interest_rates
-    reason: "Deferred to v2 (candidates: FEDFUNDS, DGS10, T10Y2Y)."
-  - family: trade
-    reason: "Deferred to v2 (candidates: BOPGSTB)."
-  - family: inequality
-    reason: "Deferred to v2 (high-quality distributional metrics are typically annual with lag)."
+
+=== spec/metrics_rationale.md ===
+# Metrics Rationale (v1)
+
+This document explains the key measurement choices in `spec/metrics_v1.yaml`. The goal is to make disagreements about "Dem vs Rep performance" explicit and auditable: if you disagree, you can point to a specific metric id or spec field, propose an alternative, and we can add it as an alternate definition rather than silently changing results.
+
+## General Conventions
+
+- Prefer pulling **level series** (indexes/levels) from upstream and computing transforms locally. This keeps formulas explicit and avoids ambiguous upstream "units" transformations.
+- Prefer **log-diff annualization** for growth rates when starting from level series:
+  - QoQ annualized growth: `100 * 4 * ln(x_t / x_{t-1})`
+  - MoM annualized inflation: `100 * 12 * ln(x_t / x_{t-1})`
+- For rates already expressed in percent (e.g., `UNRATE`), use levels and differences (percentage points) rather than re-scaling.
+- Term attribution (lag rules, inauguration handling, etc.) is **not** a metric decision; it is controlled by the join/attribution config and recorded in the run manifest.
+
+## Prices / Inflation (MoM, QoQ, YoY, SAAR)
+
+Question: should we use precomputed MoM/QoQ/YoY series vs computing from price levels?
+
+Choice (v1): **compute inflation from price index levels** (e.g., CPI, PCEPI), and explicitly support both seasonally adjusted (SA) and not seasonally adjusted (NSA) CPI where it matters.
+
+Rationale:
+- CPI/PCE are published as **index levels**, not SAAR levels. "SAAR" is an annualization convention typically applied to growth rates (and to some BEA flow/level series like GDP levels), not to CPI levels.
+- Computing locally makes the exact formula unambiguous (pct-change vs log-diff; annualized vs not).
+- Many "precomputed inflation" series are either not available as plain downloads without special API parameters, or embed transformation assumptions we still need to document.
+
+We include multiple inflation definitions because people argue about them:
+- `cpi_inflation_yoy_mean_nsa` (primary): YoY inflation from the **unadjusted** CPI index, averaged over the attributed window.
+  - Pros: YoY does not require seasonal adjustment; avoids annual revision of seasonally adjusted CPI levels due to seasonal factor updates.
+- `cpi_inflation_yoy_mean` (alternate): YoY inflation from the **seasonally adjusted** CPI index, averaged over the attributed window.
+  - Pros: included for completeness; should be very close to the NSA YoY in most periods.
+- `cpi_inflation_mom_ann_logdiff_mean` (alternate): MoM annualized log-diff inflation, averaged over the window.
+  - Pros: faster-moving signal; matches common "annualized monthly inflation" discussions.
+  - Note: for MoM measures, we prefer SA CPI because NSA MoM is dominated by seasonal patterns.
+- `pce_inflation_yoy_mean` (alternate): PCE-based inflation.
+
+Seasonal adjustment:
+- The BLS produces **both unadjusted and seasonally adjusted CPI data**; SA data are intended for short-term trend analysis, while unadjusted data are widely used for escalation/indexation and other applications.
+- SA CPI series are revised when seasonal factors are updated (typically revising recent history), so “latest data” pulls can change SA values in the recent window; caching raw downloads keeps our runs reproducible, but we still surface this as a choice.
+- For the PCE price index (`PCEPI`), the monthly series in FRED is **seasonally adjusted**. We compute YoY from that level series; if we later want a non-seasonally-adjusted PCE price index, FRED provides other formats (e.g., annual NSA) but those are not a drop-in replacement for monthly term windows.
+
+## Output (GDP)
+
+`GDPC1` is a **quarterly level in SAAR units** (real GDP at an annual rate). We still compute growth locally from the level series (log-diff annualized). This is standard and keeps the growth formula consistent with other growth metrics.
+
+We include alternates:
+- real GDP per capita growth
+- term CAGR computed from start/end levels (useful for start/end comparisons, but more sensitive to window rules)
+
+## Stock Market: Returns vs Levels (MoM/QoQ/YoY)
+
+Question: do we need levels, not just returns?
+
+Choice (v1): use **Ken French monthly returns** as the primary stock market source, and **derive level-like metrics** via compounding.
+
+Rationale:
+- Returns are the cleanest unit for comparisons (stationary-ish, not dependent on an arbitrary base year).
+- "Level" comparisons (e.g., S&P 500 start vs end) are common in popular claims, so we should support them, but they are highly sensitive to window endpoints. We treat those as **alternate views**.
+
+Ken French dataset:
+- Monthly observations: **1926-07 through 2025-12** in the current file (the header indicates it was created using the **202512** CRSP database).
+- Our pipeline should re-download on `--refresh` and cache the raw zip so results are reproducible from cached artifacts even if the upstream file changes later.
+
+Metrics included:
+- `ff_mkt_excess_return_ann_compound` (primary): annualized compound excess return (Mkt-RF).
+- `ff_mkt_total_return_ann_compound` (alternate): annualized compound total return (Mkt-RF + RF).
+- `ff_mkt_total_return_term_total` (alternate): compounded total return over the term window (end/start in percent terms).
+
+Price index levels (Dow and S&P):
+- For popular/press-style “the market went up/down under X” claims, we also include **price index levels** from FRED:
+  - `SP500` (S&P 500)
+  - `DJIA` (Dow Jones Industrial Average)
+- These are **price-only** indices (exclude dividends), so they are not directly comparable to total return measures. We treat them as alternates for public-facing level claims, not the primary return metric.
+
+Level-style term metrics included:
+- Term total percent change (end vs start): `sp500_term_pct_change`, `djia_term_pct_change`
+- Term percent change per year (CAGR, annualized from start/end using elapsed time): `sp500_term_cagr_pct`, `djia_term_cagr_pct`
+
+MoM/QoQ/YoY:
+- MoM is the monthly return itself.
+- QoQ/YoY are rolling compounded returns over 3/12 months. We have not made these primary scoreboard metrics yet; they are better suited for plots/diagnostics because they overlap heavily over time.
+
+## Employment: End-minus-start vs Per-year
+
+Question: why include `end_minus_start_per_year`?
+
+Choice (v1): keep **total change** as primary and per-year as an alternate, and apply the same pairing across comparable series to avoid cherry-picking accusations.
+
+Rationale:
+- Total change (`end_minus_start`) is the most direct answer to “how many jobs were added during this window.”
+- Per-year normalization helps when:
+  - we compare windows of different lengths (partial terms, alternate lag rules),
+  - we want a rough rate comparable across terms.
+- Per-year implicitly assumes linearity; it’s not a structural model. We treat it as a convenience view, not the canonical truth.
+
+Anti-cherry-picking policy:
+- If we include a per-year version for a metric family, we also include the total-change version (and vice versa).
+- Reports should display both side-by-side for the same underlying series to prevent “we picked the normalization that looks best” critiques.
+
+We include both payroll (CES) and household (CPS) employment series to reflect the measurement split in labor statistics.
+
+## Fiscal: Percent of GDP vs Dollars
+
+Choice (v1): start with percent-of-GDP series when available (`GFDEGDQ188S`, `FYFSGDA188S`) because it reduces inflation/scale issues and matches much of the public discourse.
+
+Notes:
+- Fiscal series are often annual or fiscal-year based; mapping to presidential windows requires extra care (and must be documented in the attribution manifest).
+
+## What We Still Need To Decide (Likely v2)
+
+- Whether to add a FRED-based stock price index series (e.g., S&P 500) and how to downsample daily data (end-of-month vs average).
+- Whether to support point-in-time/vintage data for key series (ALFRED) to avoid revision effects in historical reproducibility.
+

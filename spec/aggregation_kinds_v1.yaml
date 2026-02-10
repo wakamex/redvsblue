@@ -1,0 +1,144 @@
+version: 1
+name: aggregation_kinds_v1
+created: "2026-02-10"
+description: >
+  Defines the semantics of `term_aggregation.kind` used by `spec/metrics_v1.yaml`.
+  This is intentionally declarative so implementations can be deterministic and
+  unit-tested with synthetic data.
+
+notes:
+  - "All aggregations operate on the attributed window produced by the time joiner (see spec/attribution_v1.yaml)."
+  - "Unless otherwise stated, missing values are dropped before aggregation."
+  - "Kinds that need a start/end level use the joiner's boundary-resolved start/end observations."
+
+kinds:
+  mean:
+    description: "Arithmetic mean over observations in the attributed window."
+    formula: "mean(x_i)"
+    params:
+      post_scale:
+        type: float
+        default: 1.0
+        description: "Multiply the final scalar result by this factor."
+    missing_policy: drop
+    min_observations: 1
+
+  last:
+    description: "Last observation in the attributed window."
+    formula: "x_last"
+    missing_policy: error_if_empty_window
+    min_observations: 1
+
+  end_minus_start:
+    description: "End level minus start level."
+    formula: "x_end - x_start"
+    missing_policy: error_if_missing_boundary
+    min_observations: 2
+
+  end_minus_start_per_year:
+    description: "End minus start divided by elapsed years in the term window."
+    formula: "(x_end - x_start) / years_elapsed"
+    missing_policy: error_if_missing_boundary
+    min_observations: 2
+    params:
+      year_basis:
+        type: string
+        default: "365.25"
+        description: "How to convert calendar days to years (e.g., 365.25)."
+
+  pct_change_from_levels:
+    description: "Percent change from start/end levels."
+    formula: "scale * (x_end / x_start - 1)"
+    missing_policy: error_if_missing_boundary
+    min_observations: 2
+    params:
+      scale:
+        type: float
+        default: 100.0
+        description: "Scale factor (100 => percent)."
+
+  cagr_from_levels:
+    description: "Compound annual growth rate from start/end levels."
+    formula: "scale * ((x_end / x_start)^(1 / years_elapsed) - 1)"
+    missing_policy: error_if_missing_boundary
+    min_observations: 2
+    params:
+      scale:
+        type: float
+        default: 100.0
+        description: "Scale factor (100 => percent)."
+      use_actual_time:
+        type: bool
+        default: true
+        description: "If true, use calendar time between start/end for annualization."
+      periods_per_year:
+        type: int
+        required: false
+        description: "Optional for period-count annualization when use_actual_time=false."
+
+  mean_times_periods_per_year:
+    description: "Arithmetic mean return times periods per year (simple annualization)."
+    formula: "mean(r_i) * periods_per_year"
+    missing_policy: drop
+    min_observations: 1
+    params:
+      periods_per_year:
+        type: int
+        required: true
+
+  compound_total:
+    description: "Compounded total return over the attributed window."
+    formula: "scale * (prod_i (1 + r_i/scale) - 1)"
+    missing_policy: drop
+    min_observations: 1
+    params:
+      scale:
+        type: float
+        default: 100.0
+        description: "Scale factor of input returns (100 => percent)."
+
+  compound_annualized:
+    description: "Compounded return annualized to a per-year rate."
+    formula: "scale * (prod_i (1 + r_i/scale)^(periods_per_year/N) - 1)"
+    missing_policy: drop
+    min_observations: 1
+    params:
+      periods_per_year:
+        type: int
+        required: true
+      scale:
+        type: float
+        default: 100.0
+
+  count_transitions:
+    description: "Count of discrete transitions from from_value to to_value."
+    formula: "sum_i 1[x_{i-1}=from_value and x_i=to_value]"
+    missing_policy: drop
+    min_observations: 2
+    params:
+      from_value:
+        type: number
+        required: true
+      to_value:
+        type: number
+        required: true
+
+  annualized_std:
+    description: "Annualized standard deviation of returns."
+    formula: "std(r_i) * sqrt(periods_per_year)"
+    missing_policy: drop
+    min_observations: 2
+    params:
+      periods_per_year:
+        type: int
+        required: true
+
+  sharpe_ratio_annualized:
+    description: "Annualized Sharpe ratio of excess returns."
+    formula: "mean(r_i)*periods_per_year / (std(r_i)*sqrt(periods_per_year))"
+    missing_policy: drop
+    min_observations: 2
+    params:
+      periods_per_year:
+        type: int
+        required: true

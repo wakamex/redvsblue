@@ -10,7 +10,10 @@ Principles
 
 Implementation Order (v1)
 
-1. Lock the v1 “metric registry” entries (sources + transforms + aggregations) for the initial scoreboard set.
+1. Lock the v1 “spec stack” for the initial scoreboard set:
+    - Metric registry (`spec/metrics_v1.yaml`)
+    - Aggregation semantics (`spec/aggregation_kinds_v1.yaml`)
+    - Attribution / boundary semantics (`spec/attribution_v1.yaml`)
 2. Implement ingestion + caching for the minimum required sources (likely: FRED + NBER + Wikidata + Congress control).
 3. Implement the transform library (log diff, pct change, annualization, per-capita, %GDP, etc.) with unit tests.
 4. Implement metric evaluation + validation checks (schema checks, transform invariants, and cross-series consistency checks).
@@ -36,6 +39,7 @@ Phase 1: Data Ingestion (Online, Reproducible)
     - FRED “download CSV” endpoints (often work without API keys), e.g. https://fred.stlouisfed.org/graph/fredgraph.csv?id=GDPC1.
     - NBER business cycle dates JSON (already in literature/).
     - Ken French data library (market factors / portfolio returns) if accessible.
+    - Stooq CSV for stock index levels (S&P 500, DJIA).
     - Treasury/OMB/CBO/Fiscal Data if needed for deficit/debt (prefer stable CSV/JSON endpoints).
     - Wikidata SPARQL for president/party/term dates.
 2. For every fetch, persist:
@@ -58,6 +62,8 @@ Phase 2: Presidency and Party Coding (Reproducible, Parameterized)
     - assignment_rule: midpoint (who holds office on the midpoint date) or majority_of_days.
     - frequency: monthly/quarterly alignment rules.
     - lag: lag_months / lag_quarters to shift attribution (the “inherited economy” question).
+    - daily boundary rule for market index endpoints (close-before-inauguration vs close-on-inauguration).
+    - fiscal-year handling for FY-based annual series (e.g., deficit) with explicit alternatives.
 3. Emit a machine-readable “attribution manifest” per run documenting the exact rule (so results are auditably
    reproducible).
 4. Add a reproducible Congress control dataset:
