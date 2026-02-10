@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from rb.cache import ArtifactCache
-from rb.http import http_get
+from rb.net import http_get
 from rb.util import redact_url, write_bytes_atomic, write_text_atomic
 
 
@@ -29,4 +29,3 @@ def ingest_nber_cycles(nber_cfg: dict, *, refresh: bool) -> None:
     if not body.endswith(b"\n"):
         # Keep JSON files newline-terminated.
         write_text_atomic(derived_path, body.decode("utf-8") + "\n")
-

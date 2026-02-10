@@ -8,7 +8,13 @@ from typing import Any
 import certifi
 
 
-def http_get(url: str, *, timeout_s: int = 60, headers: dict[str, str] | None = None, retries: int = 3) -> tuple[int, dict[str, Any], bytes]:
+def http_get(
+    url: str,
+    *,
+    timeout_s: int = 60,
+    headers: dict[str, str] | None = None,
+    retries: int = 3,
+) -> tuple[int, dict[str, Any], bytes]:
     """Simple GET with retries. Returns (status, headers, body)."""
     hdrs = {"User-Agent": "rb/0.1 (+https://example.invalid)"}
     if headers:

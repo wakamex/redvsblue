@@ -8,7 +8,7 @@ from io import StringIO
 from pathlib import Path
 
 from rb.cache import ArtifactCache
-from rb.http import http_get
+from rb.net import http_get
 from rb.util import redact_url, write_text_atomic
 
 
