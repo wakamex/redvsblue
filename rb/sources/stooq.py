@@ -6,7 +6,7 @@ from io import StringIO
 from pathlib import Path
 
 from rb.cache import ArtifactCache
-from rb.http import http_get
+from rb.net import http_get
 from rb.util import redact_url, write_text_atomic
 
 
@@ -66,4 +66,3 @@ def ingest_stooq_series(*, series_key: str, series_cfg: dict, stooq_cfg: dict, r
         out_rows.append(f"{ds},{vs}")
 
     write_text_atomic(derived_path, "\n".join(out_rows) + "\n")
-
