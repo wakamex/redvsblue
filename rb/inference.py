@@ -13,6 +13,7 @@ class _Obs:
     party: str
     term_start: date | None
     term_id: str
+    cluster_id: str
 
 
 def _parse_float(s: str) -> float | None:
@@ -202,6 +203,79 @@ def _ols_nw(
     return beta, se_beta, z, p_two
 
 
+def _ols_cluster(
+    *,
+    y: list[float],
+    d: list[int],
+    clusters: list[str],
+) -> tuple[float | None, float | None, float | None, float | None, int]:
+    # y_t = alpha + beta*D_t + eps_t; cluster-robust variance by cluster_id.
+    n = len(y)
+    if n < 3 or n != len(d) or n != len(clusters):
+        return None, None, None, None, 0
+    s_d = float(sum(d))
+    if s_d <= 0.0 or s_d >= float(n):
+        return None, None, None, None, 0
+    s_y = float(sum(y))
+    s_dy = float(sum(float(di) * yi for di, yi in zip(d, y)))
+
+    xtx = [
+        [float(n), s_d],
+        [s_d, s_d],
+    ]
+    xtx_inv = _mat2_inv(xtx)
+    if xtx_inv is None:
+        return None, None, None, None, 0
+
+    alpha = xtx_inv[0][0] * s_y + xtx_inv[0][1] * s_dy
+    beta = xtx_inv[1][0] * s_y + xtx_inv[1][1] * s_dy
+
+    # Cluster score sums: S_g = sum_{i in g} x_i * u_i, then meat = sum_g S_g S_g'
+    scores_by_cluster: dict[str, list[float]] = {}
+    for yi, di, cid in zip(y, d, clusters):
+        u = yi - (alpha + beta * float(di))
+        x0 = 1.0
+        x1 = float(di)
+        s = scores_by_cluster.get(cid)
+        if s is None:
+            s = [0.0, 0.0]
+            scores_by_cluster[cid] = s
+        s[0] += x0 * u
+        s[1] += x1 * u
+
+    g = len(scores_by_cluster)
+    if g < 2:
+        return beta, None, None, None, g
+
+    meat = [[0.0, 0.0], [0.0, 0.0]]
+    for s in scores_by_cluster.values():
+        meat[0][0] += s[0] * s[0]
+        meat[0][1] += s[0] * s[1]
+        meat[1][0] += s[1] * s[0]
+        meat[1][1] += s[1] * s[1]
+
+    # Finite-sample correction (common CR0-style scaling with cluster adjustment).
+    k = 2.0  # intercept + party dummy
+    corr = 1.0
+    if g > 1 and n > int(k):
+        corr = (float(g) / float(g - 1)) * ((float(n - 1)) / float(n - int(k)))
+    meat = [[corr * meat[0][0], corr * meat[0][1]], [corr * meat[1][0], corr * meat[1][1]]]
+
+    v = _mat2_mul(_mat2_mul(xtx_inv, meat), xtx_inv)
+    var_beta = v[1][1]
+    if var_beta < 0:
+        if var_beta > -1e-12:
+            var_beta = 0.0
+        else:
+            return beta, None, None, None, g
+    se_beta = math.sqrt(var_beta)
+    if se_beta <= 0.0:
+        return beta, se_beta, None, None, g
+    z = beta / se_beta
+    p_two = _two_sided_normal_p(z)
+    return beta, se_beta, z, p_two, g
+
+
 def _load_term_groups(term_metrics_csv: Path) -> dict[str, dict]:
     groups: dict[str, dict] = {}
     with term_metrics_csv.open("r", encoding="utf-8", newline="") as handle:
@@ -236,6 +310,7 @@ def _load_term_groups(term_metrics_csv: Path) -> dict[str, dict]:
                     party=party,
                     term_start=_parse_date(row.get("term_start") or ""),
                     term_id=(row.get("term_id") or "").strip(),
+                    cluster_id=((row.get("president") or "").strip() or (row.get("term_id") or "").strip()),
                 )
             )
     return groups
@@ -296,6 +371,7 @@ def write_inference_table(
         "n_clusters_total",
         "n_clusters_d",
         "n_clusters_r",
+        "n_clusters_president",
         "effect_d_minus_r",
         "rough_mde_abs_alpha005_power080",
         "rough_effect_over_mde_abs",
@@ -305,6 +381,11 @@ def write_inference_table(
         "hac_nw_p_two_sided_norm",
         "hac_nw_p_lt_005",
         "hac_nw_p_lt_010",
+        "cluster_president_se",
+        "cluster_president_z",
+        "cluster_president_p_two_sided_norm",
+        "cluster_president_p_lt_005",
+        "cluster_president_p_lt_010",
         "perm_effect_d_minus_r",
         "perm_p_two_sided",
         "perm_q_bh_fdr",
@@ -331,12 +412,14 @@ def write_inference_table(
         n_obs = len(obs)
         n_d = sum(1 for x in d if x == 1)
         n_r = n_obs - n_d
+        clusters = [o.cluster_id for o in obs]
         d_vals = [o.value for o in obs if o.party == "D"]
         r_vals = [o.value for o in obs if o.party == "R"]
         d_term_ids = {o.term_id for o in obs if o.party == "D"}
         r_term_ids = {o.term_id for o in obs if o.party == "R"}
         mde_abs = _rough_mde_abs_two_sample(d_vals=d_vals, r_vals=r_vals)
         beta, se, z, p_hac = _ols_nw(y=y, d=d, nw_lags=max(0, int(nw_lags)))
+        _, c_se, c_z, c_p, c_g = _ols_cluster(y=y, d=d, clusters=clusters)
         effect_over_mde = None
         if beta is not None and mde_abs is not None and mde_abs > 0.0:
             effect_over_mde = abs(beta) / mde_abs
@@ -368,6 +451,7 @@ def write_inference_table(
                 "n_clusters_total": str(len({o.term_id for o in obs if o.term_id})),
                 "n_clusters_d": str(len({tid for tid in d_term_ids if tid})),
                 "n_clusters_r": str(len({tid for tid in r_term_ids if tid})),
+                "n_clusters_president": str(int(c_g)),
                 "effect_d_minus_r": _fmt(beta),
                 "rough_mde_abs_alpha005_power080": _fmt(mde_abs),
                 "rough_effect_over_mde_abs": _fmt(effect_over_mde),
@@ -377,6 +461,11 @@ def write_inference_table(
                 "hac_nw_p_two_sided_norm": _fmt(p_hac),
                 "hac_nw_p_lt_005": _bool_to_flag(hac_005),
                 "hac_nw_p_lt_010": _bool_to_flag(hac_010),
+                "cluster_president_se": _fmt(c_se),
+                "cluster_president_z": _fmt(c_z),
+                "cluster_president_p_two_sided_norm": _fmt(c_p),
+                "cluster_president_p_lt_005": _bool_to_flag(_p_flag(c_p, 0.05)),
+                "cluster_president_p_lt_010": _bool_to_flag(_p_flag(c_p, 0.10)),
                 "perm_effect_d_minus_r": _fmt(perm_eff),
                 "perm_p_two_sided": _fmt(p_perm),
                 "perm_q_bh_fdr": _fmt(q_perm),
@@ -412,11 +501,12 @@ def write_inference_table(
         lines.append(f"- Permutation table: `{permutation_party_term_csv}`")
     lines.append(f"- HAC/Newey-West lags: `{max(0, int(nw_lags))}`")
     lines.append("- HAC p-values use a normal approximation for two-sided p-values.")
+    lines.append("- Cluster p-values are president-cluster sandwich estimates with finite-sample correction and normal-approximation p-values.")
     lines.append("- Rough MDE uses a two-sample normal approximation (alpha=0.05, power=0.80) and is a scale diagnostic, not a hard decision rule.")
     lines.append("")
 
-    lines.append("| Metric | Family | Effect (D-R) | Rough MDE | |Effect|/MDE | HAC p | Perm q | Perm tier | Disagree@0.05 |")
-    lines.append("|---|---|---:|---:|---:|---:|---:|---|---:|")
+    lines.append("| Metric | Family | Effect (D-R) | Rough MDE | |Effect|/MDE | HAC p | Cluster p | Perm q | Perm tier | Disagree@0.05 |")
+    lines.append("|---|---|---:|---:|---:|---:|---:|---:|---|---:|")
     for r in sorted(
         rows,
         key=lambda rr: (
@@ -435,6 +525,7 @@ def write_inference_table(
                     _fmt(_parse_float(r.get("rough_mde_abs_alpha005_power080") or "")),
                     _fmt(_parse_float(r.get("rough_effect_over_mde_abs") or "")),
                     _fmt(_parse_float(r.get("hac_nw_p_two_sided_norm") or "")),
+                    _fmt(_parse_float(r.get("cluster_president_p_two_sided_norm") or "")),
                     _fmt(_parse_float(r.get("perm_q_bh_fdr") or "")),
                     (r.get("perm_tier") or "").replace("|", "\\|"),
                     (r.get("sig_disagree_005") or ""),

@@ -318,7 +318,7 @@ Operational status:
   - Outputs:
     - `reports/inference_table_primary_v1.csv`
     - `reports/inference_table_primary_v1.md`
-  - Table includes side-by-side permutation (`p`, `q`, tier) and HAC/Newey-West diagnostics (SE, z, p), plus disagreement flags.
+  - Table includes side-by-side permutation (`p`, `q`, tier), HAC/Newey-West diagnostics, and president-cluster sandwich diagnostics.
   - Table now also includes rough power diagnostics for primary term-level metrics:
     - effective cluster counts
     - rough MDE proxy (`rough_mde_abs_alpha005_power080`)
@@ -406,8 +406,8 @@ Current strengths:
 
 Current weaknesses / gaps:
 
-- Few-cluster econometric inference is still thinner than the best literature.
-  - We now publish a parallel HAC/Newey-West table (`rb inference-table`), but we do not yet include a few-cluster-robust variant for the same estimands.
+- Few-cluster econometric inference remains partially addressed.
+  - We now publish HAC/Newey-West plus president-cluster sandwich diagnostics in `rb inference-table`, but cluster p-values still use a normal approximation (not wild-cluster bootstrap / exact few-cluster methods).
 - Explanatory decomposition is less developed.
   - Blinder-Watson-style decomposition of the growth gap into candidate channels (oil, productivity, global growth, etc.) is not yet implemented.
 - Small-cell/power diagnostics are not explicit enough.
@@ -419,8 +419,8 @@ Current weaknesses / gaps:
 
 ## Potential Next Steps (Methodology)
 
-1. Extend the dual-inference table with a few-cluster-robust variant:
-   - keep current permutation/q + HAC/Newey-West, and add a few-cluster-robust column for the same primary estimands.
+1. Strengthen few-cluster inference:
+   - keep current permutation/q + HAC/Newey-West + president-cluster diagnostics, and add a small-cluster-robust p-value variant (for example wild-cluster bootstrap).
 2. Pre-register a primary metric set and transform hierarchy in the spec:
    - one primary metric per family, with secondaries explicitly labeled.
 3. Add power/precision diagnostics:
@@ -438,7 +438,8 @@ Current weaknesses / gaps:
 
 1. Add power diagnostics to the dual-inference outputs:
    - extend beyond primary term-level metrics and add equivalent diagnostics for within-president rows.
-2. Add a few-cluster-robust inference variant alongside HAC in `rb inference-table`.
+2. Strengthen few-cluster inference in `rb inference-table`:
+   - add a small-cluster-robust p-value variant to complement current cluster-normal p-values.
 3. Add manifest coverage for optional upstream dependency versions (for example package lock, CLI version string) to strengthen end-to-end reproducibility audits.
 
 ## Claims Table
