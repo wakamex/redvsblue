@@ -306,6 +306,7 @@ Operational status:
 - `rb publication-bundle` now hard-fails on scope mismatch (for example all-metrics randomization CSVs in primary mode, or primary-only CSVs with `--all-metrics`).
 - Randomization outputs now include explicit `inference_scope` (`primary` or `all`) in term-level and within-president CSVs; publication-bundle guards prefer this field and fall back to legacy `metric_primary` inference for older files.
 - `rb claims-table` now checks that baseline/strict (and optional within) randomization inputs are scope-compatible before building claims.
+- `rb randomization-compare` now also requires scope-compatible base/alt inputs to avoid cross-battery comparisons.
 - A narrative markdown summary is now generated automatically.
 - A comparison table is now generated via `rb randomization-compare` to track baseline-vs-stricter tier shifts metric-by-metric.
 - The main scoreboard now includes significance columns by default, sourced from randomization outputs.
