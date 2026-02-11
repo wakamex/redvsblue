@@ -1,0 +1,36 @@
+I will begin by listing the files in the `rb/` and `spec/` directories to confirm the project structure and locate the relevant code for inference and metrics. Then, I will read `rb/inference.py` and `rb/scoreboard.py` to examine the implementation of the statistical tests and how stability metrics are currently utilized.
+I will read `rb/inference.py` to understand the implementation of the statistical tests, specifically focusing on the `inference-stability` and wild-cluster bootstrap logic. I will also read `reviews/gemini_metrics_methodology_v2_review.txt` to gain context on the "v2 direction" and ensure my review aligns with previous feedback.
+I will read `rb/scoreboard.py` to examine how stability metrics are presented. After that, I will formulate the response.
+Here is the methods review based on the provided codebase and context.
+
+### A) Alignment Check vs v2 Direction
+**Mixed.**
+
+1.  **Goal Met (Hardening):** You successfully addressed the v2 critique regarding serial correlation/validity by implementing HAC and Wild Cluster Bootstrap.
+2.  **Drift (Complexity):** The v2 review recommended simpler blocking (e.g., `term_block_years`) or HAC. Building a "Stability Grid" for the Wild Cluster bootstrap is over-engineering that shifts focus from *statistical* uncertainty to *numerical* uncertainty.
+3.  **Leaky Abstraction:** Operationalizing numerical stability (`unstable` tags) in public artifacts exposes implementation details rather than synthesizing a clear statistical conclusion.
+
+### B) Role of Metrics (Hierarchy)
+1.  **`q_bh_fdr` (Primary Discovery):** Remains the best screen for "interestingness" across 50+ metrics.
+2.  **`p_wild_cluster` / `p_hac` (Robustness Gate):** The "Confirmatory" check. If `q < 0.05` but `p_wild > 0.10`, the result is likely a false positive driven by serial correlation.
+3.  **`stability` (Internal Guardrail):** **Invisible Gatekeeper.** It should not be a decision criteria for the reader. If a metric is "unstable," it is effectively "Not Significant" or "Incalculable."
+
+**Verdict:** Stability should be a **secondary guardrail** (backend filter), not a primary screening metric.
+
+### C) Complexity Budget Decision
+**Option 2: Pause additions and pare back / simplify.**
+
+*Defending this choice:* The pipeline is approaching a "Methodological Rube Goldberg Machine." You have Permutation (Term), HAC (Newey-West), Cluster-Robust (Sandwich), Wild Cluster (Bootstrap), and now a Stability Grid for the Bootstrap. Adding another layer (Exact Randomization) adds marginal value for exponential explanatory debt. The current stack is sufficient to distinguish "real" signal from noise if you simplify the output.
+
+### E) Simplification Plan
+*   **Demote (Hide):** Remove `Stab@0.05`, `Stab@0.10`, and `unstable` columns from the public `scoreboard.md`. Users confuse "algorithm instability" with "data volatility."
+*   **Action:** In `claims_table` generation, if `stability == unstable`, automatically downgrade the **Tier** to `Exploratory` or `Insufficient Evidence` and suppress the robust p-value (or set to `>0.10`).
+*   **Keep:** Retain `q_bh_fdr` and `p_wild_cluster` (or `p_hac`) as the two "Public" columns.
+
+### F) Final Recommendation
+1.  **Do Now (Pare Back):** Remove "Stability" columns from the public Scoreboard. Operationalize the `unstable` flag only as a "filter" that forces a claim to be dropped or downgraded to Non-Significant.
+2.  **Do Not Do (Additions):** Do not implement "Small-cluster exact/randomization." It solves the same "Small N" problem as Wild Cluster but adds a third competing p-value to explain.
+3.  **Hierarchy Enforcement:** Ensure `q_bh_fdr` drives the sorting/selection, while `p_wild_cluster` acts as the "Validator."
+4.  **Narrative Focus:** In the generated text, stop saying "Metric is unstable." Instead, say "Result does not survive robustness checks for small-sample clustering."
+5.  **Fix the Core:** If Wild Cluster is consistently unstable for key metrics, increase `wild_cluster_draws` default (e.g., to 9999) rather than showing the instability to the user.
+6.  **Drift Correction:** Re-center the project on "Is the difference real?" rather than "How stable is our bootstrap?"

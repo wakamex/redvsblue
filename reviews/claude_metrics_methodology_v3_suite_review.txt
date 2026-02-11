@@ -1,0 +1,99 @@
+I now have a thorough understanding of the full implementation. Here is the methods review.
+
+---
+
+## Methods Review: Statistical Inference Pipeline v3
+
+### A) Alignment Check vs v2 Direction
+
+**Mixed.**
+
+1. **q-based primacy preserved — barely.** Tier assignment in `_classify_evidence` (`randomization.py:206`) still runs on BH q-values alone. That is correct. But the publication bundle now defaults `publication_downgrade_unstable=True` (line `cli.py:1290`: `not bool(args.no_publication_stability_gate)`), meaning the stability gate silently rewrites tiers before any reader sees them. The q-based hierarchy is nominally primary but practically overridable by a diagnostic-of-a-diagnostic. This is a soft drift from the v2 principle that multiplicity-aware reporting should be *central*.
+
+2. **Dual-inference diagnostics correctly scoped — for HAC.** The HAC gate (`randomization.py:1667`) acts only on confirmatory rows, can only downgrade, and checks direction agreement. This exactly matches the v2 recommendation for inference hardening. No issue here.
+
+3. **Stability operationalization overshoots the v2 intent.** The v2 review said "avoid over-claiming from fragile significance." The current implementation goes further: it surfaces stability as first-class columns in the scoreboard, includes per-metric tags in the narrative, and defaults the stability gate ON. The v2 review did not ask for a publication-visible stability taxonomy — it asked for hardened defaults. Displaying `sig`/`ns`/`unstable` shorthand alongside q-values gives them equivalent visual authority, which they do not merit inferentially.
+
+---
+
+### B) Role of Metrics: Recommended Decision Hierarchy
+
+Ordered hierarchy for publication-facing decisions:
+
+1. **`q_bh_fdr`** — sole driver of tier assignment. Only metric that controls FDR across the family of tested metrics. Non-negotiable as primary.
+
+2. **Permutation p-value** — underlies the q-value. Report for transparency. Never override q with raw p.
+
+3. **HAC/Newey-West p-value + direction agreement** — secondary corroboration gate for confirmatory claims. Correctly limited to downgrade-only on the confirmatory tier. Retain as-is.
+
+4. **Wild-cluster bootstrap p-value** — diagnostic, not decisional. With G ≈ 7–18 president-clusters, CR0 + Rademacher has known over-rejection. The implementation (`inference.py:262–332`) uses a standard (G/(G-1))((n-1)/(n-k)) correction, which is insufficient for G < 20 — the Cameron-Gelbach-Miller literature recommends CR3 or Webb 6-point weights in this regime. This means the wild-cluster p has non-trivial size distortion, making it an unreliable arbiter. Useful for flagging discrepancies; should not gate claims.
+
+5. **Stability classification** — **secondary guardrail, not primary screening.** It measures Monte Carlo noise in the wild-cluster p across seeds and draw counts. Since the wild-cluster p itself is approximate (rank 4), stability is a meta-diagnostic — a measure of how noisy a noisy estimate is. The `unstable` classification at `inference.py:750–757` triggers whenever `p_min < threshold <= p_max` across the seed×draws grid. With only 3 seeds (default `42,137,271`) and draws including 499 (where Monte Carlo SE alone is ~1.4pp), borderline metrics will be flagged `unstable` due to Monte Carlo noise rather than genuine inferential fragility. This conflation makes stability misleading as a screening criterion.
+
+**Should stability be primary screening?** No. It should remain a backend guardrail that can only downgrade, never promote. It should not appear with equal visual weight to q-values in reader-facing outputs.
+
+---
+
+### C) Complexity Budget Decision
+
+**Option 3: Keep current suite, only minor refinements.**
+
+Defense:
+
+1. **The cluster-count problem is structural, not methodological.** With G = 7–18 presidential clusters, you are in the "few clusters" regime where all cluster-robust methods have known limitations. Adding Fisher exact randomization (enumerating all 2^G sign assignments) would give exact size control but the same low power. You would gain exactness on a test that cannot detect plausible effects — a precise answer to a question the data cannot resolve. The inferential binding constraint is power, not method choice.
+
+2. **The current stack covers the relevant design space.** You have: (a) an exact permutation test for the primary estimand, (b) a parametric HAC regression for time-series robustness, (c) a cluster-robust sandwich for within-president dependence, (d) a wild-cluster bootstrap for distributional robustness, and (e) a stability grid for Monte Carlo sensitivity. Five layers. Each subsequent layer has diminishing marginal information over the previous ones. A sixth layer (Fisher cluster randomization) would be nearly collinear with what wild-cluster bootstrap already provides.
+
+3. **Complexity tax on the reader is already high.** The claims table has 34 columns (`randomization.py:1705–1740`). The scoreboard shows q, p, tier, publication tier, stability shorthand, and CI. Each additional inference method requires the reader to understand why it might disagree with the others, and the narrative template must explain the discrepancy. The marginal explanatory burden of a sixth method exceeds its informational value.
+
+4. **The v2 review prioritized parsimony.** "Inference hardening defaults first" means consolidate existing methods, not expand the frontier.
+
+---
+
+### D) N/A (Option 3 selected)
+
+---
+
+### E) What to Demote/Simplify
+
+**Demote from default publication display:**
+
+- **Stability columns (`Stab@0.05`, `Stab@0.10`) in the scoreboard.** Move behind a `--show-stability` flag. These report on Monte Carlo behavior of a diagnostic (wild-cluster p), not on the primary inference. Displaying them at parity with q-values conflates the inferential hierarchy.
+
+- **Per-metric stability tags in the narrative.** The inline `sig`/`ns`/`unstable` tags in the narrative template should move to a diagnostics appendix. Retain only the headline `unstable_count` summary in the narrative body — that is sufficient to flag concerns without polluting per-metric reporting.
+
+- **Default the stability gate to OFF.** This is the most important change. Currently `publication_downgrade_unstable` defaults to `True` in the publication bundle (`cli.py:1290`). This means the stability gate — based on a diagnostic with known size distortion, tested across only 3 seeds with a draw grid including a noisy 499-draw point — silently rewrites publication tiers. Default it OFF. Let the analyst opt in via `--publication-stability-gate` after reviewing the stability table. The `--no-publication-stability-gate` flag should become the implicit default.
+
+- **The draws=499 grid point.** With G ≈ 7–18 clusters and 499 draws, Monte Carlo SE on the wild-cluster p is roughly sqrt(p(1-p)/499) ≈ 1.4pp at p = 0.05. This noise inflates apparent instability. Drop 499 from the default grid; keep [999, 1999] only.
+
+**Retain as default for publication-facing claims:**
+
+- `q_bh_fdr` and tier assignment — the core decision layer.
+- HAC gate (direction + significance) for confirmatory rows.
+- Effect size, bootstrap CI, n_obs — core descriptive columns.
+- Wild-cluster p in the inference table CSV — diagnostic column, not in tier logic.
+- Stability CSV as a generated artifact — available for audit, not surfaced in narrative/scoreboard by default.
+
+**One code-level fix in `_publication_tier_with_stability_gate`** (`randomization.py:1650`): The `unstable_any` flag fires on an OR across both thresholds. A metric unstable at 0.05 but `robust_not_significant` at 0.10 is simply borderline at 0.05 — expected behavior for any metric near the decision boundary, not evidence of fragility. The downgrade should be threshold-matched: only downgrade a confirmatory (q < 0.05) row if `status_005 == "unstable"`, and a supportive (q < 0.10) row if `status_010 == "unstable"`. The current blanket OR over-penalizes borderline-but-coherent results.
+
+---
+
+### F) Final Recommendation
+
+Ranked by importance:
+
+1. **DO NOW: Default the stability gate to OFF in the publication bundle.** The gate is downstream of a diagnostic with known size distortion for small G, calibrated on only 3 seeds with a noisy 499-draw point. It should not silently rewrite tiers. Flip `cli.py:1290` so `--publication-stability-gate` is opt-in, not opt-out.
+
+2. Demote stability columns (`Stab@0.05`/`Stab@0.10`) from the default scoreboard and narrative per-metric display. Move to a diagnostics appendix or behind `--show-stability`. Preserve the stability CSV as an audit artifact.
+
+3. Drop `draws=499` from the default stability grid. Keep `[999, 1999]`. The Monte Carlo noise at 499 draws inflates apparent instability without adding diagnostic value.
+
+4. If the stability gate is ever used, make it threshold-matched: downgrade for `unstable` at 0.05 only when the tier was set by q < 0.05, and at 0.10 only when set by q < 0.10. Remove the blanket `unstable_any` OR.
+
+5. Keep the q → tier → HAC-gate pipeline as the sole default publication path. It is correctly layered and well-justified. No changes needed.
+
+6. Consider expanding the seed grid from 3 to 5 seeds if the stability check is retained as an opt-in diagnostic. Three seeds is marginal for detecting genuine instability vs. Monte Carlo noise. Five seeds at draws=[999, 1999] is computationally cheap.
+
+7. Add a one-line note to the inference table output documenting G (cluster count) and that CR0 + Rademacher is approximate for G < 20. This is standard reporting practice and preempts reviewer objections about the wild-cluster bootstrap.
+
+8. **DO NOT DO YET: Add Fisher randomization inference or any small-cluster exact method.** The power constraint is structural (few presidencies), not methodological. An exact method gives exact size control on a test that lacks the power to detect plausible effects. Revisit only if the dataset grows or if a reviewer specifically requests it.

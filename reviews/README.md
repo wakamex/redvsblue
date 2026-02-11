@@ -19,6 +19,11 @@ This folder stores external-model review prompts and responses for methodology/s
 - `reviews/gemini_metrics_methodology_v2_review.txt`
 - `reviews/codex_metrics_methodology_v2_review.md`
 
+- `reviews/prompt_metrics_methodology_v3_suite.txt`
+- `reviews/claude_metrics_methodology_v3_suite_review.txt`
+- `reviews/gemini_metrics_methodology_v3_suite_review.txt`
+- `reviews/codex_metrics_methodology_v3_suite_review.md`
+
 ## Standard Workflow
 
 1. Build a single shared prompt file that includes the exact files under review.
