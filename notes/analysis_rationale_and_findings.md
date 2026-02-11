@@ -337,6 +337,7 @@ Operational status:
 - A one-command publication artifact build is now available:
   - `rb publication-bundle`
   - This runs inference table -> publication-gated claims table -> narrative template -> scoreboard with claims-aware tier columns.
+  - Supports `--profile strict_vs_baseline` (default) and `--profile baseline_only`.
 - `rb scoreboard` can now display strict/publication tier context from claims tables:
   - default claims path: `reports/claims_table_v1.csv`
   - disable via `--no-publication-tier-columns`
@@ -437,7 +438,7 @@ Current weaknesses / gaps:
 1. Add power diagnostics to the dual-inference outputs:
    - extend beyond primary term-level metrics and add equivalent diagnostics for within-president rows.
 2. Add a few-cluster-robust inference variant alongside HAC in `rb inference-table`.
-3. Add optional profile presets to `rb publication-bundle` (for example baseline-only vs strict-vs-baseline) to reduce path-management mistakes.
+3. Add an optional publication-bundle run manifest (input paths + key thresholds + generated outputs) for audit logging.
 
 ## Claims Table
 
