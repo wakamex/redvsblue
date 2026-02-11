@@ -109,7 +109,7 @@ Legend:
 
 1. Decide whether SA CPI level-term percent/CAGR variants should be added as explicit alternates.
 2. Add a fixed report artifact comparing inversion definitions (daily, monthly-EOP, monthly-AVG) each run.
-3. Expand CI from spec-only validation to a small end-to-end smoke run (`ingest -> compute -> validate`) on a minimal series subset.
+3. Add a second CI smoke profile that includes at least one daily market series and one non-FRED source.
 
 ## Change-Control Rule
 

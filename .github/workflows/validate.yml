@@ -25,10 +25,18 @@ jobs:
         run: uv sync --locked
 
       - name: Run rb validate (spec + presidents fixture)
+        run: .venv/bin/rb validate --spec spec/metrics_v1.yaml --presidents tests/fixtures/presidents_min.csv
+
+      - name: Smoke pipeline (ingest -> compute -> validate)
         run: |
-          cat > /tmp/presidents_min.csv <<'CSV'
-          term_id,president,party_abbrev,term_start,term_end
-          sample_1,Sample A,D,2000-01-20,2004-01-20
-          sample_2,Sample B,R,2004-01-20,2008-01-20
-          CSV
-          .venv/bin/rb validate --spec spec/metrics_v1.yaml --presidents /tmp/presidents_min.csv
+          .venv/bin/rb ingest --spec spec/metrics_ci_smoke.yaml --refresh
+          .venv/bin/rb compute \
+            --spec spec/metrics_ci_smoke.yaml \
+            --presidents tests/fixtures/presidents_min.csv \
+            --output-terms /tmp/term_metrics_smoke.csv \
+            --output-party /tmp/party_summary_smoke.csv
+          .venv/bin/rb validate \
+            --spec spec/metrics_ci_smoke.yaml \
+            --presidents tests/fixtures/presidents_min.csv \
+            --term-metrics /tmp/term_metrics_smoke.csv \
+            --party-summary /tmp/party_summary_smoke.csv

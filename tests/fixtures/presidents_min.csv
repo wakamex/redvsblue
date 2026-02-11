@@ -1,0 +1,3 @@
+term_id,person_qid,president,party_qid,party,party_abbrev,term_start,term_end,term_number_for_person
+sample_a_2000,Q0000001,Sample A,Q29552,Democratic Party,D,2000-01-20,2004-01-20,1
+sample_b_2004,Q0000002,Sample B,Q29468,Republican Party,R,2004-01-20,2008-01-20,1

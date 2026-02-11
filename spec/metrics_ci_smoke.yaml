@@ -1,0 +1,59 @@
+version: 1
+name: metrics_ci_smoke
+created: "2026-02-11"
+description: >
+  Minimal CI smoke spec for fast pipeline checks. Covers one FRED series and a
+  small metric set that exercises ingest -> compute -> validate.
+
+sources:
+  fred:
+    kind: fred
+    api_base_url: "https://api.stlouisfed.org/fred"
+    api_key_env: FRED_API_KEY
+    api_default_file_type: json
+    graph_csv_url_template: "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+
+series:
+  unrate_unemployment_rate:
+    source: fred
+    series_id: UNRATE
+    frequency: M
+    units: "percent"
+    description: "Civilian Unemployment Rate (BLS CPS, SA)."
+
+metrics:
+  - id: unemployment_rate_mean
+    family: unemployment
+    primary: true
+    label: "Unemployment rate (mean during term)"
+    inputs:
+      series: unrate_unemployment_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: unemployment_rate_change_pp
+    family: unemployment
+    primary: false
+    label: "Unemployment rate change (percentage points, end minus start)"
+    inputs:
+      series: unrate_unemployment_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "percentage points"
+
+  - id: unemployment_rate_change_pp_per_year
+    family: unemployment
+    primary: false
+    label: "Unemployment rate change (percentage points per year, end minus start divided by term years)"
+    inputs:
+      series: unrate_unemployment_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "percentage points per year"

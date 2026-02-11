@@ -159,6 +159,7 @@ Read:
   - and automatically during `rb randomization --all-metrics` (unless `--skip-inversion-robustness`)
   - outputs: `reports/inversion_definition_robustness_v1.csv` and `.md`
 - We wired spec/presidents validation into CI via `.github/workflows/validate.yml` so transform-symmetry drift is caught on PRs.
+- CI now also runs a minimal end-to-end smoke pipeline (`ingest -> compute -> validate`) against `spec/metrics_ci_smoke.yaml`.
 
 ## Threshold Sensitivity Snapshot (Within-President U-D)
 
