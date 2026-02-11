@@ -37,6 +37,21 @@ Current Execution Plan (v4, impact focus: revision/vintage transparency)
 4. Next impactful milestone after vintage:
     - Add Congress-control inferential checks (binary unified vs not) with explicit small-cell caveats and scope-locked outputs.
 
+Current Execution Plan (v5, impact focus: Congress-control inferential layer)
+
+1. Ship a first-class congress binary inferential artifact:
+    - Window-level unified-vs-divided permutation battery, blocked within president-term.
+    - Primary and all-metrics scopes, with scope metadata and compatibility guards.
+2. Integrate congress binary checks into publication artifacts:
+    - Include in evidence summary/markdown, claims table, randomization compare, and scoreboard by default when files exist.
+    - Include strict/publication tier overlays from claims where available.
+3. Enforce small-cell transparency:
+    - Track and display windows-per-state and terms-with-both thresholds.
+    - Flag small-cell rows explicitly as exploratory diagnostics.
+4. Next impactful milestone after congress binary:
+    - Either (a) add a small-cluster exact/randomization inference variant for near-threshold rows, or
+    - (b) build the first decomposition pass (growth/labor channels) for substantive explanatory value.
+
 Implementation Order (v1)
 
 1. Lock the v1 “spec stack” for the initial scoreboard set:

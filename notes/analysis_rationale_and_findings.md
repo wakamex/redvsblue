@@ -482,6 +482,38 @@ Current weaknesses / gaps:
 3. Add deeper vintage reporting beyond summary windows (for example per-series FRED realtime tags for publication-facing primary metrics).
 4. Defer adding a new exact small-cluster method unless near-threshold instability becomes materially common.
 
+## Congress Binary Inference Update (2026-02-11)
+
+We added a separate inferential check for congressional control using a binary split:
+
+- estimand: `mean(window_metric | unified) - mean(window_metric | divided)`
+- inference design: permutation labels shuffled within president-term blocks
+- strata reported: `all`, `D`, and `R` president-party subsets
+- explicit small-cell gates:
+  - minimum windows in each state (`unified`, `divided`)
+  - minimum count of president-terms that contain both states
+
+Generated artifacts now include:
+
+- `reports/permutation_unified_binary_v1.csv`
+- `reports/permutation_unified_binary_all_v1.csv`
+- `reports/permutation_unified_binary_min90_v1.csv`
+- `reports/permutation_unified_binary_min90_all_v1.csv`
+
+And this analysis is now wired into:
+
+- `rb randomization` evidence summary/markdown outputs
+- `rb randomization-compare`
+- `rb claims-table`
+- `rb scoreboard` (`Congress Unified vs Divided Inference (Window-Level)`)
+
+Current read:
+
+- This check is informative as a confounding diagnostic.
+- Many rows remain exploratory after `q` adjustment and/or small-cell thresholds.
+- It improves transparency and consistency, but does not change the core interpretation standard:
+  report as robustness context unless evidence is both multiplicity-robust and adequately powered.
+
 ## Claims Table
 
 A machine-readable baseline-vs-strict claims table is now produced via:
