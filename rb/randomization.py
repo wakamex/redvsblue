@@ -1061,6 +1061,8 @@ def run_randomization(
     output_unified_within_term_csv: Path | None,
     output_evidence_summary_csv: Path | None,
     output_evidence_md: Path | None,
+    output_inversion_robustness_csv: Path | None,
+    output_inversion_robustness_md: Path | None,
     within_president_min_window_days: int,
     include_diagnostic_metrics: bool,
 ) -> None:
@@ -1115,6 +1117,14 @@ def run_randomization(
             within_unified_csv=generated_within_csv,
             summary_csv=output_evidence_summary_csv,
             out_md=output_evidence_md,
+        )
+
+    # Inversion-definition robustness report is only meaningful when non-primary metrics are included.
+    if (not primary_only) and output_inversion_robustness_csv is not None:
+        write_inversion_definition_robustness(
+            permutation_party_term_csv=output_party_term_csv,
+            out_csv=output_inversion_robustness_csv,
+            out_md=output_inversion_robustness_md,
         )
 
 

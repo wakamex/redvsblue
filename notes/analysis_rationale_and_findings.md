@@ -156,6 +156,7 @@ Read:
 - Inversion-start counts are weak under all definitions; monthly resampling attenuates differences further.
 - We now maintain a dedicated generated artifact for this check via:
   - `rb inversion-robustness`
+  - and automatically during `rb randomization --all-metrics` (unless `--skip-inversion-robustness`)
   - outputs: `reports/inversion_definition_robustness_v1.csv` and `.md`
 
 ## Threshold Sensitivity Snapshot (Within-President U-D)
