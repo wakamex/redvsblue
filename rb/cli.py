@@ -30,6 +30,7 @@ from rb.randomization import (
 from rb.regimes import ensure_regime_pipeline
 from rb.scoreboard import write_scoreboard_md
 from rb.validate import validate_all
+from rb.vintage import write_fred_primary_metric_vintage_report
 
 PRESIDENT_SOURCES = ("congress_legislators", "wikidata")
 PRESIDENT_GRANULARITY = ("tenure", "term")
@@ -877,6 +878,28 @@ def _parse_args() -> argparse.Namespace:
     )
     narrative.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
+    vintage = sub.add_parser("vintage-report", help="Build a per-primary-metric FRED vintage metadata report from cached raw artifacts.")
+    vintage.add_argument("--spec", type=Path, default=Path("spec/metrics_v1.yaml"), help="Metric registry spec YAML.")
+    vintage.add_argument(
+        "--raw-root",
+        type=Path,
+        default=Path("data/raw/fred"),
+        help="Root of cached FRED raw artifacts.",
+    )
+    vintage.add_argument(
+        "--output-csv",
+        type=Path,
+        default=Path("reports/fred_vintage_primary_metrics_v1.csv"),
+        help="Output CSV path.",
+    )
+    vintage.add_argument(
+        "--output-md",
+        type=Path,
+        default=Path("reports/fred_vintage_primary_metrics_v1.md"),
+        help="Output markdown summary path.",
+    )
+    vintage.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
     pub = sub.add_parser("publication-bundle", help="Generate publication-facing claims/inference/narrative/scoreboard artifacts in one run.")
     pub.add_argument(
         "--profile",
@@ -1048,6 +1071,18 @@ def _parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("reports/scoreboard.md"),
         help="Output markdown path for scoreboard.",
+    )
+    pub.add_argument(
+        "--output-fred-vintage-csv",
+        type=Path,
+        default=Path("reports/fred_vintage_primary_metrics_v1.csv"),
+        help="Output CSV path for primary-metric FRED vintage metadata.",
+    )
+    pub.add_argument(
+        "--output-fred-vintage-md",
+        type=Path,
+        default=Path("reports/fred_vintage_primary_metrics_v1.md"),
+        help="Output markdown path for primary-metric FRED vintage metadata.",
     )
     pub.add_argument(
         "--output-manifest",
@@ -1367,6 +1402,15 @@ def main() -> int:
         )
         return 0
 
+    if args.cmd == "vintage-report":
+        write_fred_primary_metric_vintage_report(
+            spec_path=args.spec,
+            raw_root=args.raw_root,
+            out_csv=args.output_csv,
+            out_md=args.output_md,
+        )
+        return 0
+
     if args.cmd == "publication-bundle":
         if not args.party_summary.exists():
             raise FileNotFoundError(f"Missing party summary CSV: {args.party_summary}")
@@ -1538,6 +1582,12 @@ def main() -> int:
             show_publication_tiers=True,
             show_inference_stability_columns=bool(args.show_inference_stability_columns),
         )
+        write_fred_primary_metric_vintage_report(
+            spec_path=args.spec,
+            raw_root=Path("data/raw/fred"),
+            out_csv=args.output_fred_vintage_csv,
+            out_md=args.output_fred_vintage_md,
+        )
 
         if not bool(args.no_manifest):
             manifest = {
@@ -1603,6 +1653,8 @@ def main() -> int:
                     "claims_csv": _file_meta(args.output_claims),
                     "narrative_md": _file_meta(args.output_narrative),
                     "scoreboard_md": _file_meta(args.output_scoreboard),
+                    "fred_vintage_csv": _file_meta(args.output_fred_vintage_csv),
+                    "fred_vintage_md": _file_meta(args.output_fred_vintage_md),
                 },
                 "mutations": {
                     "within_mde_backfill": within_backfill,

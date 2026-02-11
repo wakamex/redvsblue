@@ -307,6 +307,8 @@ Operational status:
 - Randomization outputs now include explicit `inference_scope` (`primary` or `all`) in term-level and within-president CSVs; publication-bundle guards prefer this field and fall back to legacy `metric_primary` inference for older files.
 - `rb claims-table` now checks that baseline/strict (and optional within) randomization inputs are scope-compatible before building claims.
 - `rb randomization-compare` now also requires scope-compatible base/alt inputs to avoid cross-battery comparisons.
+- `rb vintage-report` now emits `reports/fred_vintage_primary_metrics_v1.csv` + `.md` with per-primary-metric FRED vintage metadata from cached raw artifacts.
+- `rb publication-bundle` now regenerates and records the FRED vintage report artifacts in the output manifest.
 - A narrative markdown summary is now generated automatically.
 - A comparison table is now generated via `rb randomization-compare` to track baseline-vs-stricter tier shifts metric-by-metric.
 - The main scoreboard now includes significance columns by default, sourced from randomization outputs.

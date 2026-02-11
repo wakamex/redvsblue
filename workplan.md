@@ -24,6 +24,19 @@ Current Execution Plan (v3, post external review refresh)
 5. Continue reproducibility discipline:
     - All changes remain fully code-driven with deterministic artifact generation and manifests.
 
+Current Execution Plan (v4, impact focus: revision/vintage transparency)
+
+1. Ship publication-facing vintage transparency as a first-class artifact:
+    - Generate per-primary-metric FRED vintage metadata (`realtime_start/end`, `observation_end`, `last_updated`, snapshot timestamp/hash).
+    - Emit both CSV + markdown in `reports/`.
+2. Integrate vintage artifact into publication flow:
+    - `rb publication-bundle` must regenerate vintage report every run.
+    - Manifest must include vintage artifact metadata.
+3. Keep inferential stack stable while improving publication reliability:
+    - No additional inference methods until vintage/reporting reproducibility is hardened.
+4. Next impactful milestone after vintage:
+    - Add Congress-control inferential checks (binary unified vs not) with explicit small-cell caveats and scope-locked outputs.
+
 Implementation Order (v1)
 
 1. Lock the v1 “spec stack” for the initial scoreboard set:
