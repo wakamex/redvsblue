@@ -8,6 +8,7 @@ from rb.congress_control import ensure_congress_control
 from rb.ingest import ingest_from_spec
 from rb.metrics import compute_term_metrics
 from rb.presidents import ensure_presidents
+from rb.randomization import run_randomization
 from rb.regimes import ensure_regime_pipeline
 from rb.scoreboard import write_scoreboard_md
 from rb.validate import validate_all
@@ -193,7 +194,67 @@ def _parse_args() -> argparse.Namespace:
         default=Path("data/derived/regimes/regime_windows_labels.csv"),
         help="Regime-window labels CSV (optional; adds unified-vs-divided section if present).",
     )
+    scoreboard.add_argument(
+        "--output-within-president-deltas",
+        type=Path,
+        default=Path("reports/within_president_unified_delta_v1.csv"),
+        help="Output CSV for within-president unified-minus-divided diagnostic.",
+    )
+    scoreboard.add_argument(
+        "--within-president-min-window-days",
+        type=int,
+        default=0,
+        help="Minimum window_days required for rows used in within-president unified-vs-divided diagnostics.",
+    )
     scoreboard.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
+    randomization = sub.add_parser("randomization", help="Run permutation/randomization robustness checks.")
+    randomization.add_argument("--term-metrics", type=Path, default=Path("reports/term_metrics_v1.csv"), help="Term metrics CSV.")
+    randomization.add_argument(
+        "--output-party-term",
+        type=Path,
+        default=Path("reports/permutation_party_term_v1.csv"),
+        help="Output CSV for term-level D-vs-R permutation test.",
+    )
+    randomization.add_argument(
+        "--window-metrics",
+        type=Path,
+        default=Path("reports/regime_window_metrics_v1.csv"),
+        help="Regime-window metrics CSV (optional for unified-within-term test).",
+    )
+    randomization.add_argument(
+        "--window-labels",
+        type=Path,
+        default=Path("data/derived/regimes/regime_windows_labels.csv"),
+        help="Regime-window labels CSV (optional for unified-within-term test).",
+    )
+    randomization.add_argument(
+        "--output-unified-within-term",
+        type=Path,
+        default=Path("reports/permutation_unified_within_term_v1.csv"),
+        help="Output CSV for within-president unified-vs-divided permutation test.",
+    )
+    randomization.add_argument("--permutations", type=int, default=2000, help="Number of random permutations.")
+    randomization.add_argument("--bootstrap-samples", type=int, default=2000, help="Number of bootstrap samples for CI estimates.")
+    randomization.add_argument("--seed", type=int, default=42, help="RNG seed for reproducibility.")
+    randomization.add_argument(
+        "--term-block-years",
+        type=int,
+        default=0,
+        help="If >0, term-party permutation shuffles labels within term-start-year blocks of this size.",
+    )
+    randomization.add_argument(
+        "--within-president-min-window-days",
+        type=int,
+        default=0,
+        help="Minimum window_days to include in within-president unified-vs-divided permutation test.",
+    )
+    randomization.add_argument(
+        "--all-metrics",
+        action="store_true",
+        help="Include non-primary metrics (default behavior is primary-only).",
+    )
+    randomization.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
     return p.parse_args()
 
@@ -283,6 +344,24 @@ def main() -> int:
             primary_only=not bool(args.all_metrics),
             window_metrics_csv=args.window_metrics if args.window_metrics.exists() else None,
             window_labels_csv=args.window_labels if args.window_labels.exists() else None,
+            output_within_president_deltas_csv=args.output_within_president_deltas,
+            within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
+        )
+        return 0
+
+    if args.cmd == "randomization":
+        run_randomization(
+            term_metrics_csv=args.term_metrics,
+            output_party_term_csv=args.output_party_term,
+            permutations=max(0, int(args.permutations)),
+            bootstrap_samples=max(0, int(args.bootstrap_samples)),
+            seed=int(args.seed),
+            term_block_years=max(0, int(args.term_block_years)),
+            primary_only=not bool(args.all_metrics),
+            window_metrics_csv=args.window_metrics if args.window_metrics.exists() else None,
+            window_labels_csv=args.window_labels if args.window_labels.exists() else None,
+            output_unified_within_term_csv=args.output_unified_within_term,
+            within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
         )
         return 0
 

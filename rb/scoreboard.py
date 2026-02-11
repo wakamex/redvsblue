@@ -55,6 +55,16 @@ def _fmt_int(v: int | None) -> str:
     return "" if v is None else str(v)
 
 
+def _median(xs: list[float]) -> float | None:
+    if not xs:
+        return None
+    ys = sorted(xs)
+    n = len(ys)
+    if n % 2 == 1:
+        return ys[n // 2]
+    return 0.5 * (ys[n // 2 - 1] + ys[n // 2])
+
+
 def _load_party_summary(path: Path) -> dict[tuple[str, str], PartyMetricRow]:
     out: dict[tuple[str, str], PartyMetricRow] = {}
     with path.open("r", encoding="utf-8", newline="") as handle:
@@ -248,6 +258,207 @@ def _compute_alignment_summary(
     return groups
 
 
+def _compute_within_president_unified_deltas(
+    *,
+    window_metrics_csv: Path,
+    window_labels_csv: Path,
+    min_window_days: int = 0,
+) -> dict[tuple[str, str], dict[str, Any]]:
+    # Returns (metric_id, pres_party) -> aggregate of within-president (unified - divided) deltas.
+    # For each president term and metric, compute mean metric in unified windows and in divided windows.
+    # Then aggregate deltas across president terms that experienced both states.
+    labels = _load_window_labels(window_labels_csv)
+
+    # (metric_id, pres_party, president_term_id, unified_flag) -> accumulator
+    by_pres_status: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    metric_meta: dict[str, dict[str, str]] = {}
+
+    with window_metrics_csv.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for r in rdr:
+            wid = (r.get("term_id") or "").strip()
+            metric_id = (r.get("metric_id") or "").strip()
+            if not wid or not metric_id:
+                continue
+
+            lab = labels.get(wid)
+            if not lab:
+                continue
+
+            v = _parse_float(r.get("value") or "")
+            if v is None:
+                continue
+
+            pres_party = (lab.get("pres_party") or "").strip()
+            if pres_party not in {"D", "R"}:
+                continue
+            pres_term_id = (lab.get("president_term_id") or "").strip()
+            if not pres_term_id:
+                continue
+
+            unified = (lab.get("unified_government") or "").strip() or "0"
+            days = _parse_int(lab.get("window_days") or "") or 0
+            if days < min_window_days:
+                continue
+
+            k = (metric_id, pres_party, pres_term_id, unified)
+            g = by_pres_status.get(k)
+            if g is None:
+                g = {"sum": 0.0, "n": 0, "w_sum": 0.0, "w": 0}
+                by_pres_status[k] = g
+
+            g["sum"] += v
+            g["n"] += 1
+            if days > 0:
+                g["w_sum"] += v * days
+                g["w"] += days
+
+            if metric_id not in metric_meta:
+                metric_meta[metric_id] = {
+                    "metric_label": (r.get("metric_label") or "").strip(),
+                    "metric_family": (r.get("metric_family") or "").strip(),
+                    "metric_primary": (r.get("metric_primary") or "").strip(),
+                    "agg_kind": (r.get("agg_kind") or "").strip(),
+                    "units": (r.get("units") or "").strip(),
+                }
+
+    # Collapse to per-president term means by unified status.
+    per_pres: dict[tuple[str, str, str], dict[str, float | None]] = {}
+    for (metric_id, pres_party, pres_term_id, unified), g in by_pres_status.items():
+        mean: float | None
+        if int(g["w"]) > 0:
+            mean = float(g["w_sum"]) / float(g["w"])
+        else:
+            n = int(g["n"])
+            mean = (float(g["sum"]) / n) if n > 0 else None
+        tkey = (metric_id, pres_party, pres_term_id)
+        slot = per_pres.get(tkey)
+        if slot is None:
+            slot = {"u": None, "d": None}
+            per_pres[tkey] = slot
+        if unified == "1":
+            slot["u"] = mean
+        else:
+            slot["d"] = mean
+
+    out: dict[tuple[str, str], dict[str, Any]] = {}
+    # Pre-seed groups to preserve rows even when n_with_both is zero.
+    for metric_id, meta in metric_meta.items():
+        for pres_party in ("D", "R"):
+            out[(metric_id, pres_party)] = {
+                "metric_id": metric_id,
+                "metric_label": meta.get("metric_label") or metric_id,
+                "metric_family": meta.get("metric_family") or "",
+                "metric_primary": meta.get("metric_primary") or "",
+                "agg_kind": meta.get("agg_kind") or "",
+                "units": meta.get("units") or "",
+                "pres_party": pres_party,
+                "n_with_unified": 0,
+                "n_with_divided": 0,
+                "n_with_both": 0,
+                "deltas": [],
+                "mean_delta": None,
+                "median_delta": None,
+            }
+
+    for (metric_id, pres_party, _pres_term_id), states in per_pres.items():
+        grp = out.get((metric_id, pres_party))
+        if not grp:
+            continue
+        u = states.get("u")
+        d = states.get("d")
+        if u is not None:
+            grp["n_with_unified"] += 1
+        if d is not None:
+            grp["n_with_divided"] += 1
+        if u is not None and d is not None:
+            grp["n_with_both"] += 1
+            grp["deltas"].append(u - d)
+
+    for grp in out.values():
+        ds = list(grp["deltas"])
+        n = len(ds)
+        if n > 0:
+            grp["mean_delta"] = sum(ds) / n
+            grp["median_delta"] = _median(ds)
+
+    return out
+
+
+def _write_within_president_unified_deltas_csv(
+    *,
+    metric_ids: list[str],
+    deltas: dict[tuple[str, str], dict[str, Any]],
+    out_path: Path,
+    min_window_days: int = 0,
+) -> None:
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    header = [
+        "metric_id",
+        "metric_label",
+        "metric_family",
+        "metric_primary",
+        "agg_kind",
+        "units",
+        "pres_party",
+        "mean_delta_unified_minus_divided",
+        "median_delta_unified_minus_divided",
+        "n_presidents_with_both",
+        "n_presidents_with_unified",
+        "n_presidents_with_divided",
+        "min_window_days_filter",
+    ]
+    rows: list[dict[str, str]] = []
+    for mid in metric_ids:
+        for pres_party in ("D", "R"):
+            g = deltas.get((mid, pres_party))
+            if not g:
+                rows.append(
+                    {
+                        "metric_id": mid,
+                        "metric_label": mid,
+                        "metric_family": "",
+                        "metric_primary": "",
+                        "agg_kind": "",
+                        "units": "",
+                        "pres_party": pres_party,
+                        "mean_delta_unified_minus_divided": "",
+                        "median_delta_unified_minus_divided": "",
+                        "n_presidents_with_both": "0",
+                        "n_presidents_with_unified": "0",
+                        "n_presidents_with_divided": "0",
+                        "min_window_days_filter": str(int(min_window_days)),
+                    }
+                )
+                continue
+
+            rows.append(
+                {
+                    "metric_id": str(g.get("metric_id") or mid),
+                    "metric_label": str(g.get("metric_label") or mid),
+                    "metric_family": str(g.get("metric_family") or ""),
+                    "metric_primary": str(g.get("metric_primary") or ""),
+                    "agg_kind": str(g.get("agg_kind") or ""),
+                    "units": str(g.get("units") or ""),
+                    "pres_party": pres_party,
+                    "mean_delta_unified_minus_divided": _fmt(_parse_float(str(g.get("mean_delta") or ""))),
+                    "median_delta_unified_minus_divided": _fmt(_parse_float(str(g.get("median_delta") or ""))),
+                    "n_presidents_with_both": str(int(g.get("n_with_both") or 0)),
+                    "n_presidents_with_unified": str(int(g.get("n_with_unified") or 0)),
+                    "n_presidents_with_divided": str(int(g.get("n_with_divided") or 0)),
+                    "min_window_days_filter": str(int(min_window_days)),
+                }
+            )
+
+    tmp = out_path.with_suffix(out_path.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8", newline="") as handle:
+        w = csv.DictWriter(handle, fieldnames=header)
+        w.writeheader()
+        for r in rows:
+            w.writerow(r)
+    tmp.replace(out_path)
+
+
 def write_scoreboard_md(
     *,
     spec_path: Path,
@@ -256,6 +467,8 @@ def write_scoreboard_md(
     primary_only: bool,
     window_metrics_csv: Path | None,
     window_labels_csv: Path | None,
+    output_within_president_deltas_csv: Path | None = None,
+    within_president_min_window_days: int = 0,
 ) -> None:
     spec = load_spec(spec_path)
     metrics_cfg: list[dict] = spec.get("metrics") or []
@@ -320,9 +533,16 @@ def write_scoreboard_md(
         lines.append("")
         lines.append(f"Note: {missing_party_rows} metric(s) are missing D or R rows in `{party_summary_csv}`.")
 
+    within_pres_deltas: dict[tuple[str, str], dict[str, Any]] = {}
+
     if window_metrics_csv and window_labels_csv and window_metrics_csv.exists() and window_labels_csv.exists():
         groups = _compute_unified_summary(window_metrics_csv=window_metrics_csv, window_labels_csv=window_labels_csv)
         align_groups = _compute_alignment_summary(window_metrics_csv=window_metrics_csv, window_labels_csv=window_labels_csv)
+        within_pres_deltas = _compute_within_president_unified_deltas(
+            window_metrics_csv=window_metrics_csv,
+            window_labels_csv=window_labels_csv,
+            min_window_days=within_president_min_window_days,
+        )
 
         lines.append("")
         lines.append("## Unified vs Divided Government (Regime Windows)")
@@ -361,6 +581,42 @@ def write_scoreboard_md(
         lines.append("")
         lines.append("Caution: for window-aggregations that are *totals* (e.g., `end_minus_start`),")
         lines.append("day-weighting the window-level totals is not always meaningful; prefer per-year / CAGR variants for regime comparisons.")
+
+        lines.append("")
+        lines.append("## Within-President Unified vs Divided Check")
+        lines.append("")
+        lines.append("Each president-term acts as its own control: compute (unified mean - divided mean) within the same term, then average those deltas.")
+        lines.append(f"Applied filter: include only regime windows with `window_days >= {int(within_president_min_window_days)}`.")
+        lines.append("")
+        lines.append("| Metric | Units | P party | Mean delta (U-D) | Median delta (U-D) | n(pres with both) | n(with unified) | n(with divided) |")
+        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|")
+
+        for mid in metric_ids:
+            for pres_party in ("D", "R"):
+                g = within_pres_deltas.get((mid, pres_party))
+                if not g:
+                    continue
+                label = (g.get("metric_label") or mid).replace("|", "\\|")
+                units = (g.get("units") or "").replace("|", "\\|")
+                lines.append(
+                    "| "
+                    + " | ".join(
+                        [
+                            label,
+                            units,
+                            pres_party,
+                            _fmt(g.get("mean_delta")),
+                            _fmt(g.get("median_delta")),
+                            str(int(g.get("n_with_both") or 0)),
+                            str(int(g.get("n_with_unified") or 0)),
+                            str(int(g.get("n_with_divided") or 0)),
+                        ]
+                    )
+                    + " |"
+                )
+
+        lines.append("")
+        lines.append("Caution: small `n(pres with both)` means unstable estimates; interpret as a diagnostic, not a causal estimate.")
 
         lines.append("")
         lines.append("## President Alignment With Congress (House vs Senate)")
@@ -402,6 +658,14 @@ def write_scoreboard_md(
                         )
                         + " |"
                     )
+
+    if output_within_president_deltas_csv is not None:
+        _write_within_president_unified_deltas_csv(
+            metric_ids=metric_ids,
+            deltas=within_pres_deltas,
+            out_path=output_within_president_deltas_csv,
+            min_window_days=within_president_min_window_days,
+        )
 
     lines.append("")
     lines.append("## Data Appendix")
