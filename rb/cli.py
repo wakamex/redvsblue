@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import platform
@@ -32,6 +33,14 @@ from rb.validate import validate_all
 
 PRESIDENT_SOURCES = ("congress_legislators", "wikidata")
 PRESIDENT_GRANULARITY = ("tenure", "term")
+PUB_DEFAULT_BASELINE_PARTY_TERM_PRIMARY = Path("reports/permutation_party_term_v1.csv")
+PUB_DEFAULT_BASELINE_PARTY_TERM_ALL = Path("reports/permutation_party_term_all_v1.csv")
+PUB_DEFAULT_STRICT_PARTY_TERM_PRIMARY = Path("reports/permutation_party_term_block20_v1.csv")
+PUB_DEFAULT_STRICT_PARTY_TERM_ALL = Path("reports/permutation_party_term_block20_all_v1.csv")
+PUB_DEFAULT_BASELINE_WITHIN_PRIMARY = Path("reports/permutation_unified_within_term_v1.csv")
+PUB_DEFAULT_BASELINE_WITHIN_ALL = Path("reports/permutation_unified_within_term_all_v1.csv")
+PUB_DEFAULT_STRICT_WITHIN_PRIMARY = Path("reports/permutation_unified_within_term_min90_v1.csv")
+PUB_DEFAULT_STRICT_WITHIN_ALL = Path("reports/permutation_unified_within_term_min90_all_v1.csv")
 
 
 def _sha256_file(path: Path) -> str:
@@ -77,6 +86,36 @@ def _parse_int_list_csv(spec: str, *, arg_name: str) -> list[int]:
         except ValueError as exc:
             raise ValueError(f"Invalid integer {p!r} in {arg_name}={spec!r}") from exc
     return out
+
+
+def _csv_metric_primary_scope(path: Path) -> tuple[int, int]:
+    n_primary = 0
+    n_non_primary = 0
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        if "metric_primary" not in (rdr.fieldnames or []):
+            return (0, 0)
+        for row in rdr:
+            mp = (row.get("metric_primary") or "").strip()
+            if mp == "1":
+                n_primary += 1
+            elif mp == "0":
+                n_non_primary += 1
+    return (n_primary, n_non_primary)
+
+
+def _assert_randomization_scope_matches_mode(*, path: Path, all_metrics_mode: bool, label: str) -> None:
+    n_primary, n_non_primary = _csv_metric_primary_scope(path)
+    if all_metrics_mode:
+        if n_primary > 0 and n_non_primary == 0:
+            raise ValueError(
+                f"{label} appears primary-only (`metric_primary=0` rows not found) but `--all-metrics` was set: {path}"
+            )
+    else:
+        if n_non_primary > 0:
+            raise ValueError(
+                f"{label} includes non-primary rows (`metric_primary=0`) but publication-bundle is in primary mode: {path}"
+            )
 
 
 def _git_head(cwd: Path) -> str:
@@ -785,26 +824,40 @@ def _parse_args() -> argparse.Namespace:
     pub.add_argument(
         "--baseline-party-term",
         type=Path,
-        default=Path("reports/permutation_party_term_all_v1.csv"),
-        help="Baseline term-level randomization CSV.",
+        default=None,
+        help=(
+            "Baseline term-level randomization CSV. "
+            "Default is mode-aware: primary (`reports/permutation_party_term_v1.csv`) unless `--all-metrics`, "
+            "then `reports/permutation_party_term_all_v1.csv`."
+        ),
     )
     pub.add_argument(
         "--strict-party-term",
         type=Path,
-        default=Path("reports/permutation_party_term_block20_all_v1.csv"),
-        help="Strict-profile term-level randomization CSV.",
+        default=None,
+        help=(
+            "Strict-profile term-level randomization CSV. "
+            "Default is mode-aware: primary (`reports/permutation_party_term_block20_v1.csv`) unless `--all-metrics`, "
+            "then `reports/permutation_party_term_block20_all_v1.csv`."
+        ),
     )
     pub.add_argument(
         "--baseline-within",
         type=Path,
-        default=Path("reports/permutation_unified_within_term_all_v1.csv"),
-        help="Baseline within-president randomization CSV (optional).",
+        default=None,
+        help=(
+            "Baseline within-president randomization CSV (optional). "
+            "Default is mode-aware primary/all file based on `--all-metrics`."
+        ),
     )
     pub.add_argument(
         "--strict-within",
         type=Path,
-        default=Path("reports/permutation_unified_within_term_min90_all_v1.csv"),
-        help="Strict-profile within-president randomization CSV (optional).",
+        default=None,
+        help=(
+            "Strict-profile within-president randomization CSV (optional). "
+            "Default is mode-aware primary/all file based on `--all-metrics`."
+        ),
     )
     pub.add_argument(
         "--window-metrics",
@@ -1234,20 +1287,82 @@ def main() -> int:
             raise FileNotFoundError(f"Missing party summary CSV: {args.party_summary}")
         if not args.term_metrics.exists():
             raise FileNotFoundError(f"Missing term metrics CSV: {args.term_metrics}")
-        if not args.baseline_party_term.exists():
-            raise FileNotFoundError(f"Missing baseline term CSV: {args.baseline_party_term}")
+        all_metrics_mode = bool(args.all_metrics)
+
+        baseline_party_term = (
+            args.baseline_party_term
+            if args.baseline_party_term is not None
+            else (
+                PUB_DEFAULT_BASELINE_PARTY_TERM_ALL
+                if all_metrics_mode
+                else PUB_DEFAULT_BASELINE_PARTY_TERM_PRIMARY
+            )
+        )
+        strict_party_term_candidate = (
+            args.strict_party_term
+            if args.strict_party_term is not None
+            else (
+                PUB_DEFAULT_STRICT_PARTY_TERM_ALL
+                if all_metrics_mode
+                else PUB_DEFAULT_STRICT_PARTY_TERM_PRIMARY
+            )
+        )
+        baseline_within_candidate = (
+            args.baseline_within
+            if args.baseline_within is not None
+            else (
+                PUB_DEFAULT_BASELINE_WITHIN_ALL
+                if all_metrics_mode
+                else PUB_DEFAULT_BASELINE_WITHIN_PRIMARY
+            )
+        )
+        strict_within_candidate = (
+            args.strict_within
+            if args.strict_within is not None
+            else (
+                PUB_DEFAULT_STRICT_WITHIN_ALL
+                if all_metrics_mode
+                else PUB_DEFAULT_STRICT_WITHIN_PRIMARY
+            )
+        )
+
+        if not baseline_party_term.exists():
+            raise FileNotFoundError(f"Missing baseline term CSV: {baseline_party_term}")
         bundle_profile = str(args.profile)
 
         if bundle_profile == "baseline_only":
-            strict_party_term = args.baseline_party_term
-            base_within = args.baseline_within if args.baseline_within.exists() else None
+            strict_party_term = baseline_party_term
+            base_within = baseline_within_candidate if baseline_within_candidate.exists() else None
             strict_within = base_within
         else:
-            strict_party_term = args.strict_party_term
+            strict_party_term = strict_party_term_candidate
             if not strict_party_term.exists():
                 raise FileNotFoundError(f"Missing strict term CSV: {strict_party_term}")
-            base_within = args.baseline_within if args.baseline_within.exists() else None
-            strict_within = args.strict_within if args.strict_within.exists() else None
+            base_within = baseline_within_candidate if baseline_within_candidate.exists() else None
+            strict_within = strict_within_candidate if strict_within_candidate.exists() else None
+
+        _assert_randomization_scope_matches_mode(
+            path=baseline_party_term,
+            all_metrics_mode=all_metrics_mode,
+            label="Baseline term randomization CSV",
+        )
+        _assert_randomization_scope_matches_mode(
+            path=strict_party_term,
+            all_metrics_mode=all_metrics_mode,
+            label="Strict term randomization CSV",
+        )
+        if base_within is not None:
+            _assert_randomization_scope_matches_mode(
+                path=base_within,
+                all_metrics_mode=all_metrics_mode,
+                label="Baseline within-president randomization CSV",
+            )
+        if strict_within is not None:
+            _assert_randomization_scope_matches_mode(
+                path=strict_within,
+                all_metrics_mode=all_metrics_mode,
+                label="Strict within-president randomization CSV",
+            )
 
         if (base_within is None) != (strict_within is None):
             raise FileNotFoundError(
@@ -1269,7 +1384,7 @@ def main() -> int:
 
         write_inference_table(
             term_metrics_csv=args.term_metrics,
-            permutation_party_term_csv=args.baseline_party_term,
+            permutation_party_term_csv=baseline_party_term,
             out_csv=args.output_inference_csv,
             out_md=args.output_inference_md,
             nw_lags=max(0, int(args.nw_lags)),
@@ -1298,7 +1413,7 @@ def main() -> int:
                 out_csv=args.output_inference_stability_summary_csv,
             )
         write_claims_table(
-            baseline_party_term_csv=args.baseline_party_term,
+            baseline_party_term_csv=baseline_party_term,
             strict_party_term_csv=strict_party_term,
             baseline_within_csv=base_within,
             strict_within_csv=strict_within,
@@ -1327,7 +1442,7 @@ def main() -> int:
             primary_only=not bool(args.all_metrics),
             window_metrics_csv=args.window_metrics if args.window_metrics.exists() else None,
             window_labels_csv=args.window_labels if args.window_labels.exists() else None,
-            term_randomization_csv=args.baseline_party_term,
+            term_randomization_csv=baseline_party_term,
             within_randomization_csv=base_within,
             inference_stability_summary_csv=(
                 args.output_inference_stability_summary_csv if not bool(args.skip_inference_stability) else None
@@ -1369,7 +1484,7 @@ def main() -> int:
                     "spec": _file_meta(args.spec),
                     "party_summary": _file_meta(args.party_summary),
                     "term_metrics": _file_meta(args.term_metrics),
-                    "baseline_party_term": _file_meta(args.baseline_party_term),
+                    "baseline_party_term": _file_meta(baseline_party_term),
                     "strict_party_term_used": _file_meta(strict_party_term),
                     "baseline_within": _file_meta(base_within),
                     "strict_within_used": _file_meta(strict_within),

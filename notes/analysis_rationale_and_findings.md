@@ -300,6 +300,10 @@ Operational status:
 - This policy is now encoded in `rb randomization` outputs.
 - `rb scoreboard` now starts with a compact `Family Headline Summary (Primary Metrics)` table (one pre-declared primary metric per family).
 - In `--all-metrics` mode, families without a declared primary are explicitly listed as excluded from that headline table.
+- `rb publication-bundle` now chooses randomization input defaults by mode:
+  - primary mode (default): `*_v1.csv` primary batteries
+  - `--all-metrics` mode: `*_all_v1.csv` batteries
+- `rb publication-bundle` now hard-fails on scope mismatch (for example all-metrics randomization CSVs in primary mode, or primary-only CSVs with `--all-metrics`).
 - A narrative markdown summary is now generated automatically.
 - A comparison table is now generated via `rb randomization-compare` to track baseline-vs-stricter tier shifts metric-by-metric.
 - The main scoreboard now includes significance columns by default, sourced from randomization outputs.
