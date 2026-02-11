@@ -381,8 +381,8 @@ Current strengths:
 
 Current weaknesses / gaps:
 
-- Classical econometric inference layer is thinner than the best literature.
-  - We currently lean on permutation/bootstrap; we do not yet report a parallel HAC / few-cluster-robust table for the same estimands.
+- Few-cluster econometric inference is still thinner than the best literature.
+  - We now publish a parallel HAC/Newey-West table (`rb inference-table`), but we do not yet include a few-cluster-robust variant for the same estimands.
 - Explanatory decomposition is less developed.
   - Blinder-Watson-style decomposition of the growth gap into candidate channels (oil, productivity, global growth, etc.) is not yet implemented.
 - Small-cell/power diagnostics are not explicit enough.
@@ -394,8 +394,8 @@ Current weaknesses / gaps:
 
 ## Potential Next Steps (Methodology)
 
-1. Add a dual-inference output for each primary estimand:
-   - permutation/q + HAC/Newey-West + few-cluster-robust side-by-side in one table.
+1. Extend the dual-inference table with a few-cluster-robust variant:
+   - keep current permutation/q + HAC/Newey-West, and add a few-cluster-robust column for the same primary estimands.
 2. Pre-register a primary metric set and transform hierarchy in the spec:
    - one primary metric per family, with secondaries explicitly labeled.
 3. Add power/precision diagnostics:
@@ -411,9 +411,11 @@ Current weaknesses / gaps:
 
 ## Immediate Next Steps
 
-1. Define which metrics are headline primary claims versus secondary diagnostics before re-running final tables.
-2. Add permutation stability checks across multiple seeds and larger `permutations` to quantify Monte Carlo noise in borderline rows.
-3. Add a short publication-ready narrative template that maps directly from the claims table rows (no manual cherry-picking).
+1. Add a publication-mode claims gate to `rb claims-table`:
+   - require agreement between permutation tier and HAC/Newey-West signal before allowing confirmatory labeling in publication outputs.
+2. Add power diagnostics to the dual-inference outputs:
+   - include effective sample/cluster counts and a rough minimum-detectable-effect column for primary metrics.
+3. Add a short publication-ready narrative template that maps directly from claims-table and inference-table rows (no manual cherry-picking).
 
 ## Claims Table
 
