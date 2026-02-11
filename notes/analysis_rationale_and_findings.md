@@ -132,6 +132,7 @@ Interpretation:
 
 - The expansion adds useful macro-policy context and reduces "you omitted X" critiques.
 - It does not, by itself, resolve the core inferential uncertainty; sample-size and blocking sensitivity still dominate significance stability.
+- We added a lightweight spec-symmetry validator to `rb validate` so transform-pair regressions (for example per-year without total, or CAGR without term pct change) are caught automatically.
 
 ## Threshold Sensitivity Snapshot (Within-President U-D)
 

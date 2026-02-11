@@ -103,7 +103,7 @@ Legend:
 
 1. Decide whether SA CPI level-term percent/CAGR variants should be added as explicit alternates.
 2. Add an optional monthly-resampled inversion variant to compare against trading-day-based inversion metrics.
-3. Add a lightweight automated coverage check that fails CI if a series loses transform symmetry unintentionally.
+3. Wire `rb validate` into CI so the new symmetry checks fail pull requests when transform coverage regresses.
 
 ## Change-Control Rule
 

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Iterable
 
 from rb.congress_control import _congress_end_date, _congress_start_date
+from rb.spec import load_spec
 
 
 @dataclass(frozen=True)
@@ -251,6 +252,100 @@ def validate_party_summary_csv(path: Path) -> list[ValidationIssue]:
     return issues
 
 
+def validate_metric_spec_symmetry(spec_path: Path) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    if not spec_path.exists():
+        return [ValidationIssue("ERROR", f"missing metric spec YAML: {spec_path}")]
+
+    spec = load_spec(spec_path)
+    metrics_cfg: list[dict] = spec.get("metrics") or []
+    series_cfg: dict[str, dict] = spec.get("series") or {}
+
+    by_input: dict[tuple[str, str], list[dict]] = {}
+    for m in metrics_cfg:
+        inputs = m.get("inputs") or {}
+        if "series" in inputs:
+            k = ("series", str(inputs["series"]))
+        elif "table" in inputs:
+            k = ("table", str(inputs["table"]))
+        else:
+            continue
+        by_input.setdefault(k, []).append(m)
+
+    for (kind, key), ms in sorted(by_input.items()):
+        agg_kinds = {
+            str(((m.get("term_aggregation") or {}).get("kind") or "")).strip()
+            for m in ms
+        }
+        if "end_minus_start" in agg_kinds and "end_minus_start_per_year" not in agg_kinds:
+            issues.append(
+                ValidationIssue(
+                    "WARN",
+                    f"metrics spec symmetry: {kind}={key!r} has end_minus_start but missing end_minus_start_per_year.",
+                )
+            )
+        if "end_minus_start_per_year" in agg_kinds and "end_minus_start" not in agg_kinds:
+            issues.append(
+                ValidationIssue(
+                    "WARN",
+                    f"metrics spec symmetry: {kind}={key!r} has end_minus_start_per_year but missing end_minus_start.",
+                )
+            )
+        if "pct_change_from_levels" in agg_kinds and "cagr_from_levels" not in agg_kinds:
+            issues.append(
+                ValidationIssue(
+                    "WARN",
+                    f"metrics spec symmetry: {kind}={key!r} has pct_change_from_levels but missing cagr_from_levels.",
+                )
+            )
+        if "cagr_from_levels" in agg_kinds and "pct_change_from_levels" not in agg_kinds:
+            issues.append(
+                ValidationIssue(
+                    "WARN",
+                    f"metrics spec symmetry: {kind}={key!r} has cagr_from_levels but missing pct_change_from_levels.",
+                )
+            )
+
+    # Inflation symmetry check for seasonally-adjusted index series:
+    # if we define a YoY mean metric, also require a MoM annualized log-diff mean metric.
+    for series_key, cfg in sorted(series_cfg.items()):
+        if str((cfg or {}).get("seasonal_adjustment") or "").strip() != "SA":
+            continue
+        if str((cfg or {}).get("units") or "").strip().lower() != "index":
+            continue
+        ms = by_input.get(("series", series_key), [])
+        if not ms:
+            continue
+
+        has_yoy_mean = False
+        has_mom_ann_mean = False
+        for m in ms:
+            pt = m.get("period_transform") or {}
+            agg = m.get("term_aggregation") or {}
+            pt_kind = str(pt.get("kind") or "").strip()
+            agg_kind = str(agg.get("kind") or "").strip()
+            if pt_kind == "pct_change" and int(pt.get("lag") or 0) == 12 and agg_kind == "mean":
+                has_yoy_mean = True
+            if (
+                pt_kind == "growth_rate"
+                and str(pt.get("method") or "logdiff").strip() == "logdiff"
+                and int(pt.get("lag") or 0) == 1
+                and int(pt.get("annualize_periods_per_year") or 0) == 12
+                and agg_kind == "mean"
+            ):
+                has_mom_ann_mean = True
+
+        if has_yoy_mean and not has_mom_ann_mean:
+            issues.append(
+                ValidationIssue(
+                    "WARN",
+                    f"metrics spec symmetry: series={series_key!r} has YoY mean inflation but missing MoM annualized log-diff mean.",
+                )
+            )
+
+    return issues
+
+
 def _format_issues(issues: Iterable[ValidationIssue]) -> str:
     lines: list[str] = []
     for it in issues:
@@ -260,6 +355,7 @@ def _format_issues(issues: Iterable[ValidationIssue]) -> str:
 
 def validate_all(
     *,
+    spec_path: Path,
     presidents_csv: Path,
     congress_control_csv: Path | None,
     term_metrics_csv: Path | None,
@@ -267,6 +363,7 @@ def validate_all(
 ) -> tuple[int, str]:
     issues: list[ValidationIssue] = []
 
+    issues.extend(validate_metric_spec_symmetry(spec_path))
     issues.extend(validate_presidents_csv(presidents_csv))
 
     if congress_control_csv is not None:

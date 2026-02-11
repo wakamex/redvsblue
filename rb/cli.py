@@ -167,6 +167,7 @@ def _parse_args() -> argparse.Namespace:
     )
     validate.add_argument("--term-metrics", type=Path, default=Path("reports/term_metrics_v1.csv"), help="Term metrics CSV (optional; validated if present).")
     validate.add_argument("--party-summary", type=Path, default=Path("reports/party_summary_v1.csv"), help="Party summary CSV (optional; validated if present).")
+    validate.add_argument("--spec", type=Path, default=Path("spec/metrics_v1.yaml"), help="Metric registry spec YAML for symmetry checks.")
     validate.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
     scoreboard = sub.add_parser("scoreboard", help="Render a simple markdown scoreboard from computed CSVs.")
@@ -502,6 +503,7 @@ def main() -> int:
 
     if args.cmd == "validate":
         status, out = validate_all(
+            spec_path=args.spec,
             presidents_csv=args.presidents,
             congress_control_csv=args.congress_control if args.congress_control.exists() else None,
             term_metrics_csv=args.term_metrics if args.term_metrics.exists() else None,
