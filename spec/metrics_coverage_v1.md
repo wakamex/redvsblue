@@ -42,6 +42,9 @@ Legend:
 - `unrate_unemployment_rate`
   - `covered`: mean, end-of-term value, pp change, pp change per year.
   - `intentionally_omitted`: percent-change transform on unemployment rate (not policy-intuitive).
+- `civpart_labor_force_participation`
+  - `covered`: mean, end-of-term value, pp change, pp change per year.
+  - `intentionally_omitted`: percent-change transform on participation rate (same interpretability concern as unemployment rate).
 
 ### Wages
 
@@ -58,6 +61,10 @@ Legend:
   - `intentionally_omitted`: SA level-term metrics not primary because SA revisions can complicate historical reproducibility.
 - `pcepi_pce_price_index`
   - `covered`: YoY mean, MoM annualized log-diff mean, term percent change, term CAGR.
+- `cpilfesl_core_cpi`
+  - `covered`: YoY mean, MoM annualized log-diff mean, term percent change, term CAGR.
+- `pcepilfe_core_pce_price_index`
+  - `covered`: YoY mean, MoM annualized log-diff mean, term percent change, term CAGR.
 
 ### Finance
 
@@ -68,6 +75,16 @@ Legend:
 - `sp500_spx_backfilled_pre1957`
   - `covered`: separate historical-composite term percent change and CAGR.
   - `intentionally_omitted`: stitched modern+historical headline series.
+
+### Interest Rates / Yield Curve
+
+- `fedfunds_policy_rate`
+  - `covered`: mean, end-of-term value, pp change, pp change per year.
+- `dgs10_treasury_10y_rate`
+  - `covered`: mean, end-of-term value, pp change, pp change per year.
+- `t10y2y_yield_spread`
+  - `covered`: mean, end-of-term value, pp change, pp change per year.
+  - `intentionally_omitted`: recession-classifier transforms (e.g., inversion month share) pending a dedicated recession-proxy subsection.
 
 ### Recessions
 
@@ -85,7 +102,7 @@ Legend:
 ## Suggested v2 Additions (Priority Order)
 
 1. Decide whether SA CPI level-term percent/CAGR variants should be added as explicit alternates.
-2. Consider a strict "primary metric per family" registry field in spec to lock publication defaults.
+2. Add a dedicated recession-risk block from curve inversions (for example inversion share and inversion starts).
 3. Add a lightweight automated coverage check that fails CI if a series loses transform symmetry unintentionally.
 
 ## Change-Control Rule
