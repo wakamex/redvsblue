@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 from rb.env import load_dotenv
@@ -24,6 +27,38 @@ from rb.validate import validate_all
 
 PRESIDENT_SOURCES = ("congress_legislators", "wikidata")
 PRESIDENT_GRANULARITY = ("tenure", "term")
+
+
+def _sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as handle:
+        while True:
+            chunk = handle.read(1024 * 1024)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _file_meta(path: Path | None) -> dict[str, object]:
+    if path is None:
+        return {"path": "", "exists": False}
+    if not path.exists():
+        return {"path": str(path), "exists": False}
+    st = path.stat()
+    return {
+        "path": str(path),
+        "exists": True,
+        "size_bytes": int(st.st_size),
+        "sha256": _sha256_file(path),
+    }
+
+
+def _write_json_atomic(path: Path, obj: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(obj, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    tmp.replace(path)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -626,6 +661,17 @@ def _parse_args() -> argparse.Namespace:
         default=Path("reports/scoreboard.md"),
         help="Output markdown path for scoreboard.",
     )
+    pub.add_argument(
+        "--output-manifest",
+        type=Path,
+        default=Path("reports/publication_bundle_manifest_v1.json"),
+        help="Output JSON manifest path for publication-bundle audit metadata.",
+    )
+    pub.add_argument(
+        "--no-manifest",
+        action="store_true",
+        help="Skip writing publication-bundle manifest JSON.",
+    )
     pub.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
     inversion = sub.add_parser("inversion-robustness", help="Build daily-vs-monthly T10Y2Y inversion definition comparison report.")
@@ -944,6 +990,38 @@ def main() -> int:
             show_robustness_links=True,
             show_publication_tiers=True,
         )
+
+        if not bool(args.no_manifest):
+            manifest = {
+                "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ"),
+                "command": "rb publication-bundle",
+                "profile": bundle_profile,
+                "parameters": {
+                    "all_metrics": bool(args.all_metrics),
+                    "within_president_min_window_days": max(0, int(args.within_president_min_window_days)),
+                    "nw_lags": max(0, int(args.nw_lags)),
+                    "publication_hac_p_threshold": float(args.publication_hac_p_threshold),
+                },
+                "inputs": {
+                    "spec": _file_meta(args.spec),
+                    "party_summary": _file_meta(args.party_summary),
+                    "term_metrics": _file_meta(args.term_metrics),
+                    "baseline_party_term": _file_meta(args.baseline_party_term),
+                    "strict_party_term_used": _file_meta(strict_party_term),
+                    "baseline_within": _file_meta(base_within),
+                    "strict_within_used": _file_meta(strict_within),
+                    "window_metrics": _file_meta(args.window_metrics if args.window_metrics.exists() else None),
+                    "window_labels": _file_meta(args.window_labels if args.window_labels.exists() else None),
+                },
+                "outputs": {
+                    "inference_csv": _file_meta(args.output_inference_csv),
+                    "inference_md": _file_meta(args.output_inference_md),
+                    "claims_csv": _file_meta(args.output_claims),
+                    "narrative_md": _file_meta(args.output_narrative),
+                    "scoreboard_md": _file_meta(args.output_scoreboard),
+                },
+            }
+            _write_json_atomic(args.output_manifest, manifest)
         return 0
 
     if args.cmd == "inversion-robustness":
