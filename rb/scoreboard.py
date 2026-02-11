@@ -950,7 +950,7 @@ def write_scoreboard_md(
             "n(with unified)",
             "n(with divided)",
             "Rough MDE",
-            "|Effect|/MDE",
+            "\\|Effect\\|/MDE",
             "q",
             "p",
             "CI95(U-D)",
