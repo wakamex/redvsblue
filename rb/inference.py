@@ -625,15 +625,25 @@ def write_wild_cluster_stability_table(
     term_metrics_csv: Path,
     out_csv: Path,
     seeds: list[int],
-    draws: int,
+    draws: int | list[int],
 ) -> None:
     groups = _load_term_groups(term_metrics_csv)
+    if isinstance(draws, int):
+        draws_grid = [max(0, int(draws))]
+    else:
+        draws_grid = sorted({max(0, int(x)) for x in draws})
+    if not draws_grid:
+        draws_grid = [0]
+
+    draws_txt = ",".join(str(x) for x in draws_grid)
     header = [
         "metric_id",
         "metric_label",
         "metric_family",
         "n_obs",
         "n_clusters_president",
+        "draws_grid",
+        "n_draws_grid",
         "wild_cluster_draws",
         "seeds",
         "n_seeds",
@@ -650,7 +660,6 @@ def write_wild_cluster_stability_table(
 
     seeds_clean = [int(s) for s in seeds]
     seeds_txt = ",".join(str(s) for s in seeds_clean)
-    draws_n = max(0, int(draws))
 
     for metric_id in sorted(groups.keys()):
         g = groups[metric_id]
@@ -666,47 +675,50 @@ def write_wild_cluster_stability_table(
         clusters = [o.cluster_id for o in obs]
         cluster_n = len(set(clusters))
 
-        ps: list[float] = []
-        for s in seeds_clean:
-            p = _wild_cluster_bootstrap_p(
-                y=y,
-                d=d,
-                clusters=clusters,
-                draws=draws_n,
-                seed=int(s),
+        for draws_n in draws_grid:
+            ps: list[float] = []
+            for s in seeds_clean:
+                p = _wild_cluster_bootstrap_p(
+                    y=y,
+                    d=d,
+                    clusters=clusters,
+                    draws=draws_n,
+                    seed=int(s),
+                )
+                if p is not None:
+                    ps.append(p)
+
+            p_min = min(ps) if ps else None
+            p_max = max(ps) if ps else None
+            p_med = _median(ps)
+            p_spread = (p_max - p_min) if (p_min is not None and p_max is not None) else None
+            p005_any = bool(ps) and any(p < 0.05 for p in ps)
+            p005_all = bool(ps) and all(p < 0.05 for p in ps)
+            p010_any = bool(ps) and any(p < 0.10 for p in ps)
+            p010_all = bool(ps) and all(p < 0.10 for p in ps)
+
+            rows.append(
+                {
+                    "metric_id": metric_id,
+                    "metric_label": g["metric_label"],
+                    "metric_family": g["metric_family"],
+                    "n_obs": str(len(obs)),
+                    "n_clusters_president": str(cluster_n),
+                    "draws_grid": draws_txt,
+                    "n_draws_grid": str(len(draws_grid)),
+                    "wild_cluster_draws": str(draws_n),
+                    "seeds": seeds_txt,
+                    "n_seeds": str(len(seeds_clean)),
+                    "wild_p_min": _fmt(p_min),
+                    "wild_p_median": _fmt(p_med),
+                    "wild_p_max": _fmt(p_max),
+                    "wild_p_spread": _fmt(p_spread),
+                    "p_lt_005_any": _bool_to_flag(p005_any if ps else None),
+                    "p_lt_005_all": _bool_to_flag(p005_all if ps else None),
+                    "p_lt_010_any": _bool_to_flag(p010_any if ps else None),
+                    "p_lt_010_all": _bool_to_flag(p010_all if ps else None),
+                }
             )
-            if p is not None:
-                ps.append(p)
-
-        p_min = min(ps) if ps else None
-        p_max = max(ps) if ps else None
-        p_med = _median(ps)
-        p_spread = (p_max - p_min) if (p_min is not None and p_max is not None) else None
-        p005_any = bool(ps) and any(p < 0.05 for p in ps)
-        p005_all = bool(ps) and all(p < 0.05 for p in ps)
-        p010_any = bool(ps) and any(p < 0.10 for p in ps)
-        p010_all = bool(ps) and all(p < 0.10 for p in ps)
-
-        rows.append(
-            {
-                "metric_id": metric_id,
-                "metric_label": g["metric_label"],
-                "metric_family": g["metric_family"],
-                "n_obs": str(len(obs)),
-                "n_clusters_president": str(cluster_n),
-                "wild_cluster_draws": str(draws_n),
-                "seeds": seeds_txt,
-                "n_seeds": str(len(seeds_clean)),
-                "wild_p_min": _fmt(p_min),
-                "wild_p_median": _fmt(p_med),
-                "wild_p_max": _fmt(p_max),
-                "wild_p_spread": _fmt(p_spread),
-                "p_lt_005_any": _bool_to_flag(p005_any if ps else None),
-                "p_lt_005_all": _bool_to_flag(p005_all if ps else None),
-                "p_lt_010_any": _bool_to_flag(p010_any if ps else None),
-                "p_lt_010_all": _bool_to_flag(p010_all if ps else None),
-            }
-        )
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     tmp = out_csv.with_suffix(out_csv.suffix + ".tmp")

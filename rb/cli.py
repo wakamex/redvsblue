@@ -596,6 +596,12 @@ def _parse_args() -> argparse.Namespace:
         default=1999,
         help="Rademacher wild-cluster bootstrap draws per seed (0 disables).",
     )
+    inference_stability.add_argument(
+        "--draws-grid",
+        type=str,
+        default="",
+        help="Optional comma-separated draw counts (e.g., 499,999,1999). When set, runs all values and outputs one row per metric per draw count.",
+    )
     inference_stability.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
     compare_rand = sub.add_parser("randomization-compare", help="Compare evidence tiers between two randomization runs.")
@@ -1045,11 +1051,20 @@ def main() -> int:
                 raise ValueError(f"Invalid seed {s!r} in --seeds={args.seeds!r}") from exc
         if not seeds:
             raise ValueError("No valid seeds parsed from --seeds")
+        draws_spec = [s.strip() for s in str(args.draws_grid).split(",")] if str(args.draws_grid).strip() else []
+        draws_grid: list[int] = []
+        for d in draws_spec:
+            if not d:
+                continue
+            try:
+                draws_grid.append(int(d))
+            except ValueError as exc:
+                raise ValueError(f"Invalid draw count {d!r} in --draws-grid={args.draws_grid!r}") from exc
         write_wild_cluster_stability_table(
             term_metrics_csv=args.term_metrics,
             out_csv=args.output,
             seeds=seeds,
-            draws=max(0, int(args.wild_cluster_draws)),
+            draws=draws_grid if draws_grid else max(0, int(args.wild_cluster_draws)),
         )
         return 0
 
