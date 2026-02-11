@@ -405,7 +405,11 @@ def compute_term_metrics(
             if not symbol:
                 raise ValueError(f"Stooq series missing symbol: {sk}")
             sym = str(symbol).replace("^", "")
-            path = Path("data/derived/stooq") / f"{sym}.csv"
+            # Prefer per-series derived file so we can reuse one symbol with different filters.
+            path = Path("data/derived/stooq") / f"{sk}.csv"
+            if not path.exists():
+                # Back-compat fallback to the historical symbol-based filename.
+                path = Path("data/derived/stooq") / f"{sym}.csv"
             series_data[sk] = _load_csv_timeseries(path, date_col="date", value_col="value")
         else:
             raise ValueError(f"Unsupported series source for compute: {sk} source={src!r}")
@@ -806,4 +810,3 @@ def compute_term_metrics(
         "Note: Reports are derived artifacts and are gitignored by default.",
     ]
     write_text_atomic(output_terms_csv.with_suffix(".summary.txt"), "\n".join(summary_lines) + "\n")
-

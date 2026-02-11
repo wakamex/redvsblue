@@ -170,6 +170,18 @@ series:
       start_date: "1957-01-02"
     notes:
       - "Stooq's ^spx download includes earlier monthly values; we drop observations before 1957-01-02 (S&P 500 inception)."
+  sp500_spx_backfilled_pre1957:
+    source: stooq
+    symbol: "^spx"
+    frequency: D
+    units: "index"
+    column: Close
+    description: "SPX backfilled historical level from Stooq (pre-1957 segment only; not the modern 500-stock index definition)."
+    filters:
+      end_date: "1956-12-31"
+    notes:
+      - "Used only as a separate historical-composite view for pre-1957 windows."
+      - "Do not stitch with the modern post-1957 S&P 500 in one continuous headline series."
   djia_dow_jones:
     source: stooq
     symbol: "^dji"
@@ -565,6 +577,37 @@ metrics:
       units: "percent"
       notes:
         - "Uses start/end levels and actual elapsed time to annualize."
+
+  - id: sp500_backfilled_pre1957_term_pct_change
+    family: stock_levels_historical
+    primary: false
+    label: "SPX backfilled historical percent change (pre-1957 windows only)"
+    inputs:
+      series: sp500_spx_backfilled_pre1957
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+      notes:
+        - "Separate historical-composite view; not directly comparable to modern S&P 500 headline metrics."
+
+  - id: sp500_backfilled_pre1957_term_cagr_pct
+    family: stock_levels_historical
+    primary: false
+    label: "SPX backfilled historical CAGR (pre-1957 windows only)"
+    inputs:
+      series: sp500_spx_backfilled_pre1957
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+      notes:
+        - "Separate historical-composite view; not directly comparable to modern S&P 500 headline metrics."
 
   - id: djia_term_pct_change
     family: stock_levels

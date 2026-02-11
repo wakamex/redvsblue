@@ -81,6 +81,10 @@ Price index levels (Dow and S&P):
   - S&P 500 (`^spx` from Stooq)
   - Dow Jones Industrial Average (`^dji` from Stooq)
 - These are **price-only** indices (exclude dividends), so they are not directly comparable to total return measures. We treat them as alternates for public-facing level claims, not the primary return metric.
+- For S&P levels, we keep **two separate definitions**:
+  - `sp500_sp500_index` (modern S&P 500 window, 1957+), used for headline S&P level metrics.
+  - `sp500_spx_backfilled_pre1957` (pre-1957 backfilled segment from the same provider), exposed only as a separate historical-composite alternate.
+- We intentionally do **not** stitch pre-1957 backfilled SPX data into the modern 1957+ S&P 500 headline series, to avoid implying one homogeneous index definition across the full history.
 - Boundary alignment for daily series (inaugurations on weekends/holidays, etc.) is handled by the attribution spec (`spec/attribution_v1.yaml`). v1 default is to use the **close of the last trading day strictly before** the inauguration boundary, to avoid time-of-day ambiguity on inauguration day.
 - Stooq is a third-party data source; we should treat it as a convenience feed for “popular claim” metrics (S&P/Dow levels), record retrieval metadata/hashes, and avoid redistributing raw data unless licensing is confirmed.
 
@@ -92,6 +96,7 @@ Risk context for returns:
 Level-style term metrics included:
 - Term total percent change (end vs start): `sp500_term_pct_change`, `djia_term_pct_change`
 - Term percent change per year (CAGR, annualized from start/end using elapsed time): `sp500_term_cagr_pct`, `djia_term_cagr_pct`
+- Historical composite alternates (pre-1957 only): `sp500_backfilled_pre1957_term_pct_change`, `sp500_backfilled_pre1957_term_cagr_pct`
 
 MoM/QoQ/YoY:
 - MoM is the monthly return itself.

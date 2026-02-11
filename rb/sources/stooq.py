@@ -31,7 +31,8 @@ def ingest_stooq_series(*, series_key: str, series_cfg: dict, stooq_cfg: dict, r
 
     derived_dir = Path("data/derived/stooq")
     derived_dir.mkdir(parents=True, exist_ok=True)
-    derived_path = derived_dir / f"{symbol.replace('^','')}.csv"
+    # Use series_key so multiple spec series can reuse one symbol with different filters.
+    derived_path = derived_dir / f"{series_key}.csv"
 
     if not refresh:
         have = cache.latest(raw_dir, suffix="csv")
@@ -46,9 +47,12 @@ def ingest_stooq_series(*, series_key: str, series_cfg: dict, stooq_cfg: dict, r
     out_rows: list[str] = ["date,value"]
 
     start_date: date | None = None
+    end_date: date | None = None
     filters = series_cfg.get("filters") or {}
     if isinstance(filters, dict) and filters.get("start_date"):
         start_date = _parse_date(str(filters["start_date"]))
+    if isinstance(filters, dict) and filters.get("end_date"):
+        end_date = _parse_date(str(filters["end_date"]))
 
     col = series_cfg.get("column", "Close")
     for row in rdr:
@@ -59,6 +63,8 @@ def ingest_stooq_series(*, series_key: str, series_cfg: dict, stooq_cfg: dict, r
             continue
         d = _parse_date(ds)
         if start_date and d < start_date:
+            continue
+        if end_date and d > end_date:
             continue
         vs = (row.get(col) or "").strip()
         if not vs:
