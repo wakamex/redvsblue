@@ -221,6 +221,17 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Hide the optional robustness-artifact links section from the markdown output.",
     )
+    scoreboard.add_argument(
+        "--claims-table",
+        type=Path,
+        default=Path("reports/claims_table_v1.csv"),
+        help="Claims table CSV (optional; adds strict/publication tier columns if present).",
+    )
+    scoreboard.add_argument(
+        "--no-publication-tier-columns",
+        action="store_true",
+        help="Hide strict/publication tier columns in the party summary table.",
+    )
     scoreboard.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
     randomization = sub.add_parser("randomization", help="Run permutation/randomization robustness checks.")
@@ -649,9 +660,11 @@ def main() -> int:
             primary_only=not bool(args.all_metrics),
             window_metrics_csv=args.window_metrics if args.window_metrics.exists() else None,
             window_labels_csv=args.window_labels if args.window_labels.exists() else None,
+            claims_table_csv=args.claims_table if args.claims_table.exists() else None,
             output_within_president_deltas_csv=args.output_within_president_deltas,
             within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
             show_robustness_links=not bool(args.no_robustness_links),
+            show_publication_tiers=not bool(args.no_publication_tier_columns),
         )
         return 0
 
