@@ -6,6 +6,7 @@ from pathlib import Path
 from rb.env import load_dotenv
 from rb.congress_control import ensure_congress_control
 from rb.ingest import ingest_from_spec
+from rb.inference import write_inference_table
 from rb.metrics import compute_term_metrics
 from rb.presidents import ensure_presidents
 from rb.randomization import compare_randomization_outputs, run_randomization, run_randomization_seed_stability, write_claims_table
@@ -337,6 +338,34 @@ def _parse_args() -> argparse.Namespace:
     )
     stability.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
+    inference = sub.add_parser("inference-table", help="Build primary-metric side-by-side inference table (Permutation + HAC/Newey-West).")
+    inference.add_argument("--term-metrics", type=Path, default=Path("reports/term_metrics_v1.csv"), help="Term metrics CSV.")
+    inference.add_argument(
+        "--permutation-party-term",
+        type=Path,
+        default=Path("reports/permutation_party_term_v1.csv"),
+        help="Term-party permutation CSV (provides permutation p/q/tier columns).",
+    )
+    inference.add_argument(
+        "--output-csv",
+        type=Path,
+        default=Path("reports/inference_table_primary_v1.csv"),
+        help="Output CSV path.",
+    )
+    inference.add_argument(
+        "--output-md",
+        type=Path,
+        default=Path("reports/inference_table_primary_v1.md"),
+        help="Output markdown summary path.",
+    )
+    inference.add_argument(
+        "--nw-lags",
+        type=int,
+        default=1,
+        help="Newey-West lag length for HAC standard errors.",
+    )
+    inference.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
     compare_rand = sub.add_parser("randomization-compare", help="Compare evidence tiers between two randomization runs.")
     compare_rand.add_argument(
         "--base-party-term",
@@ -541,6 +570,17 @@ def main() -> int:
             min_term_n_obs=max(0, int(args.min_term_n_obs)),
             primary_only=not bool(args.all_metrics),
             include_diagnostic_metrics=bool(args.include_diagnostic_metrics),
+        )
+        return 0
+
+    if args.cmd == "inference-table":
+        perm_path = args.permutation_party_term if args.permutation_party_term.exists() else None
+        write_inference_table(
+            term_metrics_csv=args.term_metrics,
+            permutation_party_term_csv=perm_path,
+            out_csv=args.output_csv,
+            out_md=args.output_md,
+            nw_lags=max(0, int(args.nw_lags)),
         )
         return 0
 
