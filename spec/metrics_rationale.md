@@ -2,6 +2,8 @@
 
 This document explains the key measurement choices in `spec/metrics_v1.yaml`. The goal is to make disagreements about "Dem vs Rep performance" explicit and auditable: if you disagree, you can point to a specific metric id or spec field, propose an alternative, and we can add it as an alternate definition rather than silently changing results.
 
+Per-series transform inclusion/exclusion decisions are tracked in `spec/metrics_coverage_v1.md` so judgment calls are explicit instead of implicit.
+
 ## General Conventions
 
 - Prefer pulling **level series** (indexes/levels) from upstream and computing transforms locally. This keeps formulas explicit and avoids ambiguous upstream "units" transformations.
@@ -36,11 +38,14 @@ We include multiple inflation definitions because people argue about them:
 - `cpi_inflation_mom_ann_logdiff_mean` (alternate): MoM annualized log-diff inflation, averaged over the window.
   - Pros: faster-moving signal; matches common "annualized monthly inflation" discussions.
   - Note: for MoM measures, we prefer SA CPI because NSA MoM is dominated by seasonal patterns.
-- `pce_inflation_yoy_mean` (alternate): PCE-based inflation.
+- `pce_inflation_yoy_mean` (alternate): PCE-based YoY inflation.
+- `pce_inflation_mom_ann_logdiff_mean` (alternate): PCE MoM annualized log-diff inflation.
 
 We also include cumulative price-level change metrics:
 - `cpi_price_level_term_pct_change_nsa`: total percent change in the CPI index over the term window (end vs start).
 - `cpi_price_level_term_cagr_pct_nsa`: annualized percent change (CAGR) from start/end levels.
+- `pce_price_level_term_pct_change`: total percent change in PCEPI over the term window.
+- `pce_price_level_term_cagr_pct`: annualized percent change (CAGR) from PCEPI start/end levels.
 These are often more intuitive for “prices went up X% during this term” claims than an average YoY rate.
 
 Seasonal adjustment:
@@ -54,7 +59,9 @@ Seasonal adjustment:
 
 We include alternates:
 - real GDP per capita growth
+- term total percent change from start/end levels
 - term CAGR computed from start/end levels (useful for start/end comparisons, but more sensitive to window rules)
+- per-capita term total percent change and per-capita term CAGR for symmetry with aggregate GDP
 
 ## Stock Market: Returns vs Levels (MoM/QoQ/YoY)
 
@@ -74,6 +81,7 @@ Metrics included:
 - `ff_mkt_excess_return_ann_compound` (primary): annualized compound excess return (Mkt-RF).
 - `ff_mkt_total_return_ann_compound` (alternate): annualized compound total return (Mkt-RF + RF).
 - `ff_mkt_total_return_term_total` (alternate): compounded total return over the term window (end/start in percent terms).
+- `ff_mkt_excess_return_term_total` (alternate): compounded excess return over the term window.
 
 Price index levels (Dow and S&P):
 - For popular/press-style “the market went up/down under X” claims, we also include **price index levels** from Stooq:
@@ -118,15 +126,28 @@ Rationale:
 Anti-cherry-picking policy:
 - If we include a per-year version for a metric family, we also include the total-change version (and vice versa).
 - Reports should display both side-by-side for the same underlying series to prevent “we picked the normalization that looks best” critiques.
+- We now also include percent-change and CAGR variants for payroll and household employment so level and rate-style narratives can be cross-checked.
 
 We include both payroll (CES) and household (CPS) employment series to reflect the measurement split in labor statistics.
+
+For unemployment (`UNRATE`), we use level-preserving transforms:
+- term mean,
+- end-of-term level,
+- percentage-point change, and
+- percentage-point change per year.
+This keeps interpretation in labor-market units and avoids percent-change-on-rate ambiguity.
 
 ## Wages / Real Earnings
 
 If the goal is “how did typical workers do,” GDP and stocks are incomplete: they can rise while typical wages stagnate.
 
-Choice (v1): include one real-earnings series with term percent change + CAGR:
+Choice (v1): include one real-earnings series with both level and change views:
 - `LES1252881600Q` (CPS; real median weekly earnings for full-time workers; CPI-adjusted).
+
+Metrics include:
+- mean and end-of-term levels (context metrics),
+- term percent change,
+- term CAGR.
 
 Notes:
 - This series is quarterly and can be noisy; it’s still valuable as a reality check against purely macro/market metrics.
@@ -138,6 +159,7 @@ Choice (v1): start with percent-of-GDP series when available (`GFDEGDQ188S`, `FY
 
 Notes:
 - Fiscal series are often annual or fiscal-year based; mapping to presidential windows requires extra care (and must be documented in the attribution manifest).
+- For symmetry, we now include mean/end/change/change-per-year transforms for both debt and surplus/deficit percent-of-GDP series.
 
 ## What We Still Need To Decide (Likely v2)
 
