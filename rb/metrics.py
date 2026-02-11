@@ -407,7 +407,12 @@ def compute_term_metrics(
             series_id = cfg.get("series_id")
             if not series_id:
                 raise ValueError(f"FRED series missing series_id: {sk}")
-            path = Path("data/derived/fred/observations") / f"{series_id}.csv"
+            path = Path("data/derived/fred/observations") / f"{sk}.csv"
+            if not path.exists():
+                if isinstance(cfg.get("api_params"), dict) and cfg.get("api_params"):
+                    raise FileNotFoundError(f"Missing derived data: {path}. Run `rb ingest` for series {sk!r}.")
+                # Back-compat fallback to prior series-id keyed filenames.
+                path = Path("data/derived/fred/observations") / f"{series_id}.csv"
             series_data[sk] = _load_csv_timeseries(path, date_col="date", value_col="value")
         elif src == "stooq":
             symbol = cfg.get("symbol")

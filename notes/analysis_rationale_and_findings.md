@@ -115,6 +115,7 @@ To reduce omission risk and make transform coverage more symmetric, we expanded 
   - plus explicit inversion diagnostics from `T10Y2Y < 0`:
     - inversion share of trading days
     - inversion start count
+    - monthly-EOP inversion share/start variants (FRED resample) for horizon robustness
 
 Transform policy applied:
 
@@ -133,6 +134,22 @@ Interpretation:
 - The expansion adds useful macro-policy context and reduces "you omitted X" critiques.
 - It does not, by itself, resolve the core inferential uncertainty; sample-size and blocking sensitivity still dominate significance stability.
 - We added a lightweight spec-symmetry validator to `rb validate` so transform-pair regressions (for example per-year without total, or CAGR without term pct change) are caught automatically.
+
+Daily vs monthly inversion robustness snapshot (latest run):
+
+- `yield_curve_t10y2y_inversion_share`:
+  - `n_obs=10`, diff(D-R)=`21.82` pp, `q=0.338`, exploratory
+- `yield_curve_t10y2y_inversion_share_monthly_eop`:
+  - `n_obs=10`, diff(D-R)=`22.83` pp, `q=0.336`, exploratory
+- `yield_curve_t10y2y_inversion_start_count`:
+  - `n_obs=37`, diff(D-R)=`-0.75`, `q=0.878`, exploratory
+- `yield_curve_t10y2y_inversion_start_count_monthly_eop`:
+  - `n_obs=37`, diff(D-R)=`-0.11`, `q=1.000`, exploratory
+
+Read:
+
+- Inversion-share signal is directionally stable under daily vs monthly-EOP definitions, but remains non-confirmatory.
+- Inversion-start counts are weak under both definitions; monthly resampling further attenuates differences.
 
 ## Threshold Sensitivity Snapshot (Within-President U-D)
 

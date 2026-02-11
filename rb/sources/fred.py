@@ -32,14 +32,24 @@ def ingest_fred_series(*, series_key: str, series_cfg: dict, fred_cfg: dict, ref
 
     api_key = _fred_api_key(fred_cfg)
 
-    raw_obs_dir = cache.artifact_dir("fred", "observations", series_id)
-    raw_meta_dir = cache.artifact_dir("fred", "series", series_id)
+    raw_obs_dir = cache.artifact_dir("fred", "observations", series_key)
+    raw_meta_dir = cache.artifact_dir("fred", "series", series_key)
     derived_obs_path = Path("data/derived/fred/observations")
     derived_obs_path.mkdir(parents=True, exist_ok=True)
-    derived_obs_path = derived_obs_path / f"{series_id}.csv"
+    derived_obs_path = derived_obs_path / f"{series_key}.csv"
     derived_series_path = Path("data/derived/fred/series")
     derived_series_path.mkdir(parents=True, exist_ok=True)
-    derived_series_path = derived_series_path / f"{series_id}.json"
+    derived_series_path = derived_series_path / f"{series_key}.json"
+
+    api_params_raw = series_cfg.get("api_params") or {}
+    if not isinstance(api_params_raw, dict):
+        raise ValueError(f"FRED series api_params must be a mapping: {series_key}")
+    api_params: dict[str, str] = {}
+    for k, v in api_params_raw.items():
+        ks = str(k).strip()
+        if not ks:
+            continue
+        api_params[ks] = str(v).strip()
 
     if not refresh:
         have_obs = cache.latest(raw_obs_dir, suffix="json" if api_key else "csv")
@@ -49,10 +59,16 @@ def ingest_fred_series(*, series_key: str, series_cfg: dict, fred_cfg: dict, ref
 
     if api_key:
         # Observations
+        obs_params = {
+            "series_id": series_id,
+            "api_key": api_key,
+            "file_type": fred_cfg.get("api_default_file_type", "json"),
+        }
+        obs_params.update(api_params)
         obs_url = _fred_api_url(
             fred_cfg,
             "series/observations",
-            {"series_id": series_id, "api_key": api_key, "file_type": fred_cfg.get("api_default_file_type", "json")},
+            obs_params,
         )
         status, headers, body = http_get(obs_url)
         cache.write(
@@ -89,6 +105,8 @@ def ingest_fred_series(*, series_key: str, series_cfg: dict, fred_cfg: dict, ref
         )
         write_text_atomic(derived_series_path, body.decode("utf-8") + ("\n" if not body.endswith(b"\n") else ""))
     else:
+        if api_params:
+            raise ValueError(f"FRED series {series_key} requires API params but no API key is configured.")
         # Fallback: graph CSV (no API key) for observations only.
         tmpl = fred_cfg.get("graph_csv_url_template") or fred_cfg.get("url_template")
         if not tmpl:
