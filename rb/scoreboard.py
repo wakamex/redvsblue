@@ -600,15 +600,24 @@ def write_scoreboard_md(
     if term_rand_path is not None:
         lines.append("")
         lines.append(f"Significance columns sourced from `{term_rand_path}`.")
-        cpi_robust_path = Path("reports/cpi_sa_nsa_robustness_v1.md")
-        if cpi_robust_path.exists():
-            lines.append(f"CPI SA-vs-NSA sensitivity details: `{cpi_robust_path}`.")
-        inversion_robust_path = Path("reports/inversion_definition_robustness_v1.md")
-        if inversion_robust_path.exists():
-            lines.append(f"Yield-curve inversion-definition sensitivity details: `{inversion_robust_path}`.")
     else:
         lines.append("")
         lines.append("Significance columns are blank until `rb randomization` has been run.")
+
+    robustness_links: list[tuple[str, Path]] = []
+    cpi_robust_path = Path("reports/cpi_sa_nsa_robustness_v1.md")
+    if cpi_robust_path.exists():
+        robustness_links.append(("CPI SA-vs-NSA sensitivity", cpi_robust_path))
+    inversion_robust_path = Path("reports/inversion_definition_robustness_v1.md")
+    if inversion_robust_path.exists():
+        robustness_links.append(("Yield-curve inversion-definition sensitivity", inversion_robust_path))
+
+    if robustness_links:
+        lines.append("")
+        lines.append("## Robustness Artifacts")
+        lines.append("")
+        for label, path in robustness_links:
+            lines.append(f"- {label}: `{path}`")
 
     within_pres_deltas: dict[tuple[str, str], dict[str, Any]] = {}
 
@@ -706,12 +715,6 @@ def write_scoreboard_md(
         lines.append("Caution: small `n(pres with both)` means unstable estimates; interpret as a diagnostic, not a causal estimate.")
         if within_rand_path is not None:
             lines.append(f"Significance columns in this section are sourced from `{within_rand_path}`.")
-            cpi_robust_path = Path("reports/cpi_sa_nsa_robustness_v1.md")
-            if cpi_robust_path.exists():
-                lines.append(f"CPI SA-vs-NSA sensitivity details: `{cpi_robust_path}`.")
-            inversion_robust_path = Path("reports/inversion_definition_robustness_v1.md")
-            if inversion_robust_path.exists():
-                lines.append(f"Yield-curve inversion-definition sensitivity details: `{inversion_robust_path}`.")
 
         lines.append("")
         lines.append("## President Alignment With Congress (House vs Senate)")
