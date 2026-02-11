@@ -131,6 +131,8 @@ Current outputs:
 - `reports/permutation_unified_within_term_v1.csv` (primary metrics)
 - `reports/permutation_party_term_all_v1.csv` (all metrics)
 - `reports/permutation_unified_within_term_all_v1.csv` (all metrics)
+- `reports/permutation_evidence_summary_v1.csv` (compact evidence-tier summary by analysis and metric family)
+- `reports/permutation_evidence_summary_v1.md` (human-readable confirmatory/supportive summary)
 
 What it does:
 
@@ -202,6 +204,8 @@ Implication for current read:
 Operational status:
 
 - This policy is now encoded in `rb randomization` outputs.
+- A compact family-level summary table is now generated automatically.
+- A narrative markdown summary is now generated automatically.
 - Current all-metrics tier counts:
   - Term-level party differences: `confirmatory=7`, `supportive=4`, `exploratory=26`.
   - Within-president unified/divided: `confirmatory=0`, `supportive=3`, `exploratory=71`.
@@ -210,7 +214,7 @@ Operational status:
 
 1. Decide and document the default published threshold for `within-president-min-window-days` (after sensitivity review).
 2. Decide/report default randomization settings for publication tables (`permutations`, `bootstrap_samples`, `term_block_years`, `q_threshold`, min-`n` rules).
-3. Add a compact generated summary table grouped by metric family and evidence tier.
+3. Add a narrative export (short markdown) that highlights only confirmatory/supportive rows and key caveats.
 
 ## Reproduce Current Outputs
 
