@@ -529,6 +529,96 @@ def _parse_args() -> argparse.Namespace:
     )
     narrative.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
+    pub = sub.add_parser("publication-bundle", help="Generate publication-facing claims/inference/narrative/scoreboard artifacts in one run.")
+    pub.add_argument("--spec", type=Path, default=Path("spec/metrics_v1.yaml"), help="Metric registry spec YAML.")
+    pub.add_argument("--party-summary", type=Path, default=Path("reports/party_summary_v1.csv"), help="Party summary CSV.")
+    pub.add_argument("--term-metrics", type=Path, default=Path("reports/term_metrics_v1.csv"), help="Term metrics CSV.")
+    pub.add_argument(
+        "--baseline-party-term",
+        type=Path,
+        default=Path("reports/permutation_party_term_all_v1.csv"),
+        help="Baseline term-level randomization CSV.",
+    )
+    pub.add_argument(
+        "--strict-party-term",
+        type=Path,
+        default=Path("reports/permutation_party_term_block20_all_v1.csv"),
+        help="Strict-profile term-level randomization CSV.",
+    )
+    pub.add_argument(
+        "--baseline-within",
+        type=Path,
+        default=Path("reports/permutation_unified_within_term_all_v1.csv"),
+        help="Baseline within-president randomization CSV (optional).",
+    )
+    pub.add_argument(
+        "--strict-within",
+        type=Path,
+        default=Path("reports/permutation_unified_within_term_min90_all_v1.csv"),
+        help="Strict-profile within-president randomization CSV (optional).",
+    )
+    pub.add_argument(
+        "--window-metrics",
+        type=Path,
+        default=Path("reports/regime_window_metrics_v1.csv"),
+        help="Regime-window metrics CSV for scoreboard sections (optional).",
+    )
+    pub.add_argument(
+        "--window-labels",
+        type=Path,
+        default=Path("data/derived/regimes/regime_windows_labels.csv"),
+        help="Regime-window labels CSV for scoreboard sections (optional).",
+    )
+    pub.add_argument(
+        "--all-metrics",
+        action="store_true",
+        help="Render scoreboard with all metrics (default is primary-only).",
+    )
+    pub.add_argument(
+        "--within-president-min-window-days",
+        type=int,
+        default=0,
+        help="Minimum window_days filter used in scoreboard within-president diagnostics.",
+    )
+    pub.add_argument("--nw-lags", type=int, default=1, help="Newey-West lag length for inference table.")
+    pub.add_argument(
+        "--publication-hac-p-threshold",
+        type=float,
+        default=0.05,
+        help="HAC p-value threshold used by claims publication gating.",
+    )
+    pub.add_argument(
+        "--output-inference-csv",
+        type=Path,
+        default=Path("reports/inference_table_primary_v1.csv"),
+        help="Output CSV for dual-inference primary table.",
+    )
+    pub.add_argument(
+        "--output-inference-md",
+        type=Path,
+        default=Path("reports/inference_table_primary_v1.md"),
+        help="Output markdown for dual-inference primary table.",
+    )
+    pub.add_argument(
+        "--output-claims",
+        type=Path,
+        default=Path("reports/claims_table_v1.csv"),
+        help="Output CSV for publication-gated claims table.",
+    )
+    pub.add_argument(
+        "--output-narrative",
+        type=Path,
+        default=Path("reports/publication_narrative_template_v1.md"),
+        help="Output markdown path for publication narrative template.",
+    )
+    pub.add_argument(
+        "--output-scoreboard",
+        type=Path,
+        default=Path("reports/scoreboard.md"),
+        help="Output markdown path for scoreboard.",
+    )
+    pub.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
     inversion = sub.add_parser("inversion-robustness", help="Build daily-vs-monthly T10Y2Y inversion definition comparison report.")
     inversion.add_argument(
         "--permutation-party-term",
@@ -781,6 +871,60 @@ def main() -> int:
             claims_table_csv=args.claims_table,
             inference_table_csv=args.inference_table,
             out_md=args.output,
+        )
+        return 0
+
+    if args.cmd == "publication-bundle":
+        if not args.party_summary.exists():
+            raise FileNotFoundError(f"Missing party summary CSV: {args.party_summary}")
+        if not args.term_metrics.exists():
+            raise FileNotFoundError(f"Missing term metrics CSV: {args.term_metrics}")
+        if not args.baseline_party_term.exists():
+            raise FileNotFoundError(f"Missing baseline term CSV: {args.baseline_party_term}")
+        if not args.strict_party_term.exists():
+            raise FileNotFoundError(f"Missing strict term CSV: {args.strict_party_term}")
+        base_within = args.baseline_within if args.baseline_within.exists() else None
+        strict_within = args.strict_within if args.strict_within.exists() else None
+        if (base_within is None) != (strict_within is None):
+            raise FileNotFoundError(
+                "Publication bundle requires both baseline/strict within CSVs or neither."
+            )
+
+        write_inference_table(
+            term_metrics_csv=args.term_metrics,
+            permutation_party_term_csv=args.baseline_party_term,
+            out_csv=args.output_inference_csv,
+            out_md=args.output_inference_md,
+            nw_lags=max(0, int(args.nw_lags)),
+        )
+        write_claims_table(
+            baseline_party_term_csv=args.baseline_party_term,
+            strict_party_term_csv=args.strict_party_term,
+            baseline_within_csv=base_within,
+            strict_within_csv=strict_within,
+            out_csv=args.output_claims,
+            inference_table_csv=args.output_inference_csv if args.output_inference_csv.exists() else None,
+            publication_mode=True,
+            publication_hac_p_threshold=float(args.publication_hac_p_threshold),
+        )
+        write_publication_narrative_template(
+            claims_table_csv=args.output_claims,
+            inference_table_csv=args.output_inference_csv,
+            out_md=args.output_narrative,
+        )
+        write_scoreboard_md(
+            spec_path=args.spec,
+            party_summary_csv=args.party_summary,
+            out_path=args.output_scoreboard,
+            primary_only=not bool(args.all_metrics),
+            window_metrics_csv=args.window_metrics if args.window_metrics.exists() else None,
+            window_labels_csv=args.window_labels if args.window_labels.exists() else None,
+            term_randomization_csv=args.baseline_party_term,
+            within_randomization_csv=base_within,
+            claims_table_csv=args.output_claims,
+            within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
+            show_robustness_links=True,
+            show_publication_tiers=True,
         )
         return 0
 

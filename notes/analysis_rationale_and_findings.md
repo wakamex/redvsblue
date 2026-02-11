@@ -334,6 +334,9 @@ Operational status:
   - `rb narrative-template`
   - default output: `reports/publication_narrative_template_v1.md`
   - This template is generated directly from claims/inference tables to reduce narrative cherry-picking.
+- A one-command publication artifact build is now available:
+  - `rb publication-bundle`
+  - This runs inference table -> publication-gated claims table -> narrative template -> scoreboard with claims-aware tier columns.
 - `rb scoreboard` can now display strict/publication tier context from claims tables:
   - default claims path: `reports/claims_table_v1.csv`
   - disable via `--no-publication-tier-columns`
@@ -434,7 +437,7 @@ Current weaknesses / gaps:
 1. Add power diagnostics to the dual-inference outputs:
    - extend beyond primary term-level metrics and add equivalent diagnostics for within-president rows.
 2. Add a few-cluster-robust inference variant alongside HAC in `rb inference-table`.
-3. Add a one-command publication bundle that runs claims (publication mode) + inference + narrative + scoreboard in a consistent profile.
+3. Add optional profile presets to `rb publication-bundle` (for example baseline-only vs strict-vs-baseline) to reduce path-management mistakes.
 
 ## Claims Table
 
