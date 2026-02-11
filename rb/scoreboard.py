@@ -570,6 +570,7 @@ def write_scoreboard_md(
     within_president_min_window_days: int = 0,
     show_robustness_links: bool = True,
     show_publication_tiers: bool = True,
+    show_inference_stability_columns: bool = False,
 ) -> None:
     spec = load_spec(spec_path)
     metrics_cfg: list[dict] = spec.get("metrics") or []
@@ -613,7 +614,7 @@ def write_scoreboard_md(
         term_claims = _load_claims_term_rows(claims_table_csv)
         within_claims = _load_claims_within_rows(claims_table_csv)
     show_pub_cols = bool(show_publication_tiers and term_claims)
-    show_stability_cols = bool(inf_stability)
+    show_stability_cols = bool(show_inference_stability_columns and inf_stability)
     show_within_pub_cols = bool(show_publication_tiers and within_claims)
     has_publication_tiers = any((r.get("tier_strict_publication") or "").strip() for r in term_claims.values())
     has_within_publication_tiers = any((r.get("tier_strict_publication") or "").strip() for r in within_claims.values())

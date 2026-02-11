@@ -386,6 +386,11 @@ def _parse_args() -> argparse.Namespace:
         help="Inference stability summary CSV (optional; adds stability status columns if present).",
     )
     scoreboard.add_argument(
+        "--show-inference-stability-columns",
+        action="store_true",
+        help="Show inference-stability status columns in the party summary table.",
+    )
+    scoreboard.add_argument(
         "--no-publication-tier-columns",
         action="store_true",
         help="Hide strict/publication tier columns in the party summary table.",
@@ -752,6 +757,11 @@ def _parse_args() -> argparse.Namespace:
         help="Inference stability summary CSV (optional).",
     )
     narrative.add_argument(
+        "--include-inference-stability",
+        action="store_true",
+        help="Include inference-stability tags in narrative rows and summary counts.",
+    )
+    narrative.add_argument(
         "--output",
         type=Path,
         default=Path("reports/publication_narrative_template_v1.md"),
@@ -861,9 +871,19 @@ def _parse_args() -> argparse.Namespace:
         help="Skip generating inference stability + summary artifacts inside publication-bundle.",
     )
     pub.add_argument(
-        "--no-publication-stability-gate",
+        "--publication-stability-gate",
         action="store_true",
-        help="Disable publication-tier downgrade for rows flagged unstable in inference-stability summary.",
+        help="Enable publication-tier downgrade for rows flagged unstable in inference-stability summary.",
+    )
+    pub.add_argument(
+        "--show-inference-stability-columns",
+        action="store_true",
+        help="Show inference-stability status columns in generated scoreboard.",
+    )
+    pub.add_argument(
+        "--include-inference-stability-narrative",
+        action="store_true",
+        help="Include inference-stability tags in generated publication narrative.",
     )
     pub.add_argument(
         "--output-inference-csv",
@@ -1059,6 +1079,7 @@ def main() -> int:
             within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
             show_robustness_links=not bool(args.no_robustness_links),
             show_publication_tiers=not bool(args.no_publication_tier_columns),
+            show_inference_stability_columns=bool(args.show_inference_stability_columns),
         )
         return 0
 
@@ -1203,6 +1224,7 @@ def main() -> int:
             inference_stability_summary_csv=(
                 args.inference_stability_summary if args.inference_stability_summary.exists() else None
             ),
+            include_inference_stability=bool(args.include_inference_stability),
             out_md=args.output,
         )
         return 0
@@ -1287,7 +1309,7 @@ def main() -> int:
             ),
             publication_mode=True,
             publication_hac_p_threshold=float(args.publication_hac_p_threshold),
-            publication_downgrade_unstable=not bool(args.no_publication_stability_gate),
+            publication_downgrade_unstable=bool(args.publication_stability_gate),
         )
         write_publication_narrative_template(
             claims_table_csv=args.output_claims,
@@ -1295,6 +1317,7 @@ def main() -> int:
             inference_stability_summary_csv=(
                 args.output_inference_stability_summary_csv if not bool(args.skip_inference_stability) else None
             ),
+            include_inference_stability=bool(args.include_inference_stability_narrative),
             out_md=args.output_narrative,
         )
         write_scoreboard_md(
@@ -1313,6 +1336,7 @@ def main() -> int:
             within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
             show_robustness_links=True,
             show_publication_tiers=True,
+            show_inference_stability_columns=bool(args.show_inference_stability_columns),
         )
 
         if not bool(args.no_manifest):
@@ -1331,7 +1355,9 @@ def main() -> int:
                     "skip_inference_stability": bool(args.skip_inference_stability),
                     "inference_stability_seeds": str(args.inference_stability_seeds),
                     "inference_stability_draws_grid": str(args.inference_stability_draws_grid),
-                    "publication_stability_gate": not bool(args.no_publication_stability_gate),
+                    "publication_stability_gate": bool(args.publication_stability_gate),
+                    "show_inference_stability_columns": bool(args.show_inference_stability_columns),
+                    "include_inference_stability_narrative": bool(args.include_inference_stability_narrative),
                 },
                 "environment": {
                     "python_version": sys.version.split()[0],

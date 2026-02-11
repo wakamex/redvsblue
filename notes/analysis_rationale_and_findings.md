@@ -334,7 +334,7 @@ Operational status:
   - `--publication-mode --inference-table reports/inference_table_primary_v1.csv`
   - Confirmatory labels are downgraded when HAC significance/direction checks do not agree.
   - Optional stability gate:
-    - `--publication-stability-gate` (or publication-bundle default behavior, disable with `--no-publication-stability-gate`)
+    - `--publication-stability-gate`
     - downgrades unstable rows (`robust_significant/supportive` -> one tier lower) when inference-stability status is `unstable`.
   - New output columns include:
     - `tier_baseline_publication`
@@ -346,7 +346,7 @@ Operational status:
   - default output: `reports/publication_narrative_template_v1.md`
   - This template is generated directly from claims/inference tables to reduce narrative cherry-picking.
   - Template now includes a dedicated within-president diagnostics section with rough MDE context when claims rows include `analysis=within_unified`.
-  - Template now also ingests inference-stability summary (`reports/inference_wild_cluster_stability_summary_v1.csv`) and surfaces per-row stability tags (0.05/0.10) plus unstable-count summary.
+  - Optional stability tags/summary can be included via `--include-inference-stability`.
 - A one-command publication artifact build is now available:
   - `rb publication-bundle`
   - This runs inference table -> publication-gated claims table -> narrative template -> scoreboard with claims-aware tier columns.
@@ -365,7 +365,7 @@ Operational status:
   - strict/publication tier columns are wired for both party and within-president sections.
   - publication-tier cells are populated when claims were generated with `rb claims-table --publication-mode`.
   - Within-president scoreboard rows now also surface rough MDE diagnostics when present in within-randomization inputs.
-  - Party table now also displays inference-stability shorthand columns (`Stab@0.05`, `Stab@0.10`) when `reports/inference_wild_cluster_stability_summary_v1.csv` is available (`sig`/`ns`/`unstable`).
+  - Optional inference-stability shorthand columns (`Stab@0.05`, `Stab@0.10`) are available via `--show-inference-stability-columns`.
 - A dedicated wild-cluster seed-stability diagnostic is now available:
   - `rb inference-stability --seeds 42,137,271`
   - optional draw-count grid: `--draws-grid 499,999,1999`
@@ -467,9 +467,10 @@ Current weaknesses / gaps:
 
 ## Immediate Next Steps
 
-1. Add a small-cluster exact/randomization inference variant for very low cluster counts (beyond current wild-cluster bootstrap).
-2. Decide whether stability-gate should be default-on for standalone `rb claims-table --publication-mode` (it is already default-on in `rb publication-bundle`).
+1. Keep q-first publication hierarchy explicit in docs (`q` primary; HAC/wild/stability are robustness layers).
+2. Keep stability gate/display opt-in by default; only enable for specific publication runs that require it.
 3. Add deeper vintage reporting beyond summary windows (for example per-series FRED realtime tags for publication-facing primary metrics).
+4. Defer adding a new exact small-cluster method unless near-threshold instability becomes materially common.
 
 ## Claims Table
 

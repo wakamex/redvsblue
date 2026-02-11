@@ -8,6 +8,22 @@ Principles
 4. “Shock years” are handled as diagnostics and robustness, not as subjective exclusions (but we still explicitly address
    them).
 
+Current Execution Plan (v3, post external review refresh)
+
+1. Keep inferential hierarchy explicit:
+    - Primary screening remains permutation + BH FDR `q_bh_fdr`.
+    - HAC / cluster / wild-cluster / stability remain robustness diagnostics.
+2. Reduce publication-surface overemphasis of diagnostics:
+    - Do not show stability tags by default in public-facing scoreboard/narrative.
+    - Keep stability artifacts generated and available for audit.
+3. Keep method stack stable for now:
+    - Do not add another exact small-cluster/randomization layer yet.
+    - Prioritize communication clarity and decision-rule consistency.
+4. Keep publication robustness gating available but explicit:
+    - Publication stability downgrade should be opt-in unless explicitly requested.
+5. Continue reproducibility discipline:
+    - All changes remain fully code-driven with deterministic artifact generation and manifests.
+
 Implementation Order (v1)
 
 1. Lock the v1 “spec stack” for the initial scoreboard set:
