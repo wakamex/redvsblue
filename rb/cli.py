@@ -1299,6 +1299,14 @@ def main() -> int:
         base_within = args.base_within if args.base_within.exists() else None
         if alt_within is not None and not alt_within.exists():
             raise FileNotFoundError(f"Missing alt within CSV: {alt_within}")
+        scope_paths: list[tuple[Path, str]] = [
+            (args.base_party_term, "base_party_term"),
+            (args.alt_party_term, "alt_party_term"),
+        ]
+        if base_within is not None and alt_within is not None:
+            scope_paths.append((base_within, "base_within"))
+            scope_paths.append((alt_within, "alt_within"))
+        _assert_randomization_scopes_compatible(paths=scope_paths)
         compare_randomization_outputs(
             base_party_term_csv=args.base_party_term,
             alt_party_term_csv=args.alt_party_term,
