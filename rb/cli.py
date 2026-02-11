@@ -3,6 +3,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import platform
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -59,6 +62,18 @@ def _write_json_atomic(path: Path, obj: object) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(obj, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     tmp.replace(path)
+
+
+def _git_head(cwd: Path) -> str:
+    try:
+        out = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(cwd),
+            stderr=subprocess.DEVNULL,
+        )
+        return out.decode("utf-8").strip()
+    except Exception:
+        return ""
 
 
 def _parse_args() -> argparse.Namespace:
@@ -1002,6 +1017,12 @@ def main() -> int:
                     "nw_lags": max(0, int(args.nw_lags)),
                     "publication_hac_p_threshold": float(args.publication_hac_p_threshold),
                 },
+                "environment": {
+                    "python_version": sys.version.split()[0],
+                    "platform": platform.platform(),
+                    "cwd": str(Path.cwd()),
+                    "git_head": _git_head(Path.cwd()),
+                },
                 "inputs": {
                     "spec": _file_meta(args.spec),
                     "party_summary": _file_meta(args.party_summary),
@@ -1012,6 +1033,8 @@ def main() -> int:
                     "strict_within_used": _file_meta(strict_within),
                     "window_metrics": _file_meta(args.window_metrics if args.window_metrics.exists() else None),
                     "window_labels": _file_meta(args.window_labels if args.window_labels.exists() else None),
+                    "pyproject_toml": _file_meta(Path("pyproject.toml") if Path("pyproject.toml").exists() else None),
+                    "uv_lock": _file_meta(Path("uv.lock") if Path("uv.lock").exists() else None),
                 },
                 "outputs": {
                     "inference_csv": _file_meta(args.output_inference_csv),

@@ -338,7 +338,7 @@ Operational status:
   - `rb publication-bundle`
   - This runs inference table -> publication-gated claims table -> narrative template -> scoreboard with claims-aware tier columns.
   - Supports `--profile strict_vs_baseline` (default) and `--profile baseline_only`.
-  - Emits a JSON run manifest by default (`reports/publication_bundle_manifest_v1.json`) with input/output paths, hashes, and thresholds.
+  - Emits a JSON run manifest by default (`reports/publication_bundle_manifest_v1.json`) with input/output paths, hashes, thresholds, and runtime/dependency metadata (Python/platform, git head, `pyproject.toml`, `uv.lock`).
 - `rb scoreboard` can now display strict/publication tier context from claims tables:
   - default claims path: `reports/claims_table_v1.csv`
   - disable via `--no-publication-tier-columns`
@@ -440,7 +440,7 @@ Current weaknesses / gaps:
    - extend beyond primary term-level metrics and add equivalent diagnostics for within-president rows.
 2. Strengthen few-cluster inference in `rb inference-table`:
    - add a small-cluster-robust p-value variant to complement current cluster-normal p-values.
-3. Add manifest coverage for optional upstream dependency versions (for example package lock, CLI version string) to strengthen end-to-end reproducibility audits.
+3. Extend manifest context to include upstream data retrieval timestamps/vintage identifiers where available.
 
 ## Claims Table
 
