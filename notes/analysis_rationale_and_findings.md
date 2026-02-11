@@ -342,6 +342,7 @@ Operational status:
   - default output: `reports/publication_narrative_template_v1.md`
   - This template is generated directly from claims/inference tables to reduce narrative cherry-picking.
   - Template now includes a dedicated within-president diagnostics section with rough MDE context when claims rows include `analysis=within_unified`.
+  - Template now also ingests inference-stability summary (`reports/inference_wild_cluster_stability_summary_v1.csv`) and surfaces per-row stability tags (0.05/0.10) plus unstable-count summary.
 - A one-command publication artifact build is now available:
   - `rb publication-bundle`
   - This runs inference table -> publication-gated claims table -> narrative template -> scoreboard with claims-aware tier columns.
@@ -463,7 +464,7 @@ Current weaknesses / gaps:
 ## Immediate Next Steps
 
 1. Add a small-cluster exact/randomization inference variant for very low cluster counts (beyond current wild-cluster bootstrap).
-2. Surface inference-stability summary flags directly in the publication narrative (scoreboard now includes them).
+2. Add optional publication gating that downgrades claims when inference-stability status is `unstable`.
 3. Add deeper vintage reporting beyond summary windows (for example per-series FRED realtime tags for publication-facing primary metrics).
 
 ## Claims Table
