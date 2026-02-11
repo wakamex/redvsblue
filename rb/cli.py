@@ -147,6 +147,34 @@ def _assert_randomization_scope_matches_mode(*, path: Path, all_metrics_mode: bo
             )
 
 
+def _canonical_randomization_scope(path: Path) -> str:
+    scope = _csv_inference_scope(path)
+    if scope:
+        return scope
+    n_primary, n_non_primary = _csv_metric_primary_scope(path)
+    if n_non_primary > 0:
+        return "all"
+    if n_primary > 0:
+        return "primary"
+    return "unknown"
+
+
+def _assert_randomization_scopes_compatible(*, paths: list[tuple[Path, str]]) -> None:
+    known: list[tuple[str, str, Path]] = []
+    for path, label in paths:
+        scope = _canonical_randomization_scope(path)
+        if scope == "unknown":
+            continue
+        known.append((scope, label, path))
+    if len(known) <= 1:
+        return
+    scopes = {s for s, _, _ in known}
+    if len(scopes) <= 1:
+        return
+    detail = ", ".join(f"{label}={scope} ({path})" for scope, label, path in known)
+    raise ValueError(f"Incompatible randomization scopes across inputs: {detail}")
+
+
 def _describe_randomization_scope(path: Path) -> str:
     scope = _csv_inference_scope(path)
     if scope:
@@ -1291,6 +1319,14 @@ def main() -> int:
             raise FileNotFoundError(
                 "Within-president claims require both baseline and strict within CSVs or neither."
             )
+        scope_paths: list[tuple[Path, str]] = [
+            (args.baseline_party_term, "baseline_party_term"),
+            (args.strict_party_term, "strict_party_term"),
+        ]
+        if base_within is not None and strict_within is not None:
+            scope_paths.append((base_within, "baseline_within"))
+            scope_paths.append((strict_within, "strict_within"))
+        _assert_randomization_scopes_compatible(paths=scope_paths)
         write_claims_table(
             baseline_party_term_csv=args.baseline_party_term,
             strict_party_term_csv=args.strict_party_term,
