@@ -244,6 +244,52 @@ metrics:
       notes:
         - "Uses first/last observation in the attributed window."
 
+  - id: gdp_growth_real_term_pct_change
+    family: gdp_growth
+    primary: false
+    label: "Real GDP growth (term total percent change from start/end)"
+    inputs:
+      series: gdpc1_real_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+      notes:
+        - "Uses first/last observation in the attributed window."
+
+  - id: gdp_growth_real_percap_term_pct_change
+    family: gdp_growth
+    primary: false
+    label: "Real GDP per capita growth (term total percent change from start/end)"
+    inputs:
+      series: a939rx0q048sbea_real_gdp_per_capita
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+      notes:
+        - "Uses first/last observation in the attributed window."
+
+  - id: gdp_growth_real_percap_term_cagr
+    family: gdp_growth
+    primary: false
+    label: "Real GDP per capita growth (term CAGR from start/end)"
+    inputs:
+      series: a939rx0q048sbea_real_gdp_per_capita
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      periods_per_year: 4
+      scale: 100
+      units: "percent"
+      notes:
+        - "Uses first/last observation in the attributed window."
+
   # Employment
   - id: payroll_jobs_change_total
     family: jobs
@@ -293,6 +339,60 @@ metrics:
       kind: end_minus_start_per_year
       units: "thousands of persons per year"
 
+  - id: payroll_jobs_term_pct_change
+    family: jobs
+    primary: false
+    label: "Payroll employment percent change (term total, end vs start)"
+    inputs:
+      series: payems_payroll_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: payroll_jobs_term_cagr_pct
+    family: jobs
+    primary: false
+    label: "Payroll employment CAGR (term annualized from start/end)"
+    inputs:
+      series: payems_payroll_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+
+  - id: household_employment_term_pct_change
+    family: jobs
+    primary: false
+    label: "Household employment percent change (CPS, term total, end vs start)"
+    inputs:
+      series: ce16ov_household_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: household_employment_term_cagr_pct
+    family: jobs
+    primary: false
+    label: "Household employment CAGR (CPS, term annualized from start/end)"
+    inputs:
+      series: ce16ov_household_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+
   # Unemployment
   - id: unemployment_rate_mean
     family: unemployment
@@ -304,6 +404,18 @@ metrics:
       kind: identity
     term_aggregation:
       kind: mean
+      units: "percent"
+
+  - id: unemployment_rate_end
+    family: unemployment
+    primary: false
+    label: "Unemployment rate (end-of-term value)"
+    inputs:
+      series: unrate_unemployment_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: last
       units: "percent"
 
   - id: unemployment_rate_change_pp
@@ -343,6 +455,30 @@ metrics:
       kind: pct_change_from_levels
       scale: 100
       units: "percent"
+
+  - id: real_median_weekly_earnings_mean
+    family: wages
+    primary: false
+    label: "Real median weekly earnings (mean during term; LES1252881600Q)"
+    inputs:
+      series: les1252881600q_real_median_weekly_earnings
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean
+      units: "1982-84 dollars per week"
+
+  - id: real_median_weekly_earnings_end
+    family: wages
+    primary: false
+    label: "Real median weekly earnings (end-of-term value; LES1252881600Q)"
+    inputs:
+      series: les1252881600q_real_median_weekly_earnings
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: last
+      units: "1982-84 dollars per week"
 
   - id: real_median_weekly_earnings_term_cagr_pct
     family: wages
@@ -407,6 +543,24 @@ metrics:
       kind: mean
       units: "percent"
 
+  - id: pce_inflation_mom_ann_logdiff_mean
+    family: inflation
+    primary: false
+    label: "PCE inflation (MoM annualized, log diff, mean during term)"
+    inputs:
+      series: pcepi_pce_price_index
+    period_transform:
+      kind: growth_rate
+      method: logdiff
+      lag: 1
+      annualize_periods_per_year: 12
+      scale: 100
+      notes:
+        - "Formula: 100 * 12 * ln(PCEPI_t / PCEPI_{t-1})."
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
   - id: cpi_inflation_mom_ann_logdiff_mean
     family: inflation
     primary: false
@@ -444,6 +598,33 @@ metrics:
     label: "CPI price level CAGR (term annualized from start/end; CPIAUCNS)"
     inputs:
       series: cpiaucns_cpi_unadjusted
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+
+  - id: pce_price_level_term_pct_change
+    family: inflation
+    primary: false
+    label: "PCE price level percent change (term total, end vs start; PCEPI)"
+    inputs:
+      series: pcepi_pce_price_index
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: pce_price_level_term_cagr_pct
+    family: inflation
+    primary: false
+    label: "PCE price level CAGR (term annualized from start/end; PCEPI)"
+    inputs:
+      series: pcepi_pce_price_index
     period_transform:
       kind: identity
     term_aggregation:
@@ -508,6 +689,22 @@ metrics:
     inputs:
       table: ff_factors_monthly
       column: mkt_total
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: compound_total
+      input_units: "percent"
+      output_units: "percent"
+      notes:
+        - "Formula: 100 * (prod_t (1 + r_t/100) - 1) over months in the attributed term window."
+
+  - id: ff_mkt_excess_return_term_total
+    family: stock_returns
+    primary: false
+    label: "Stock market excess return (term total, compounded; Ken French Mkt-RF)"
+    inputs:
+      table: ff_factors_monthly
+      column: mkt_rf
     period_transform:
       kind: identity
     term_aggregation:
@@ -726,6 +923,42 @@ metrics:
     term_aggregation:
       kind: mean
       units: "percent of GDP"
+
+  - id: federal_surplus_deficit_pct_gdp_end
+    family: fiscal
+    primary: false
+    label: "Federal surplus/deficit (%GDP, end-of-term value; FYFSGDA188S)"
+    inputs:
+      series: fyfsgda188s_federal_surplus_deficit_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: last
+      units: "percent of GDP"
+
+  - id: federal_surplus_deficit_pct_gdp_change_pp
+    family: fiscal
+    primary: false
+    label: "Federal surplus/deficit (%GDP, change in percentage points, end minus start; FYFSGDA188S)"
+    inputs:
+      series: fyfsgda188s_federal_surplus_deficit_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "percentage points"
+
+  - id: federal_surplus_deficit_pct_gdp_change_pp_per_year
+    family: fiscal
+    primary: false
+    label: "Federal surplus/deficit (%GDP, change in percentage points per year; FYFSGDA188S)"
+    inputs:
+      series: fyfsgda188s_federal_surplus_deficit_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "percentage points per year"
 
 known_omissions:
   - family: housing

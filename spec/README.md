@@ -4,6 +4,7 @@ This folder contains *declarative* specifications used by the pipeline:
 
 - `spec/metrics_v1.yaml`: v1 metric registry for the initial scoreboard (base series + transforms + term aggregations).
 - `spec/metrics_rationale.md`: human-readable rationale for key measurement choices (why these series, transforms, and aggregations).
+- `spec/metrics_coverage_v1.md`: per-series transform coverage matrix (included/partial/omitted/candidate) to make metric-selection judgment calls explicit.
 - `spec/aggregation_kinds_v1.yaml`: formal semantics of `term_aggregation.kind` (so the engine is implementable/testable).
 - `spec/attribution_v1.yaml`: formal semantics of time attribution / boundary rules (so "start/end" are deterministic).
 
