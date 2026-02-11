@@ -728,3 +728,91 @@ def write_wild_cluster_stability_table(
         for r in rows:
             w.writerow(r)
     tmp.replace(out_csv)
+
+
+def write_wild_cluster_stability_summary(
+    *,
+    stability_csv: Path,
+    out_csv: Path,
+) -> None:
+    if not stability_csv.exists():
+        raise FileNotFoundError(f"Missing wild-cluster stability CSV: {stability_csv}")
+
+    groups: dict[str, list[dict[str, str]]] = {}
+    with stability_csv.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for row in rdr:
+            mid = (row.get("metric_id") or "").strip()
+            if not mid:
+                continue
+            groups.setdefault(mid, []).append(dict(row))
+
+    def _status(p_min: float | None, p_max: float | None, thr: float) -> str:
+        if p_min is None or p_max is None:
+            return "missing"
+        if p_max < thr:
+            return "robust_significant"
+        if p_min >= thr:
+            return "robust_not_significant"
+        return "unstable"
+
+    header = [
+        "metric_id",
+        "metric_label",
+        "metric_family",
+        "n_rows",
+        "n_draws",
+        "draws",
+        "seeds",
+        "wild_p_min_overall",
+        "wild_p_max_overall",
+        "wild_p_spread_overall",
+        "status_005",
+        "status_010",
+        "unstable_any",
+    ]
+    rows: list[dict[str, str]] = []
+
+    for mid in sorted(groups.keys()):
+        rs = groups[mid]
+        first = rs[0]
+        pmins = [_parse_float(r.get("wild_p_min") or "") for r in rs]
+        pmaxs = [_parse_float(r.get("wild_p_max") or "") for r in rs]
+        pmins_num = [x for x in pmins if x is not None]
+        pmaxs_num = [x for x in pmaxs if x is not None]
+        overall_min = min(pmins_num) if pmins_num else None
+        overall_max = max(pmaxs_num) if pmaxs_num else None
+        spread = (overall_max - overall_min) if (overall_min is not None and overall_max is not None) else None
+
+        draws = sorted({(r.get("wild_cluster_draws") or "").strip() for r in rs if (r.get("wild_cluster_draws") or "").strip()})
+        seeds = sorted({(r.get("seeds") or "").strip() for r in rs if (r.get("seeds") or "").strip()})
+        status_005 = _status(overall_min, overall_max, 0.05)
+        status_010 = _status(overall_min, overall_max, 0.10)
+        unstable_any = status_005 == "unstable" or status_010 == "unstable"
+
+        rows.append(
+            {
+                "metric_id": mid,
+                "metric_label": (first.get("metric_label") or "").strip(),
+                "metric_family": (first.get("metric_family") or "").strip(),
+                "n_rows": str(len(rs)),
+                "n_draws": str(len(draws)),
+                "draws": ",".join(draws),
+                "seeds": "|".join(seeds),
+                "wild_p_min_overall": _fmt(overall_min),
+                "wild_p_max_overall": _fmt(overall_max),
+                "wild_p_spread_overall": _fmt(spread),
+                "status_005": status_005,
+                "status_010": status_010,
+                "unstable_any": "1" if unstable_any else "0",
+            }
+        )
+
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out_csv.with_suffix(out_csv.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8", newline="") as handle:
+        w = csv.DictWriter(handle, fieldnames=header)
+        w.writeheader()
+        for r in rows:
+            w.writerow(r)
+    tmp.replace(out_csv)

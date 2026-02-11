@@ -346,6 +346,10 @@ Operational status:
   - `rb publication-bundle`
   - This runs inference table -> publication-gated claims table -> narrative template -> scoreboard with claims-aware tier columns.
   - Supports `--profile strict_vs_baseline` (default) and `--profile baseline_only`.
+  - It now also emits inference stability artifacts by default:
+    - `reports/inference_wild_cluster_stability_v1.csv`
+    - `reports/inference_wild_cluster_stability_summary_v1.csv`
+    - disable with `--skip-inference-stability`.
   - By default, it now auto-backfills stale within-president rough-MDE columns in within-randomization CSV inputs using regime-window source data.
   - Disable this repair step with `--no-backfill-within-mde`.
   - Emits a JSON run manifest by default (`reports/publication_bundle_manifest_v1.json`) with input/output paths, hashes, thresholds, runtime/dependency metadata (Python/platform, git head, `pyproject.toml`, `uv.lock`), and upstream raw/vintage summaries (latest raw artifact timestamps by source plus FRED realtime window summary).
@@ -361,6 +365,10 @@ Operational status:
   - optional draw-count grid: `--draws-grid 499,999,1999`
   - output: `reports/inference_wild_cluster_stability_v1.csv`
   - reports min/median/max wild-cluster p-values and whether 0.05/0.10 significance calls are stable across seed and draw-count choices.
+- A compact instability summary is now available:
+  - `rb inference-stability-summary`
+  - output: `reports/inference_wild_cluster_stability_summary_v1.csv`
+  - classifies each metric as `robust_significant`, `robust_not_significant`, or `unstable` at 0.05 and 0.10 thresholds.
 - Historical all-metrics tier counts (pre-hardening defaults; retained for comparison context):
   - Term-level party differences: `confirmatory=2`, `supportive=5`, `exploratory=30`.
   - Within-president unified/divided: `confirmatory=0`, `supportive=0`, `exploratory=74`.
@@ -454,7 +462,7 @@ Current weaknesses / gaps:
 ## Immediate Next Steps
 
 1. Add a small-cluster exact/randomization inference variant for very low cluster counts (beyond current wild-cluster bootstrap).
-2. Add a compact publication-facing summary that flags metrics with unstable significance calls in `rb inference-stability` outputs.
+2. Surface inference-stability summary flags directly in publication narrative/scoreboard sections (not only as CSV artifacts).
 3. Add deeper vintage reporting beyond summary windows (for example per-series FRED realtime tags for publication-facing primary metrics).
 
 ## Claims Table
