@@ -106,7 +106,7 @@ Legend:
 
 ## Suggested v2 Additions (Priority Order)
 
-1. Extend SA-vs-NSA divergence reporting to include CPI YoY pair (`cpi_inflation_yoy_mean_nsa` vs `cpi_inflation_yoy_mean`) alongside level-term metrics.
+1. Add a one-line scoreboard pointer to the CPI SA-vs-NSA robustness artifact so readers can find it without opening notes.
 2. Add a fixed report artifact comparing inversion definitions (daily, monthly-EOP, monthly-AVG) each run.
 3. Add a second CI smoke profile that includes at least one daily market series and one non-FRED source.
 

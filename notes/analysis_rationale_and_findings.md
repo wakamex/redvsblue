@@ -168,6 +168,10 @@ Read:
     - `rb cpi-robustness`
     - and automatically during `rb randomization --all-metrics` (unless `--skip-cpi-robustness`)
     - outputs: `reports/cpi_sa_nsa_robustness_v1.csv` and `.md`
+  - The robustness artifact now includes the CPI YoY SA-vs-NSA pair in addition to level-term pct/CAGR pairs.
+  - Latest YoY snapshot in the same artifact:
+    - `cpi_inflation_yoy_mean_nsa`: diff(D-R)=`2.80`, `q=0.214`, exploratory
+    - `cpi_inflation_yoy_mean` (SA): diff(D-R)=`-0.19`, `q=1.000`, exploratory
 
 ## Threshold Sensitivity Snapshot (Within-President U-D)
 

@@ -1688,6 +1688,13 @@ def write_cpi_sa_nsa_level_robustness(
 
     groups: list[tuple[str, list[tuple[str, str]]]] = [
         (
+            "cpi_inflation_yoy_mean",
+            [
+                ("nsa", "cpi_inflation_yoy_mean_nsa"),
+                ("sa", "cpi_inflation_yoy_mean"),
+            ],
+        ),
+        (
             "cpi_level_term_pct_change",
             [
                 ("nsa", "cpi_price_level_term_pct_change_nsa"),
@@ -1759,11 +1766,11 @@ def write_cpi_sa_nsa_level_robustness(
         return
 
     lines: list[str] = []
-    lines.append("# CPI SA vs NSA Level Robustness")
+    lines.append("# CPI SA vs NSA Robustness")
     lines.append("")
     lines.append(f"Source: `{permutation_party_term_csv}`")
     lines.append("")
-    lines.append("Compares D-R estimates for CPI level-term metrics under:")
+    lines.append("Compares D-R estimates for CPI SA-vs-NSA paired metrics under:")
     lines.append("- NSA CPI definitions")
     lines.append("- SA CPI alternate definitions")
     lines.append("")

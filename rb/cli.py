@@ -276,13 +276,13 @@ def _parse_args() -> argparse.Namespace:
         "--output-cpi-robustness-csv",
         type=Path,
         default=Path("reports/cpi_sa_nsa_robustness_v1.csv"),
-        help="Output CSV for CPI SA-vs-NSA level-metric comparison (generated only with --all-metrics).",
+        help="Output CSV for CPI SA-vs-NSA paired-metric comparison (generated only with --all-metrics).",
     )
     randomization.add_argument(
         "--output-cpi-robustness-md",
         type=Path,
         default=Path("reports/cpi_sa_nsa_robustness_v1.md"),
-        help="Output markdown for CPI SA-vs-NSA level-metric comparison (generated only with --all-metrics).",
+        help="Output markdown for CPI SA-vs-NSA paired-metric comparison (generated only with --all-metrics).",
     )
     randomization.add_argument(
         "--skip-cpi-robustness",
@@ -495,7 +495,7 @@ def _parse_args() -> argparse.Namespace:
     )
     inversion.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
-    cpi = sub.add_parser("cpi-robustness", help="Build SA-vs-NSA CPI level-metric comparison report.")
+    cpi = sub.add_parser("cpi-robustness", help="Build SA-vs-NSA CPI paired-metric comparison report.")
     cpi.add_argument(
         "--permutation-party-term",
         type=Path,
