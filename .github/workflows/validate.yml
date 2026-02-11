@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  validate:
+  validate-spec:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -24,18 +24,35 @@ jobs:
       - name: Sync dependencies
         run: uv sync --locked
 
-      - name: Cache smoke data artifacts
+      - name: Run rb validate (spec + presidents fixture)
+        run: .venv/bin/rb validate --spec spec/metrics_v1.yaml --presidents tests/fixtures/presidents_min.csv
+
+  smoke-fred:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Sync dependencies
+        run: uv sync --locked
+
+      - name: Cache smoke data artifacts (FRED profile)
         uses: actions/cache@v4
         with:
           path: |
             data/raw
             data/derived
-          key: ${{ runner.os }}-rb-smoke-${{ hashFiles('spec/metrics_ci_smoke.yaml', 'spec/metrics_ci_smoke_nonfred.yaml') }}
+          key: ${{ runner.os }}-rb-smoke-fred-${{ hashFiles('spec/metrics_ci_smoke.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-rb-smoke-
-
-      - name: Run rb validate (spec + presidents fixture)
-        run: .venv/bin/rb validate --spec spec/metrics_v1.yaml --presidents tests/fixtures/presidents_min.csv
+            ${{ runner.os }}-rb-smoke-fred-
 
       - name: Smoke pipeline (ingest -> compute -> validate)
         run: |
@@ -57,6 +74,33 @@ jobs:
             --presidents tests/fixtures/presidents_min.csv \
             --term-metrics /tmp/term_metrics_smoke.csv \
             --party-summary /tmp/party_summary_smoke.csv
+
+  smoke-nonfred:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Sync dependencies
+        run: uv sync --locked
+
+      - name: Cache smoke data artifacts (non-FRED profile)
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/raw
+            data/derived
+          key: ${{ runner.os }}-rb-smoke-nonfred-${{ hashFiles('spec/metrics_ci_smoke_nonfred.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-rb-smoke-nonfred-
 
       - name: Smoke pipeline (daily + non-FRED source)
         run: |
