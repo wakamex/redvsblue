@@ -29,7 +29,14 @@ jobs:
 
       - name: Smoke pipeline (ingest -> compute -> validate)
         run: |
-          .venv/bin/rb ingest --spec spec/metrics_ci_smoke.yaml --refresh
+          retry() {
+            for i in 1 2 3; do
+              "$@" && return 0
+              sleep $((i * 3))
+            done
+            return 1
+          }
+          retry .venv/bin/rb ingest --spec spec/metrics_ci_smoke.yaml --refresh
           .venv/bin/rb compute \
             --spec spec/metrics_ci_smoke.yaml \
             --presidents tests/fixtures/presidents_min.csv \
@@ -43,7 +50,14 @@ jobs:
 
       - name: Smoke pipeline (daily + non-FRED source)
         run: |
-          .venv/bin/rb ingest --spec spec/metrics_ci_smoke_nonfred.yaml --refresh
+          retry() {
+            for i in 1 2 3; do
+              "$@" && return 0
+              sleep $((i * 3))
+            done
+            return 1
+          }
+          retry .venv/bin/rb ingest --spec spec/metrics_ci_smoke_nonfred.yaml --refresh
           .venv/bin/rb compute \
             --spec spec/metrics_ci_smoke_nonfred.yaml \
             --presidents tests/fixtures/presidents_min.csv \
