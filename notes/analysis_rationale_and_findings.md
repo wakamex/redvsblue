@@ -138,6 +138,9 @@ What it does:
 - Within-president control test: permutes unified/divided assignment within each president-term's regime windows and reports two-sided permutation p-values for mean within-term delta (U-D).
 - Both outputs now include Benjamini-Hochberg FDR-adjusted `q_bh_fdr` columns in addition to raw `p_two_sided`.
 - Both outputs now include bootstrap 95% confidence intervals (`bootstrap_ci95_low`, `bootstrap_ci95_high`) for the observed estimand.
+- Both outputs now include a rule-based evidence classification:
+  - `confirmatory` / `supportive` / `exploratory`
+  - with audit columns (`passes_q_threshold`, `passes_ci_excludes_zero`, `passes_min_n`, thresholds used).
 
 Early read (all-metrics run):
 
@@ -154,11 +157,60 @@ Interpretation caveats:
 - Small-cell metrics can look extreme by chance; treat low-p small-`n` findings as hypotheses to stress-test, not conclusions.
 - For screening, prefer `q_bh_fdr` over raw p-values when comparing many metrics at once.
 
+## Significance Tension and How To Resolve It
+
+Current tension (all-metrics snapshots):
+
+- Term-level party test (`reports/permutation_party_term_all_v1.csv`):
+  - `p < 0.05`: 8 metrics
+  - `q_bh_fdr < 0.10`: 7 metrics
+  - `q_bh_fdr < 0.05`: 2 metrics
+  - bootstrap CI excludes zero: 11 metrics
+- Within-president unified/divided test (`reports/permutation_unified_within_term_all_v1.csv`):
+  - `p < 0.05`: 1 row
+  - `q_bh_fdr < 0.10`: 0 rows
+  - bootstrap CI excludes zero: 12 rows (mostly small-`n` cells)
+
+Why they disagree:
+
+- Raw p-values do not account for multiplicity across many metrics/transforms.
+- BH-adjusted q-values are stricter and can wash out borderline effects.
+- Bootstrap CIs answer precision around effect size, not multiplicity; with small samples they can be unstable and still exclude zero.
+- Many transforms are correlated variants of the same underlying signal, which complicates naive “count of significant metrics” interpretation.
+
+Proposed resolution policy (for reporting):
+
+1. **Primary claim threshold** (confirmatory tone):
+   - Require all three:
+     - `q_bh_fdr < 0.10`
+     - bootstrap CI excludes zero
+     - minimum sample threshold met (`n_obs >= 12` for term-level; `n_presidents_with_both >= 5` for within-president rows)
+2. **Supportive evidence** (suggestive tone):
+   - Exactly two of the three checks above pass.
+3. **Exploratory only**:
+   - One or zero checks pass, or small-`n` threshold fails.
+4. **No metric-family cherry-picking**:
+   - Report results by family + transform grid, not single best metric.
+   - For headline statements, prioritize pre-declared primary metrics.
+
+Implication for current read:
+
+- Term-level evidence is stronger than within-president unified/divided evidence.
+- Within-president rows are currently mostly exploratory due to small `n_presidents_with_both` and lack of low q-values.
+- We should avoid claiming “Congress effect is significant” globally at this stage; treat it as mixed/diagnostic.
+
+Operational status:
+
+- This policy is now encoded in `rb randomization` outputs.
+- Current all-metrics tier counts:
+  - Term-level party differences: `confirmatory=7`, `supportive=4`, `exploratory=26`.
+  - Within-president unified/divided: `confirmatory=0`, `supportive=3`, `exploratory=71`.
+
 ## Immediate Next Steps
 
 1. Decide and document the default published threshold for `within-president-min-window-days` (after sensitivity review).
-2. Add a small-`n` reporting threshold policy (for example minimum `n_presidents_with_both`).
-3. Decide/report default randomization settings for publication tables (`permutations`, `bootstrap_samples`, `term_block_years`).
+2. Decide/report default randomization settings for publication tables (`permutations`, `bootstrap_samples`, `term_block_years`, `q_threshold`, min-`n` rules).
+3. Add a compact generated summary table grouped by metric family and evidence tier.
 
 ## Reproduce Current Outputs
 

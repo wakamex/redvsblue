@@ -238,6 +238,24 @@ def _parse_args() -> argparse.Namespace:
     randomization.add_argument("--bootstrap-samples", type=int, default=2000, help="Number of bootstrap samples for CI estimates.")
     randomization.add_argument("--seed", type=int, default=42, help="RNG seed for reproducibility.")
     randomization.add_argument(
+        "--q-threshold",
+        type=float,
+        default=0.10,
+        help="FDR-adjusted q-value threshold used for evidence tier classification.",
+    )
+    randomization.add_argument(
+        "--min-term-n-obs",
+        type=int,
+        default=12,
+        help="Minimum n_obs for term-level rows to pass minimum sample-size check.",
+    )
+    randomization.add_argument(
+        "--min-within-n-both",
+        type=int,
+        default=5,
+        help="Minimum n_presidents_with_both for within-president rows to pass minimum sample-size check.",
+    )
+    randomization.add_argument(
         "--term-block-years",
         type=int,
         default=0,
@@ -357,6 +375,9 @@ def main() -> int:
             bootstrap_samples=max(0, int(args.bootstrap_samples)),
             seed=int(args.seed),
             term_block_years=max(0, int(args.term_block_years)),
+            q_threshold=float(args.q_threshold),
+            min_term_n_obs=max(0, int(args.min_term_n_obs)),
+            min_within_n_both=max(0, int(args.min_within_n_both)),
             primary_only=not bool(args.all_metrics),
             window_metrics_csv=args.window_metrics if args.window_metrics.exists() else None,
             window_labels_csv=args.window_labels if args.window_labels.exists() else None,

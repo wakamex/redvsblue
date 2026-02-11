@@ -161,6 +161,28 @@ def _add_bh_q_values(rows: list[dict[str, str]], *, p_col: str, q_col: str) -> N
         r[q_col] = _fmt(q) if q is not None else ""
 
 
+def _classify_evidence(
+    *,
+    q: float | None,
+    ci_lo: float | None,
+    ci_hi: float | None,
+    n: int,
+    q_threshold: float,
+    min_n: int,
+) -> tuple[str, str, str, str]:
+    pass_q = q is not None and q < q_threshold
+    pass_ci = ci_lo is not None and ci_hi is not None and ((ci_lo > 0 and ci_hi > 0) or (ci_lo < 0 and ci_hi < 0))
+    pass_n = n >= min_n
+    score = int(pass_q) + int(pass_ci) + int(pass_n)
+    if score == 3:
+        tier = "confirmatory"
+    elif score == 2:
+        tier = "supportive"
+    else:
+        tier = "exploratory"
+    return ("1" if pass_q else "0", "1" if pass_ci else "0", "1" if pass_n else "0", tier)
+
+
 def _diff_d_minus_r(values: list[float], labels: list[str]) -> float | None:
     sum_d = 0.0
     sum_r = 0.0
@@ -249,6 +271,8 @@ def _compute_term_party_permutation(
     seed: int,
     block_years: int,
     bootstrap_samples: int,
+    q_threshold: float,
+    min_n_obs: int,
     primary_only: bool,
 ) -> None:
     groups = _load_term_metric_groups(term_metrics_csv=term_metrics_csv, primary_only=primary_only)
@@ -273,6 +297,12 @@ def _compute_term_party_permutation(
         "bootstrap_ci95_high",
         "p_two_sided",
         "q_bh_fdr",
+        "passes_q_threshold",
+        "passes_ci_excludes_zero",
+        "passes_min_n",
+        "evidence_tier",
+        "q_threshold",
+        "min_n_threshold",
         "permutations",
         "bootstrap_samples",
         "seed",
@@ -370,6 +400,25 @@ def _compute_term_party_permutation(
         )
 
     _add_bh_q_values(rows, p_col="p_two_sided", q_col="q_bh_fdr")
+    for r in rows:
+        q = _parse_float(r.get("q_bh_fdr") or "")
+        lo = _parse_float(r.get("bootstrap_ci95_low") or "")
+        hi = _parse_float(r.get("bootstrap_ci95_high") or "")
+        n = _parse_int(r.get("n_obs") or "") or 0
+        pq, pc, pn, tier = _classify_evidence(
+            q=q,
+            ci_lo=lo,
+            ci_hi=hi,
+            n=n,
+            q_threshold=q_threshold,
+            min_n=min_n_obs,
+        )
+        r["passes_q_threshold"] = pq
+        r["passes_ci_excludes_zero"] = pc
+        r["passes_min_n"] = pn
+        r["evidence_tier"] = tier
+        r["q_threshold"] = _fmt(q_threshold)
+        r["min_n_threshold"] = str(int(min_n_obs))
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     tmp = out_csv.with_suffix(out_csv.suffix + ".tmp")
@@ -434,6 +483,8 @@ def _compute_unified_within_term_permutation(
     seed: int,
     bootstrap_samples: int,
     min_window_days: int,
+    q_threshold: float,
+    min_n_within_both: int,
     primary_only: bool,
 ) -> None:
     labels = _load_window_labels(window_labels_csv)
@@ -503,6 +554,12 @@ def _compute_unified_within_term_permutation(
         "bootstrap_ci95_high",
         "p_two_sided",
         "q_bh_fdr",
+        "passes_q_threshold",
+        "passes_ci_excludes_zero",
+        "passes_min_n",
+        "evidence_tier",
+        "q_threshold",
+        "min_n_threshold",
         "permutations",
         "bootstrap_samples",
         "seed",
@@ -582,6 +639,25 @@ def _compute_unified_within_term_permutation(
         )
 
     _add_bh_q_values(rows, p_col="p_two_sided", q_col="q_bh_fdr")
+    for r in rows:
+        q = _parse_float(r.get("q_bh_fdr") or "")
+        lo = _parse_float(r.get("bootstrap_ci95_low") or "")
+        hi = _parse_float(r.get("bootstrap_ci95_high") or "")
+        n = _parse_int(r.get("n_presidents_with_both") or "") or 0
+        pq, pc, pn, tier = _classify_evidence(
+            q=q,
+            ci_lo=lo,
+            ci_hi=hi,
+            n=n,
+            q_threshold=q_threshold,
+            min_n=min_n_within_both,
+        )
+        r["passes_q_threshold"] = pq
+        r["passes_ci_excludes_zero"] = pc
+        r["passes_min_n"] = pn
+        r["evidence_tier"] = tier
+        r["q_threshold"] = _fmt(q_threshold)
+        r["min_n_threshold"] = str(int(min_n_within_both))
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     tmp = out_csv.with_suffix(out_csv.suffix + ".tmp")
@@ -601,6 +677,9 @@ def run_randomization(
     bootstrap_samples: int,
     seed: int,
     term_block_years: int,
+    q_threshold: float,
+    min_term_n_obs: int,
+    min_within_n_both: int,
     primary_only: bool,
     window_metrics_csv: Path | None,
     window_labels_csv: Path | None,
@@ -617,6 +696,8 @@ def run_randomization(
         bootstrap_samples=max(0, int(bootstrap_samples)),
         seed=int(seed),
         block_years=max(0, int(term_block_years)),
+        q_threshold=float(q_threshold),
+        min_n_obs=max(0, int(min_term_n_obs)),
         primary_only=bool(primary_only),
     )
 
@@ -633,5 +714,7 @@ def run_randomization(
         bootstrap_samples=max(0, int(bootstrap_samples)),
         seed=int(seed),
         min_window_days=max(0, int(within_president_min_window_days)),
+        q_threshold=float(q_threshold),
+        min_n_within_both=max(0, int(min_within_n_both)),
         primary_only=bool(primary_only),
     )
