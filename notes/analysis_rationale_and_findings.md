@@ -360,6 +360,7 @@ Operational status:
   - strict/publication tier columns are wired for both party and within-president sections.
   - publication-tier cells are populated when claims were generated with `rb claims-table --publication-mode`.
   - Within-president scoreboard rows now also surface rough MDE diagnostics when present in within-randomization inputs.
+  - Party table now also displays inference-stability shorthand columns (`Stab@0.05`, `Stab@0.10`) when `reports/inference_wild_cluster_stability_summary_v1.csv` is available (`sig`/`ns`/`unstable`).
 - A dedicated wild-cluster seed-stability diagnostic is now available:
   - `rb inference-stability --seeds 42,137,271`
   - optional draw-count grid: `--draws-grid 499,999,1999`
@@ -462,7 +463,7 @@ Current weaknesses / gaps:
 ## Immediate Next Steps
 
 1. Add a small-cluster exact/randomization inference variant for very low cluster counts (beyond current wild-cluster bootstrap).
-2. Surface inference-stability summary flags directly in publication narrative/scoreboard sections (not only as CSV artifacts).
+2. Surface inference-stability summary flags directly in the publication narrative (scoreboard now includes them).
 3. Add deeper vintage reporting beyond summary windows (for example per-series FRED realtime tags for publication-facing primary metrics).
 
 ## Claims Table
