@@ -24,6 +24,16 @@ jobs:
       - name: Sync dependencies
         run: uv sync --locked
 
+      - name: Cache smoke data artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/raw
+            data/derived
+          key: ${{ runner.os }}-rb-smoke-${{ hashFiles('spec/metrics_ci_smoke.yaml', 'spec/metrics_ci_smoke_nonfred.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-rb-smoke-
+
       - name: Run rb validate (spec + presidents fixture)
         run: .venv/bin/rb validate --spec spec/metrics_v1.yaml --presidents tests/fixtures/presidents_min.csv
 

@@ -163,6 +163,7 @@ Read:
 - CI now includes a second smoke profile with a daily market series and non-FRED source (`spec/metrics_ci_smoke_nonfred.yaml`) to catch source-integration regressions earlier.
 - CI smoke steps now wrap network-dependent ingest calls with retry/backoff to reduce transient external-failure noise.
 - CI smoke ingest now avoids forced `--refresh`, so cached downloads from earlier steps in the same run can be reused.
+- CI now caches smoke `data/raw` and `data/derived` artifacts across workflow runs via `actions/cache`, keyed by smoke-spec hashes.
 - We added SA CPI term-level percent/CAGR alternates (`cpi_price_level_term_pct_change_sa`, `cpi_price_level_term_cagr_pct_sa`) so NSA-vs-SA CPI level sensitivity is explicit and auditable.
 - Latest SA-vs-NSA CPI level snapshot (all-metrics randomization):
   - NSA level metrics (`*_nsa`) show larger D-R differences than SA level metrics (`*_sa`) in the current run.
