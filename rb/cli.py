@@ -234,6 +234,18 @@ def _parse_args() -> argparse.Namespace:
         default=Path("reports/permutation_unified_within_term_v1.csv"),
         help="Output CSV for within-president unified-vs-divided permutation test.",
     )
+    randomization.add_argument(
+        "--output-evidence-summary",
+        type=Path,
+        default=Path("reports/permutation_evidence_summary_v1.csv"),
+        help="Output CSV summary of evidence tiers by analysis and metric family.",
+    )
+    randomization.add_argument(
+        "--output-evidence-md",
+        type=Path,
+        default=Path("reports/permutation_evidence_summary_v1.md"),
+        help="Output markdown summary of confirmatory/supportive evidence rows.",
+    )
     randomization.add_argument("--permutations", type=int, default=2000, help="Number of random permutations.")
     randomization.add_argument("--bootstrap-samples", type=int, default=2000, help="Number of bootstrap samples for CI estimates.")
     randomization.add_argument("--seed", type=int, default=42, help="RNG seed for reproducibility.")
@@ -382,6 +394,8 @@ def main() -> int:
             window_metrics_csv=args.window_metrics if args.window_metrics.exists() else None,
             window_labels_csv=args.window_labels if args.window_labels.exists() else None,
             output_unified_within_term_csv=args.output_unified_within_term,
+            output_evidence_summary_csv=args.output_evidence_summary,
+            output_evidence_md=args.output_evidence_md,
             within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
         )
         return 0
