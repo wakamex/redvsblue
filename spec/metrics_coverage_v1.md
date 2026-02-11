@@ -83,8 +83,8 @@ Legend:
 - `dgs10_treasury_10y_rate`
   - `covered`: mean, end-of-term value, pp change, pp change per year.
 - `t10y2y_yield_spread`
-  - `covered`: mean, end-of-term value, pp change, pp change per year.
-  - `intentionally_omitted`: recession-classifier transforms (e.g., inversion month share) pending a dedicated recession-proxy subsection.
+  - `covered`: mean, end-of-term value, pp change, pp change per year, inversion share, inversion start count.
+  - `note`: inversion metrics are based on trading-day observations (`T10Y2Y < 0`) and are descriptive recession-risk proxies.
 
 ### Recessions
 
@@ -102,7 +102,7 @@ Legend:
 ## Suggested v2 Additions (Priority Order)
 
 1. Decide whether SA CPI level-term percent/CAGR variants should be added as explicit alternates.
-2. Add a dedicated recession-risk block from curve inversions (for example inversion share and inversion starts).
+2. Add an optional monthly-resampled inversion variant to compare against trading-day-based inversion metrics.
 3. Add a lightweight automated coverage check that fails CI if a series loses transform symmetry unintentionally.
 
 ## Change-Control Rule
