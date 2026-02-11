@@ -259,6 +259,15 @@ def _transform_growth_rate_logdiff(
     return TimeSeries(dates=ts.dates, values=out)
 
 
+def _transform_indicator_lt(ts: TimeSeries, *, threshold: float) -> TimeSeries:
+    out: list[float | None] = [None] * len(ts.values)
+    for i, v in enumerate(ts.values):
+        if v is None:
+            continue
+        out[i] = 1.0 if float(v) < threshold else 0.0
+    return TimeSeries(dates=ts.dates, values=out)
+
+
 def _std_sample(xs: list[float]) -> float:
     if len(xs) < 2:
         raise ValueError("need at least 2 observations for std")
@@ -491,6 +500,9 @@ def compute_term_metrics(
             ann = int(pt.get("annualize_periods_per_year") or 1)
             scale = float(pt.get("scale") or 100.0)
             ts = _transform_growth_rate_logdiff(base_ts, lag=lag, annualize_periods_per_year=ann, scale=scale)
+        elif pt_kind == "indicator_lt":
+            threshold = float(pt.get("threshold") or 0.0)
+            ts = _transform_indicator_lt(base_ts, threshold=threshold)
         else:
             raise ValueError(f"Unsupported period_transform.kind: {pt_kind!r} for metric {metric_id}")
 

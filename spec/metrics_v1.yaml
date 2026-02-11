@@ -989,6 +989,39 @@ metrics:
       kind: end_minus_start_per_year
       units: "percentage points per year"
 
+  - id: yield_curve_t10y2y_inversion_share
+    family: interest_rates
+    primary: false
+    label: "10y-2y inversion share (trading-day share during term; T10Y2Y < 0)"
+    inputs:
+      series: t10y2y_yield_spread
+    period_transform:
+      kind: indicator_lt
+      threshold: 0
+      notes:
+        - "Maps each observation to 1 if T10Y2Y < 0 else 0."
+    term_aggregation:
+      kind: mean
+      post_scale: 100
+      units: "percent of trading days"
+
+  - id: yield_curve_t10y2y_inversion_start_count
+    family: interest_rates
+    primary: false
+    label: "10y-2y inversion starts (count of 0->1 transitions; T10Y2Y < 0)"
+    inputs:
+      series: t10y2y_yield_spread
+    period_transform:
+      kind: indicator_lt
+      threshold: 0
+      notes:
+        - "Maps each observation to 1 if T10Y2Y < 0 else 0."
+    term_aggregation:
+      kind: count_transitions
+      from_value: 0
+      to_value: 1
+      units: "count"
+
   # Stock returns (excess)
   - id: ff_mkt_excess_return_ann_compound
     family: stock_returns

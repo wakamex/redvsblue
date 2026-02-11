@@ -112,6 +112,9 @@ To reduce omission risk and make transform coverage more symmetric, we expanded 
   - `FEDFUNDS` (effective fed funds rate)
   - `DGS10` (10-year Treasury yield)
   - `T10Y2Y` (10y-2y spread)
+  - plus explicit inversion diagnostics from `T10Y2Y < 0`:
+    - inversion share of trading days
+    - inversion start count
 
 Transform policy applied:
 

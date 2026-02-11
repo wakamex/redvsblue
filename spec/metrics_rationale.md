@@ -130,12 +130,16 @@ For each, we include:
 - end-of-term level,
 - end-minus-start (percentage points), and
 - end-minus-start per year.
+- for `T10Y2Y` specifically, inversion diagnostics:
+  - inversion share of trading days (`T10Y2Y < 0`)
+  - inversion start count (`0->1` transitions in the inversion indicator)
 
 Rationale:
 
 - These series are central to claims about inflation control, financing conditions, and recession risk.
 - Level and pp-change transforms are interpretable and avoid percent-change-on-rate confusion.
 - Keeping a symmetric transform set across all three avoids one-off metric selection.
+- Explicit inversion metrics make recession-risk signaling auditable instead of implicit in spread means.
 
 Guardrail:
 
