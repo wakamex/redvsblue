@@ -713,6 +713,33 @@ metrics:
       use_actual_time: true
       units: "percent"
 
+  - id: cpi_price_level_term_pct_change_sa
+    family: inflation
+    primary: false
+    label: "CPI price level percent change (term total, end vs start; CPIAUCSL)"
+    inputs:
+      series: cpiaucsl_cpi
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: cpi_price_level_term_cagr_pct_sa
+    family: inflation
+    primary: false
+    label: "CPI price level CAGR (term annualized from start/end; CPIAUCSL)"
+    inputs:
+      series: cpiaucsl_cpi
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+
   - id: pce_price_level_term_pct_change
     family: inflation
     primary: false

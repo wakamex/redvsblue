@@ -46,6 +46,7 @@ We include multiple inflation definitions because people argue about them:
 We also include cumulative price-level change metrics:
 - `cpi_price_level_term_pct_change_nsa`: total percent change in the CPI index over the term window (end vs start).
 - `cpi_price_level_term_cagr_pct_nsa`: annualized percent change (CAGR) from start/end levels.
+- `cpi_price_level_term_pct_change_sa` and `cpi_price_level_term_cagr_pct_sa`: SA CPI level-term alternates for direct SA-vs-NSA sensitivity checks.
 - `pce_price_level_term_pct_change`: total percent change in PCEPI over the term window.
 - `pce_price_level_term_cagr_pct`: annualized percent change (CAGR) from PCEPI start/end levels.
 - `core_cpi_price_level_term_pct_change`, `core_cpi_price_level_term_cagr_pct`: cumulative core CPI level change over the term window.

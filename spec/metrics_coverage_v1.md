@@ -56,9 +56,8 @@ Legend:
 - `cpiaucns_cpi_unadjusted`
   - `covered`: YoY mean, term percent change, term CAGR.
 - `cpiaucsl_cpi`
-  - `covered`: YoY mean (alternate), MoM annualized log-diff mean.
-  - `partial`: no term total/CAGR level metrics for SA CPI.
-  - `intentionally_omitted`: SA level-term metrics not primary because SA revisions can complicate historical reproducibility.
+  - `covered`: YoY mean (alternate), MoM annualized log-diff mean, term percent change, term CAGR.
+  - `note`: SA level-term metrics are alternates; NSA remains the default headline CPI level pair.
 - `pcepi_pce_price_index`
   - `covered`: YoY mean, MoM annualized log-diff mean, term percent change, term CAGR.
 - `cpilfesl_core_cpi`
@@ -107,7 +106,7 @@ Legend:
 
 ## Suggested v2 Additions (Priority Order)
 
-1. Decide whether SA CPI level-term percent/CAGR variants should be added as explicit alternates.
+1. Add a standard SA-vs-NSA divergence diagnostic table for CPI level-term metrics in reporting.
 2. Add a fixed report artifact comparing inversion definitions (daily, monthly-EOP, monthly-AVG) each run.
 3. Add a second CI smoke profile that includes at least one daily market series and one non-FRED source.
 
