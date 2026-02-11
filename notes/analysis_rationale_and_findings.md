@@ -330,6 +330,10 @@ Operational status:
     - `tier_baseline_publication`
     - `tier_strict_publication`
     - `publication_gate_reason_*`
+- A publication-ready narrative scaffold is now available via:
+  - `rb narrative-template`
+  - default output: `reports/publication_narrative_template_v1.md`
+  - This template is generated directly from claims/inference tables to reduce narrative cherry-picking.
 - Historical all-metrics tier counts (pre-hardening defaults; retained for comparison context):
   - Term-level party differences: `confirmatory=2`, `supportive=5`, `exploratory=30`.
   - Within-president unified/divided: `confirmatory=0`, `supportive=0`, `exploratory=74`.
@@ -425,7 +429,7 @@ Current weaknesses / gaps:
 1. Add power diagnostics to the dual-inference outputs:
    - extend beyond primary term-level metrics and add equivalent diagnostics for within-president rows.
 2. Add a few-cluster-robust inference variant alongside HAC in `rb inference-table`.
-3. Add a short publication-ready narrative template that maps directly from claims-table and inference-table rows (no manual cherry-picking).
+3. Apply publication-tier gating consistently in presentation layers (for example, optional scoreboard columns using publication tiers).
 
 ## Claims Table
 

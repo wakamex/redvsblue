@@ -8,6 +8,7 @@ from rb.congress_control import ensure_congress_control
 from rb.ingest import ingest_from_spec
 from rb.inference import write_inference_table
 from rb.metrics import compute_term_metrics
+from rb.narrative import write_publication_narrative_template
 from rb.presidents import ensure_presidents
 from rb.randomization import (
     compare_randomization_outputs,
@@ -496,6 +497,27 @@ def _parse_args() -> argparse.Namespace:
     )
     claims.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
+    narrative = sub.add_parser("narrative-template", help="Build a publication-ready narrative template from claims + inference tables.")
+    narrative.add_argument(
+        "--claims-table",
+        type=Path,
+        default=Path("reports/claims_table_v1.csv"),
+        help="Claims table CSV (ideally generated with --publication-mode).",
+    )
+    narrative.add_argument(
+        "--inference-table",
+        type=Path,
+        default=Path("reports/inference_table_primary_v1.csv"),
+        help="Primary inference table CSV.",
+    )
+    narrative.add_argument(
+        "--output",
+        type=Path,
+        default=Path("reports/publication_narrative_template_v1.md"),
+        help="Output markdown path.",
+    )
+    narrative.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
     inversion = sub.add_parser("inversion-robustness", help="Build daily-vs-monthly T10Y2Y inversion definition comparison report.")
     inversion.add_argument(
         "--permutation-party-term",
@@ -734,6 +756,18 @@ def main() -> int:
             inference_table_csv=args.inference_table if args.inference_table.exists() else None,
             publication_mode=bool(args.publication_mode),
             publication_hac_p_threshold=float(args.publication_hac_p_threshold),
+        )
+        return 0
+
+    if args.cmd == "narrative-template":
+        if not args.claims_table.exists():
+            raise FileNotFoundError(f"Missing claims table CSV: {args.claims_table}")
+        if not args.inference_table.exists():
+            raise FileNotFoundError(f"Missing inference table CSV: {args.inference_table}")
+        write_publication_narrative_template(
+            claims_table_csv=args.claims_table,
+            inference_table_csv=args.inference_table,
+            out_md=args.output,
         )
         return 0
 
