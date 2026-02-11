@@ -84,6 +84,12 @@ series:
     frequency: M
     units: "percent"
     description: "Civilian Unemployment Rate (BLS CPS, SA)."
+  civpart_labor_force_participation:
+    source: fred
+    series_id: CIVPART
+    frequency: M
+    units: "percent"
+    description: "Labor Force Participation Rate: Civilian labor force as share of civilian noninstitutional population (BLS CPS, SA)."
 
   # Wages
   les1252881600q_real_median_weekly_earnings:
@@ -115,6 +121,40 @@ series:
     units: "index"
     description: "PCE Price Index (BEA, SA)."
     seasonal_adjustment: SA
+  cpilfesl_core_cpi:
+    source: fred
+    series_id: CPILFESL
+    frequency: M
+    units: "index"
+    description: "CPI-U less food and energy (Core CPI, SA)."
+    seasonal_adjustment: SA
+  pcepilfe_core_pce_price_index:
+    source: fred
+    series_id: PCEPILFE
+    frequency: M
+    units: "index"
+    description: "Personal Consumption Expenditures Excluding Food and Energy (Core PCE, SA)."
+    seasonal_adjustment: SA
+
+  # Interest rates / yield curve
+  fedfunds_policy_rate:
+    source: fred
+    series_id: FEDFUNDS
+    frequency: M
+    units: "percent"
+    description: "Effective Federal Funds Rate (monthly average)."
+  dgs10_treasury_10y_rate:
+    source: fred
+    series_id: DGS10
+    frequency: D
+    units: "percent"
+    description: "10-Year Treasury Constant Maturity Rate."
+  t10y2y_yield_spread:
+    source: fred
+    series_id: T10Y2Y
+    frequency: D
+    units: "percentage points"
+    description: "10-Year minus 2-Year Treasury Constant Maturity yield spread."
 
   # Business cycle labels
   usrec_recession_indicator:
@@ -442,6 +482,55 @@ metrics:
       kind: end_minus_start_per_year
       units: "percentage points per year"
 
+  # Labor force participation
+  - id: labor_force_participation_rate_mean
+    family: labor_force_participation
+    primary: true
+    label: "Labor force participation rate (mean during term)"
+    inputs:
+      series: civpart_labor_force_participation
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: labor_force_participation_rate_end
+    family: labor_force_participation
+    primary: false
+    label: "Labor force participation rate (end-of-term value)"
+    inputs:
+      series: civpart_labor_force_participation
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: last
+      units: "percent"
+
+  - id: labor_force_participation_rate_change_pp
+    family: labor_force_participation
+    primary: false
+    label: "Labor force participation rate change (percentage points, end minus start)"
+    inputs:
+      series: civpart_labor_force_participation
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "percentage points"
+
+  - id: labor_force_participation_rate_change_pp_per_year
+    family: labor_force_participation
+    primary: false
+    label: "Labor force participation rate change (percentage points per year, end minus start divided by term years)"
+    inputs:
+      series: civpart_labor_force_participation
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "percentage points per year"
+
   # Wages
   - id: real_median_weekly_earnings_term_pct_change
     family: wages
@@ -632,6 +721,273 @@ metrics:
       scale: 100
       use_actual_time: true
       units: "percent"
+
+  - id: core_cpi_inflation_yoy_mean
+    family: inflation
+    primary: false
+    label: "Core CPI inflation (YoY, mean during term; CPILFESL)"
+    inputs:
+      series: cpilfesl_core_cpi
+    period_transform:
+      kind: pct_change
+      lag: 12
+      scale: 100
+      notes:
+        - "Formula: 100 * (CPILFESL_t / CPILFESL_{t-12} - 1)."
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: core_cpi_inflation_mom_ann_logdiff_mean
+    family: inflation
+    primary: false
+    label: "Core CPI inflation (MoM annualized, log diff, mean during term; CPILFESL)"
+    inputs:
+      series: cpilfesl_core_cpi
+    period_transform:
+      kind: growth_rate
+      method: logdiff
+      lag: 1
+      annualize_periods_per_year: 12
+      scale: 100
+      notes:
+        - "Formula: 100 * 12 * ln(CPILFESL_t / CPILFESL_{t-1})."
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: core_cpi_price_level_term_pct_change
+    family: inflation
+    primary: false
+    label: "Core CPI price level percent change (term total, end vs start; CPILFESL)"
+    inputs:
+      series: cpilfesl_core_cpi
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: core_cpi_price_level_term_cagr_pct
+    family: inflation
+    primary: false
+    label: "Core CPI price level CAGR (term annualized from start/end; CPILFESL)"
+    inputs:
+      series: cpilfesl_core_cpi
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+
+  - id: core_pce_inflation_yoy_mean
+    family: inflation
+    primary: false
+    label: "Core PCE inflation (YoY, mean during term; PCEPILFE)"
+    inputs:
+      series: pcepilfe_core_pce_price_index
+    period_transform:
+      kind: pct_change
+      lag: 12
+      scale: 100
+      notes:
+        - "Formula: 100 * (PCEPILFE_t / PCEPILFE_{t-12} - 1)."
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: core_pce_inflation_mom_ann_logdiff_mean
+    family: inflation
+    primary: false
+    label: "Core PCE inflation (MoM annualized, log diff, mean during term; PCEPILFE)"
+    inputs:
+      series: pcepilfe_core_pce_price_index
+    period_transform:
+      kind: growth_rate
+      method: logdiff
+      lag: 1
+      annualize_periods_per_year: 12
+      scale: 100
+      notes:
+        - "Formula: 100 * 12 * ln(PCEPILFE_t / PCEPILFE_{t-1})."
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: core_pce_price_level_term_pct_change
+    family: inflation
+    primary: false
+    label: "Core PCE price level percent change (term total, end vs start; PCEPILFE)"
+    inputs:
+      series: pcepilfe_core_pce_price_index
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: core_pce_price_level_term_cagr_pct
+    family: inflation
+    primary: false
+    label: "Core PCE price level CAGR (term annualized from start/end; PCEPILFE)"
+    inputs:
+      series: pcepilfe_core_pce_price_index
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+
+  # Interest rates / yield curve
+  - id: fedfunds_policy_rate_mean
+    family: interest_rates
+    primary: true
+    label: "Effective federal funds rate (mean during term; FEDFUNDS)"
+    inputs:
+      series: fedfunds_policy_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: fedfunds_policy_rate_end
+    family: interest_rates
+    primary: false
+    label: "Effective federal funds rate (end-of-term value; FEDFUNDS)"
+    inputs:
+      series: fedfunds_policy_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: last
+      units: "percent"
+
+  - id: fedfunds_policy_rate_change_pp
+    family: interest_rates
+    primary: false
+    label: "Effective federal funds rate change (percentage points, end minus start; FEDFUNDS)"
+    inputs:
+      series: fedfunds_policy_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "percentage points"
+
+  - id: fedfunds_policy_rate_change_pp_per_year
+    family: interest_rates
+    primary: false
+    label: "Effective federal funds rate change (percentage points per year, end minus start divided by term years; FEDFUNDS)"
+    inputs:
+      series: fedfunds_policy_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "percentage points per year"
+
+  - id: treasury_10y_rate_mean
+    family: interest_rates
+    primary: false
+    label: "10-year Treasury yield (mean during term; DGS10)"
+    inputs:
+      series: dgs10_treasury_10y_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: treasury_10y_rate_end
+    family: interest_rates
+    primary: false
+    label: "10-year Treasury yield (end-of-term value; DGS10)"
+    inputs:
+      series: dgs10_treasury_10y_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: last
+      units: "percent"
+
+  - id: treasury_10y_rate_change_pp
+    family: interest_rates
+    primary: false
+    label: "10-year Treasury yield change (percentage points, end minus start; DGS10)"
+    inputs:
+      series: dgs10_treasury_10y_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "percentage points"
+
+  - id: treasury_10y_rate_change_pp_per_year
+    family: interest_rates
+    primary: false
+    label: "10-year Treasury yield change (percentage points per year, end minus start divided by term years; DGS10)"
+    inputs:
+      series: dgs10_treasury_10y_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "percentage points per year"
+
+  - id: yield_curve_t10y2y_spread_mean
+    family: interest_rates
+    primary: false
+    label: "10y-2y Treasury spread (mean during term; T10Y2Y)"
+    inputs:
+      series: t10y2y_yield_spread
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean
+      units: "percentage points"
+
+  - id: yield_curve_t10y2y_spread_end
+    family: interest_rates
+    primary: false
+    label: "10y-2y Treasury spread (end-of-term value; T10Y2Y)"
+    inputs:
+      series: t10y2y_yield_spread
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: last
+      units: "percentage points"
+
+  - id: yield_curve_t10y2y_spread_change_pp
+    family: interest_rates
+    primary: false
+    label: "10y-2y Treasury spread change (percentage points, end minus start; T10Y2Y)"
+    inputs:
+      series: t10y2y_yield_spread
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "percentage points"
+
+  - id: yield_curve_t10y2y_spread_change_pp_per_year
+    family: interest_rates
+    primary: false
+    label: "10y-2y Treasury spread change (percentage points per year, end minus start divided by term years; T10Y2Y)"
+    inputs:
+      series: t10y2y_yield_spread
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "percentage points per year"
 
   # Stock returns (excess)
   - id: ff_mkt_excess_return_ann_compound
@@ -963,8 +1319,6 @@ metrics:
 known_omissions:
   - family: housing
     reason: "Deferred to v2 (candidates: CSUSHPISA, HOUST)."
-  - family: interest_rates
-    reason: "Deferred to v2 (candidates: FEDFUNDS, DGS10, T10Y2Y)."
   - family: trade
     reason: "Deferred to v2 (candidates: BOPGSTB)."
   - family: inequality

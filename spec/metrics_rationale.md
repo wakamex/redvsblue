@@ -40,12 +40,16 @@ We include multiple inflation definitions because people argue about them:
   - Note: for MoM measures, we prefer SA CPI because NSA MoM is dominated by seasonal patterns.
 - `pce_inflation_yoy_mean` (alternate): PCE-based YoY inflation.
 - `pce_inflation_mom_ann_logdiff_mean` (alternate): PCE MoM annualized log-diff inflation.
+- `core_cpi_inflation_yoy_mean` and `core_cpi_inflation_mom_ann_logdiff_mean` (alternates): core CPI variants that remove food/energy noise.
+- `core_pce_inflation_yoy_mean` and `core_pce_inflation_mom_ann_logdiff_mean` (alternates): core PCE variants often used in policy discussions.
 
 We also include cumulative price-level change metrics:
 - `cpi_price_level_term_pct_change_nsa`: total percent change in the CPI index over the term window (end vs start).
 - `cpi_price_level_term_cagr_pct_nsa`: annualized percent change (CAGR) from start/end levels.
 - `pce_price_level_term_pct_change`: total percent change in PCEPI over the term window.
 - `pce_price_level_term_cagr_pct`: annualized percent change (CAGR) from PCEPI start/end levels.
+- `core_cpi_price_level_term_pct_change`, `core_cpi_price_level_term_cagr_pct`: cumulative core CPI level change over the term window.
+- `core_pce_price_level_term_pct_change`, `core_pce_price_level_term_cagr_pct`: cumulative core PCE level change over the term window.
 These are often more intuitive for “prices went up X% during this term” claims than an average YoY rate.
 
 Seasonal adjustment:
@@ -110,6 +114,33 @@ MoM/QoQ/YoY:
 - MoM is the monthly return itself.
 - QoQ/YoY are rolling compounded returns over 3/12 months. We have not made these primary scoreboard metrics yet; they are better suited for plots/diagnostics because they overlap heavily over time.
 
+## Interest Rates / Yield Curve
+
+Question: should rates be treated as explanatory variables only, or also as outcome descriptors under a presidency?
+
+Choice (v1): include rates/spreads as descriptive macro-financial state variables, with level-preserving transforms:
+
+- `fedfunds_policy_rate` (`FEDFUNDS`)
+- `dgs10_treasury_10y_rate` (`DGS10`)
+- `t10y2y_yield_spread` (`T10Y2Y`)
+
+For each, we include:
+
+- term mean,
+- end-of-term level,
+- end-minus-start (percentage points), and
+- end-minus-start per year.
+
+Rationale:
+
+- These series are central to claims about inflation control, financing conditions, and recession risk.
+- Level and pp-change transforms are interpretable and avoid percent-change-on-rate confusion.
+- Keeping a symmetric transform set across all three avoids one-off metric selection.
+
+Guardrail:
+
+- These are not interpreted as direct policy causal effects of the president; monetary policy independence and macro endogeneity remain explicit caveats.
+
 ## Employment: End-minus-start vs Per-year
 
 Question: why include `end_minus_start_per_year`?
@@ -136,6 +167,15 @@ For unemployment (`UNRATE`), we use level-preserving transforms:
 - percentage-point change, and
 - percentage-point change per year.
 This keeps interpretation in labor-market units and avoids percent-change-on-rate ambiguity.
+
+We now apply the same level-preserving transform family to labor force participation (`CIVPART`):
+
+- term mean,
+- end-of-term level,
+- percentage-point change, and
+- percentage-point change per year.
+
+This adds a labor-utilization lens that is not captured by unemployment alone (for example, decline in participation can mechanically lower unemployment).
 
 ## Wages / Real Earnings
 

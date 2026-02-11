@@ -99,6 +99,37 @@ This check is not:
 - Boundary sensitivity for short windows and CAGR edge cases.
 - Vintage/revision drift in macro series (results can move across download dates).
 
+## Metric-Set Expansion Update (2026-02-11)
+
+To reduce omission risk and make transform coverage more symmetric, we expanded the spec with:
+
+- Labor-force utilization:
+  - `CIVPART` (`labor_force_participation` family)
+- Core inflation:
+  - `CPILFESL` (core CPI)
+  - `PCEPILFE` (core PCE)
+- Monetary/term-structure context:
+  - `FEDFUNDS` (effective fed funds rate)
+  - `DGS10` (10-year Treasury yield)
+  - `T10Y2Y` (10y-2y spread)
+
+Transform policy applied:
+
+- For rate/spread series (`CIVPART`, `FEDFUNDS`, `DGS10`, `T10Y2Y`): mean, end, pp change, pp change per year.
+- For core price-level series (`CPILFESL`, `PCEPILFE`): YoY mean, MoM annualized log-diff mean, term pct change, term CAGR.
+
+Early empirical read after rebuild:
+
+- New primary metrics (`labor_force_participation_rate_mean`, `fedfunds_policy_rate_mean`) are currently exploratory in permutation output (`q_bh_fdr` well above 0.10 in the latest run).
+- Coverage is mechanically limited by data starts:
+  - `FEDFUNDS` and core inflation start postwar (fewer eligible terms than GDP/CPI headline series).
+  - `T10Y2Y` has especially short history (post-1970s), so this is currently a contextual diagnostic, not a high-power inferential signal.
+
+Interpretation:
+
+- The expansion adds useful macro-policy context and reduces "you omitted X" critiques.
+- It does not, by itself, resolve the core inferential uncertainty; sample-size and blocking sensitivity still dominate significance stability.
+
 ## Threshold Sensitivity Snapshot (Within-President U-D)
 
 Using the new filter (`--within-president-min-window-days`), a quick `0/30/90` check shows:
