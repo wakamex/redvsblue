@@ -351,6 +351,7 @@ Operational status:
   - disable via `--no-publication-tier-columns`
   - strict/publication tier columns are wired for both party and within-president sections.
   - publication-tier cells are populated when claims were generated with `rb claims-table --publication-mode`.
+  - Within-president scoreboard rows now also surface rough MDE diagnostics when present in within-randomization inputs.
 - Historical all-metrics tier counts (pre-hardening defaults; retained for comparison context):
   - Term-level party differences: `confirmatory=2`, `supportive=5`, `exploratory=30`.
   - Within-president unified/divided: `confirmatory=0`, `supportive=0`, `exploratory=74`.
@@ -444,7 +445,7 @@ Current weaknesses / gaps:
 ## Immediate Next Steps
 
 1. Add a small-cluster exact/randomization inference variant for very low cluster counts (beyond current wild-cluster bootstrap).
-2. Surface within-president MDE diagnostics in publication-facing markdown tables (scoreboard and/or narrative template).
+2. Surface within-president MDE diagnostics in the publication narrative template (not only scoreboard tables).
 3. Extend manifest context to include upstream data retrieval timestamps/vintage identifiers where available.
 
 ## Claims Table
