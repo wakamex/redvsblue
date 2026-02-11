@@ -108,7 +108,7 @@ Legend:
 
 1. Add a `--no-robustness-links` scoreboard option for cleaner exports when consumers want only core tables.
 2. Add a fixed report artifact comparing inversion definitions (daily, monthly-EOP, monthly-AVG) each run.
-3. Add local caching for CI smoke downloads between steps/jobs to reduce provider dependence and runtime.
+3. Add `actions/cache` for `data/raw` smoke artifacts between workflow runs (with spec-hash keys) to reduce external provider hits.
 
 ## Change-Control Rule
 
