@@ -341,6 +341,7 @@ Operational status:
   - `rb narrative-template`
   - default output: `reports/publication_narrative_template_v1.md`
   - This template is generated directly from claims/inference tables to reduce narrative cherry-picking.
+  - Template now includes a dedicated within-president diagnostics section with rough MDE context when claims rows include `analysis=within_unified`.
 - A one-command publication artifact build is now available:
   - `rb publication-bundle`
   - This runs inference table -> publication-gated claims table -> narrative template -> scoreboard with claims-aware tier columns.
@@ -445,7 +446,7 @@ Current weaknesses / gaps:
 ## Immediate Next Steps
 
 1. Add a small-cluster exact/randomization inference variant for very low cluster counts (beyond current wild-cluster bootstrap).
-2. Surface within-president MDE diagnostics in the publication narrative template (not only scoreboard tables).
+2. Add baseline-vs-strict stability diagnostics for wild-cluster p-values (seed and draw-count sensitivity) in the inference artifacts.
 3. Extend manifest context to include upstream data retrieval timestamps/vintage identifiers where available.
 
 ## Claims Table

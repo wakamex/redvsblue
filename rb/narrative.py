@@ -48,10 +48,15 @@ def write_publication_narrative_template(
         raise FileNotFoundError(f"Missing inference table CSV: {inference_table_csv}")
 
     claims_by_metric: dict[str, dict[str, str]] = {}
+    within_claim_rows: list[dict[str, str]] = []
     with claims_table_csv.open("r", encoding="utf-8", newline="") as handle:
         rdr = csv.DictReader(handle)
         for row in rdr:
-            if (row.get("analysis") or "").strip() != "term_party":
+            analysis = (row.get("analysis") or "").strip()
+            if analysis == "within_unified":
+                within_claim_rows.append(row)
+                continue
+            if analysis != "term_party":
                 continue
             mid = (row.get("metric_id") or "").strip()
             if not mid:
@@ -101,6 +106,35 @@ def write_publication_narrative_template(
     n_support = len(by_tier["supportive"])
     n_expl = len(by_tier["exploratory"])
     n_missing = len(by_tier["missing"])
+
+    within_rows: list[dict[str, str]] = []
+    for row in within_claim_rows:
+        eff = (row.get("effect_strict") or "").strip() or (row.get("effect_baseline") or "").strip()
+        q = (row.get("q_strict") or "").strip() or (row.get("q_baseline") or "").strip()
+        mde = (row.get("mde_strict") or "").strip() or (row.get("mde_baseline") or "").strip()
+        ratio = (row.get("effect_over_mde_strict") or "").strip() or (row.get("effect_over_mde_baseline") or "").strip()
+        n = (row.get("n_strict") or "").strip() or (row.get("n_baseline") or "").strip()
+        within_rows.append(
+            {
+                "metric_id": (row.get("metric_id") or "").strip(),
+                "metric_family": (row.get("metric_family") or "").strip(),
+                "pres_party": (row.get("pres_party") or "").strip(),
+                "tier": _best_claim_tier(row),
+                "effect": eff,
+                "q": q,
+                "mde": mde,
+                "effect_over_mde": ratio,
+                "n": n,
+            }
+        )
+    within_rows.sort(
+        key=lambda r: (
+            -_tier_rank(r.get("tier") or ""),
+            _parse_float(r.get("q") or "") if _parse_float(r.get("q") or "") is not None else 1e9,
+            r.get("metric_id") or "",
+            r.get("pres_party") or "",
+        )
+    )
 
     lines: list[str] = []
     lines.append("# Publication Narrative Template")
@@ -161,6 +195,18 @@ def write_publication_narrative_template(
         lines.append("Rows with missing tier assignment:")
         for r in by_tier["missing"]:
             lines.append("- `{metric_id}` ({metric_family})".format(**r))
+    lines.append("")
+    lines.append("## Within-President Diagnostics (Publication Tier)")
+    lines.append("")
+    if within_rows:
+        lines.append(f"- Rows available: `{len(within_rows)}`")
+        for r in within_rows:
+            lines.append(
+                "- `{metric_id}` ({metric_family}, P={pres_party}): tier={tier}, "
+                "effect={effect}, q={q}, n={n}, rough MDE={mde}, |effect|/MDE={effect_over_mde}".format(**r)
+            )
+    else:
+        lines.append("- None (claims table did not include `analysis=within_unified` rows).")
     lines.append("")
     lines.append("## Standard Caveats (Keep)")
     lines.append("")
