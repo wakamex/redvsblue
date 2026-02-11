@@ -130,6 +130,31 @@ def _load_within_randomization(path: Path) -> dict[tuple[str, str], dict[str, st
     return out
 
 
+def _load_inference_stability_summary(path: Path) -> dict[str, dict[str, str]]:
+    out: dict[str, dict[str, str]] = {}
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for r in rdr:
+            mid = (r.get("metric_id") or "").strip()
+            if not mid:
+                continue
+            out[mid] = r
+    return out
+
+
+def _compact_stability_status(s: str) -> str:
+    txt = (s or "").strip()
+    if txt == "robust_significant":
+        return "sig"
+    if txt == "robust_not_significant":
+        return "ns"
+    if txt == "unstable":
+        return "unstable"
+    if txt == "missing":
+        return "missing"
+    return ""
+
+
 def _load_claims_term_rows(path: Path) -> dict[str, dict[str, str]]:
     out: dict[str, dict[str, str]] = {}
     with path.open("r", encoding="utf-8", newline="") as handle:
@@ -539,6 +564,7 @@ def write_scoreboard_md(
     window_labels_csv: Path | None,
     term_randomization_csv: Path | None = Path("reports/permutation_party_term_v1.csv"),
     within_randomization_csv: Path | None = Path("reports/permutation_unified_within_term_v1.csv"),
+    inference_stability_summary_csv: Path | None = Path("reports/inference_wild_cluster_stability_summary_v1.csv"),
     claims_table_csv: Path | None = Path("reports/claims_table_v1.csv"),
     output_within_president_deltas_csv: Path | None = None,
     within_president_min_window_days: int = 0,
@@ -573,6 +599,12 @@ def write_scoreboard_md(
         within_rand_path = within_randomization_csv
         within_rand = _load_within_randomization(within_randomization_csv)
 
+    inf_stability_path: Path | None = None
+    inf_stability: dict[str, dict[str, str]] = {}
+    if inference_stability_summary_csv is not None and inference_stability_summary_csv.exists():
+        inf_stability_path = inference_stability_summary_csv
+        inf_stability = _load_inference_stability_summary(inference_stability_summary_csv)
+
     term_claims_path: Path | None = None
     term_claims: dict[str, dict[str, str]] = {}
     within_claims: dict[tuple[str, str], dict[str, str]] = {}
@@ -581,6 +613,7 @@ def write_scoreboard_md(
         term_claims = _load_claims_term_rows(claims_table_csv)
         within_claims = _load_claims_within_rows(claims_table_csv)
     show_pub_cols = bool(show_publication_tiers and term_claims)
+    show_stability_cols = bool(inf_stability)
     show_within_pub_cols = bool(show_publication_tiers and within_claims)
     has_publication_tiers = any((r.get("tier_strict_publication") or "").strip() for r in term_claims.values())
     has_within_publication_tiers = any((r.get("tier_strict_publication") or "").strip() for r in within_claims.values())
@@ -631,6 +664,9 @@ def write_scoreboard_md(
     if show_pub_cols:
         party_header.extend(["Strict q", "Strict tier", "Publication tier"])
         party_sep.extend(["---:", "---:", "---:"])
+    if show_stability_cols:
+        party_header.extend(["Stab@0.05", "Stab@0.10"])
+        party_sep.extend(["---:", "---:"])
 
     lines.append("| " + " | ".join(party_header) + " |")
     lines.append("| " + " | ".join(party_sep) + " |")
@@ -676,6 +712,14 @@ def write_scoreboard_md(
                     (cr.get("tier_strict_publication") or "").strip(),
                 ]
             )
+        if show_stability_cols:
+            sr = inf_stability.get(mid, {})
+            row_values.extend(
+                [
+                    _compact_stability_status(sr.get("status_005") or ""),
+                    _compact_stability_status(sr.get("status_010") or ""),
+                ]
+            )
         lines.append("| " + " | ".join(row_values) + " |")
         if d is None or r is None:
             missing_party_rows += 1
@@ -698,6 +742,11 @@ def write_scoreboard_md(
         )
     elif show_publication_tiers:
         lines.append("Publication-tier columns are blank until `rb claims-table --publication-mode` has been run.")
+    if show_stability_cols and inf_stability_path is not None:
+        lines.append(
+            f"Inference-stability columns (`Stab@0.05`, `Stab@0.10`) sourced from `{inf_stability_path}` "
+            "(`sig`=robust_significant, `ns`=robust_not_significant)."
+        )
 
     if show_robustness_links:
         robustness_links: list[tuple[str, Path]] = []

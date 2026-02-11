@@ -380,6 +380,12 @@ def _parse_args() -> argparse.Namespace:
         help="Claims table CSV (optional; adds strict/publication tier columns if present).",
     )
     scoreboard.add_argument(
+        "--inference-stability-summary",
+        type=Path,
+        default=Path("reports/inference_wild_cluster_stability_summary_v1.csv"),
+        help="Inference stability summary CSV (optional; adds stability status columns if present).",
+    )
+    scoreboard.add_argument(
         "--no-publication-tier-columns",
         action="store_true",
         help="Hide strict/publication tier columns in the party summary table.",
@@ -1023,6 +1029,9 @@ def main() -> int:
             primary_only=not bool(args.all_metrics),
             window_metrics_csv=args.window_metrics if args.window_metrics.exists() else None,
             window_labels_csv=args.window_labels if args.window_labels.exists() else None,
+            inference_stability_summary_csv=(
+                args.inference_stability_summary if args.inference_stability_summary.exists() else None
+            ),
             claims_table_csv=args.claims_table if args.claims_table.exists() else None,
             output_within_president_deltas_csv=args.output_within_president_deltas,
             within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
@@ -1261,6 +1270,9 @@ def main() -> int:
             window_labels_csv=args.window_labels if args.window_labels.exists() else None,
             term_randomization_csv=args.baseline_party_term,
             within_randomization_csv=base_within,
+            inference_stability_summary_csv=(
+                args.output_inference_stability_summary_csv if not bool(args.skip_inference_stability) else None
+            ),
             claims_table_csv=args.output_claims,
             within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
             show_robustness_links=True,
