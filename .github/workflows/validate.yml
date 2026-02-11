@@ -1,0 +1,34 @@
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Sync dependencies
+        run: uv sync --locked
+
+      - name: Run rb validate (spec + presidents fixture)
+        run: |
+          cat > /tmp/presidents_min.csv <<'CSV'
+          term_id,president,party_abbrev,term_start,term_end
+          sample_1,Sample A,D,2000-01-20,2004-01-20
+          sample_2,Sample B,R,2004-01-20,2008-01-20
+          CSV
+          .venv/bin/rb validate --spec spec/metrics_v1.yaml --presidents /tmp/presidents_min.csv
