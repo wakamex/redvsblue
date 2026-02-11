@@ -8,6 +8,16 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+STRICT_Q_DEFAULT = 0.05
+SUPPORTIVE_Q_THRESHOLD = 0.10
+DIAGNOSTIC_ONLY_METRIC_IDS = frozenset(
+    {
+        "sp500_backfilled_pre1957_term_pct_change",
+        "sp500_backfilled_pre1957_term_cagr_pct",
+        "ff_mkt_excess_return_ann_arith",
+    }
+)
+
 
 def _parse_float(s: str) -> float | None:
     txt = (s or "").strip()
@@ -169,18 +179,28 @@ def _classify_evidence(
     n: int,
     q_threshold: float,
     min_n: int,
-) -> tuple[str, str, str, str]:
-    pass_q = q is not None and q < q_threshold
+) -> dict[str, str]:
+    pass_q_threshold = q is not None and q < q_threshold
+    pass_q_005 = q is not None and q < 0.05
+    pass_q_010 = q is not None and q < SUPPORTIVE_Q_THRESHOLD
     pass_ci = ci_lo is not None and ci_hi is not None and ((ci_lo > 0 and ci_hi > 0) or (ci_lo < 0 and ci_hi < 0))
     pass_n = n >= min_n
-    score = int(pass_q) + int(pass_ci) + int(pass_n)
-    if score == 3:
+    # Tier assignment uses multiplicity-aware q-values plus minimum sample-size checks.
+    # CI exclusion is still reported, but not used as a hard gate.
+    if pass_q_threshold and pass_n:
         tier = "confirmatory"
-    elif score == 2:
+    elif pass_q_010 and pass_n:
         tier = "supportive"
     else:
         tier = "exploratory"
-    return ("1" if pass_q else "0", "1" if pass_ci else "0", "1" if pass_n else "0", tier)
+    return {
+        "passes_q_threshold": "1" if pass_q_threshold else "0",
+        "passes_q_lt_005": "1" if pass_q_005 else "0",
+        "passes_q_lt_010": "1" if pass_q_010 else "0",
+        "passes_ci_excludes_zero": "1" if pass_ci else "0",
+        "passes_min_n": "1" if pass_n else "0",
+        "evidence_tier": tier,
+    }
 
 
 def _diff_d_minus_r(values: list[float], labels: list[str]) -> float | None:
@@ -207,7 +227,12 @@ class _MetricObs:
     term_start: date | None
 
 
-def _load_term_metric_groups(*, term_metrics_csv: Path, primary_only: bool) -> dict[tuple[str, str], dict[str, Any]]:
+def _load_term_metric_groups(
+    *,
+    term_metrics_csv: Path,
+    primary_only: bool,
+    include_diagnostic_metrics: bool,
+) -> dict[tuple[str, str], dict[str, Any]]:
     groups: dict[tuple[str, str], dict[str, Any]] = {}
     with term_metrics_csv.open("r", encoding="utf-8", newline="") as handle:
         rdr = csv.DictReader(handle)
@@ -217,6 +242,8 @@ def _load_term_metric_groups(*, term_metrics_csv: Path, primary_only: bool) -> d
             if not metric_id or party not in {"D", "R"}:
                 continue
             if primary_only and (row.get("metric_primary") or "").strip() != "1":
+                continue
+            if not include_diagnostic_metrics and metric_id in DIAGNOSTIC_ONLY_METRIC_IDS:
                 continue
             v = _parse_float(row.get("value") or "")
             if v is None:
@@ -274,8 +301,13 @@ def _compute_term_party_permutation(
     q_threshold: float,
     min_n_obs: int,
     primary_only: bool,
+    include_diagnostic_metrics: bool,
 ) -> None:
-    groups = _load_term_metric_groups(term_metrics_csv=term_metrics_csv, primary_only=primary_only)
+    groups = _load_term_metric_groups(
+        term_metrics_csv=term_metrics_csv,
+        primary_only=primary_only,
+        include_diagnostic_metrics=include_diagnostic_metrics,
+    )
     rng = random.Random(seed)
     boot_rng = random.Random(seed + 1000003)
 
@@ -298,10 +330,13 @@ def _compute_term_party_permutation(
         "p_two_sided",
         "q_bh_fdr",
         "passes_q_threshold",
+        "passes_q_lt_005",
+        "passes_q_lt_010",
         "passes_ci_excludes_zero",
         "passes_min_n",
         "evidence_tier",
         "q_threshold",
+        "q_threshold_supportive",
         "min_n_threshold",
         "permutations",
         "bootstrap_samples",
@@ -405,7 +440,7 @@ def _compute_term_party_permutation(
         lo = _parse_float(r.get("bootstrap_ci95_low") or "")
         hi = _parse_float(r.get("bootstrap_ci95_high") or "")
         n = _parse_int(r.get("n_obs") or "") or 0
-        pq, pc, pn, tier = _classify_evidence(
+        ev = _classify_evidence(
             q=q,
             ci_lo=lo,
             ci_hi=hi,
@@ -413,11 +448,14 @@ def _compute_term_party_permutation(
             q_threshold=q_threshold,
             min_n=min_n_obs,
         )
-        r["passes_q_threshold"] = pq
-        r["passes_ci_excludes_zero"] = pc
-        r["passes_min_n"] = pn
-        r["evidence_tier"] = tier
+        r["passes_q_threshold"] = ev["passes_q_threshold"]
+        r["passes_q_lt_005"] = ev["passes_q_lt_005"]
+        r["passes_q_lt_010"] = ev["passes_q_lt_010"]
+        r["passes_ci_excludes_zero"] = ev["passes_ci_excludes_zero"]
+        r["passes_min_n"] = ev["passes_min_n"]
+        r["evidence_tier"] = ev["evidence_tier"]
         r["q_threshold"] = _fmt(q_threshold)
+        r["q_threshold_supportive"] = _fmt(SUPPORTIVE_Q_THRESHOLD)
         r["min_n_threshold"] = str(int(min_n_obs))
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
@@ -486,6 +524,7 @@ def _compute_unified_within_term_permutation(
     q_threshold: float,
     min_n_within_both: int,
     primary_only: bool,
+    include_diagnostic_metrics: bool,
 ) -> None:
     labels = _load_window_labels(window_labels_csv)
     rng = random.Random(seed)
@@ -500,6 +539,8 @@ def _compute_unified_within_term_permutation(
             if not metric_id:
                 continue
             if primary_only and (row.get("metric_primary") or "").strip() != "1":
+                continue
+            if not include_diagnostic_metrics and metric_id in DIAGNOSTIC_ONLY_METRIC_IDS:
                 continue
             wid = (row.get("term_id") or "").strip()
             lab = labels.get(wid)
@@ -555,10 +596,13 @@ def _compute_unified_within_term_permutation(
         "p_two_sided",
         "q_bh_fdr",
         "passes_q_threshold",
+        "passes_q_lt_005",
+        "passes_q_lt_010",
         "passes_ci_excludes_zero",
         "passes_min_n",
         "evidence_tier",
         "q_threshold",
+        "q_threshold_supportive",
         "min_n_threshold",
         "permutations",
         "bootstrap_samples",
@@ -644,7 +688,7 @@ def _compute_unified_within_term_permutation(
         lo = _parse_float(r.get("bootstrap_ci95_low") or "")
         hi = _parse_float(r.get("bootstrap_ci95_high") or "")
         n = _parse_int(r.get("n_presidents_with_both") or "") or 0
-        pq, pc, pn, tier = _classify_evidence(
+        ev = _classify_evidence(
             q=q,
             ci_lo=lo,
             ci_hi=hi,
@@ -652,11 +696,14 @@ def _compute_unified_within_term_permutation(
             q_threshold=q_threshold,
             min_n=min_n_within_both,
         )
-        r["passes_q_threshold"] = pq
-        r["passes_ci_excludes_zero"] = pc
-        r["passes_min_n"] = pn
-        r["evidence_tier"] = tier
+        r["passes_q_threshold"] = ev["passes_q_threshold"]
+        r["passes_q_lt_005"] = ev["passes_q_lt_005"]
+        r["passes_q_lt_010"] = ev["passes_q_lt_010"]
+        r["passes_ci_excludes_zero"] = ev["passes_ci_excludes_zero"]
+        r["passes_min_n"] = ev["passes_min_n"]
+        r["evidence_tier"] = ev["evidence_tier"]
         r["q_threshold"] = _fmt(q_threshold)
+        r["q_threshold_supportive"] = _fmt(SUPPORTIVE_Q_THRESHOLD)
         r["min_n_threshold"] = str(int(min_n_within_both))
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
@@ -686,6 +733,9 @@ def _write_evidence_summary(
     family_counts: dict[tuple[str, str], int] = {}
     analysis_counts: dict[str, int] = {}
 
+    def _flag(v: str | None) -> bool:
+        return (v or "").strip() == "1"
+
     for analysis, path in analyses:
         with path.open("r", encoding="utf-8", newline="") as handle:
             rdr = csv.DictReader(handle)
@@ -694,31 +744,64 @@ def _write_evidence_summary(
                 tier = (r.get("evidence_tier") or "").strip() or "exploratory"
                 if tier not in tier_order:
                     tier = "exploratory"
+                q = _parse_float(r.get("q_bh_fdr") or "")
+                q_threshold = _parse_float(r.get("q_threshold") or "")
+                if q_threshold is None:
+                    q_threshold = STRICT_Q_DEFAULT
+                pass_q_threshold = _flag(r.get("passes_q_threshold"))
+                pass_q_005 = _flag(r.get("passes_q_lt_005")) or (q is not None and q < 0.05)
+                pass_q_010 = _flag(r.get("passes_q_lt_010")) or (q is not None and q < SUPPORTIVE_Q_THRESHOLD)
+                if (r.get("passes_q_threshold") or "").strip() == "":
+                    pass_q_threshold = q is not None and q < q_threshold
+                pass_ci = _flag(r.get("passes_ci_excludes_zero"))
+                pass_min_n = _flag(r.get("passes_min_n"))
 
                 k = (analysis, fam, tier)
                 a = aggregate.get(k)
                 if a is None:
-                    a = {"n_rows": 0, "n_pass_q": 0, "n_pass_ci": 0, "n_pass_min_n": 0}
+                    a = {
+                        "n_rows": 0,
+                        "n_pass_q_threshold": 0,
+                        "n_pass_q_005": 0,
+                        "n_pass_q_010": 0,
+                        "n_pass_ci": 0,
+                        "n_pass_min_n": 0,
+                    }
                     aggregate[k] = a
                 a["n_rows"] += 1
-                if (r.get("passes_q_threshold") or "").strip() == "1":
-                    a["n_pass_q"] += 1
-                if (r.get("passes_ci_excludes_zero") or "").strip() == "1":
+                if pass_q_threshold:
+                    a["n_pass_q_threshold"] += 1
+                if pass_q_005:
+                    a["n_pass_q_005"] += 1
+                if pass_q_010:
+                    a["n_pass_q_010"] += 1
+                if pass_ci:
                     a["n_pass_ci"] += 1
-                if (r.get("passes_min_n") or "").strip() == "1":
+                if pass_min_n:
                     a["n_pass_min_n"] += 1
 
                 fam_all = (analysis, "__all__", tier)
                 b = aggregate.get(fam_all)
                 if b is None:
-                    b = {"n_rows": 0, "n_pass_q": 0, "n_pass_ci": 0, "n_pass_min_n": 0}
+                    b = {
+                        "n_rows": 0,
+                        "n_pass_q_threshold": 0,
+                        "n_pass_q_005": 0,
+                        "n_pass_q_010": 0,
+                        "n_pass_ci": 0,
+                        "n_pass_min_n": 0,
+                    }
                     aggregate[fam_all] = b
                 b["n_rows"] += 1
-                if (r.get("passes_q_threshold") or "").strip() == "1":
-                    b["n_pass_q"] += 1
-                if (r.get("passes_ci_excludes_zero") or "").strip() == "1":
+                if pass_q_threshold:
+                    b["n_pass_q_threshold"] += 1
+                if pass_q_005:
+                    b["n_pass_q_005"] += 1
+                if pass_q_010:
+                    b["n_pass_q_010"] += 1
+                if pass_ci:
                     b["n_pass_ci"] += 1
-                if (r.get("passes_min_n") or "").strip() == "1":
+                if pass_min_n:
                     b["n_pass_min_n"] += 1
 
                 family_counts[(analysis, fam)] = family_counts.get((analysis, fam), 0) + 1
@@ -732,6 +815,8 @@ def _write_evidence_summary(
         "n_rows",
         "share_of_family_rows",
         "share_of_analysis_rows",
+        "n_pass_q_lt_005",
+        "n_pass_q_lt_010",
         "n_pass_q_threshold",
         "n_pass_ci_excludes_zero",
         "n_pass_min_n",
@@ -744,7 +829,17 @@ def _write_evidence_summary(
             fam_den = family_counts.get((analysis, fam), 0)
             ana_den = analysis_counts.get(analysis, 0)
             for tier in tier_order:
-                a = aggregate.get((analysis, fam, tier), {"n_rows": 0, "n_pass_q": 0, "n_pass_ci": 0, "n_pass_min_n": 0})
+                a = aggregate.get(
+                    (analysis, fam, tier),
+                    {
+                        "n_rows": 0,
+                        "n_pass_q_threshold": 0,
+                        "n_pass_q_005": 0,
+                        "n_pass_q_010": 0,
+                        "n_pass_ci": 0,
+                        "n_pass_min_n": 0,
+                    },
+                )
                 n_rows = int(a["n_rows"])
                 share_f = (n_rows / fam_den) if fam_den > 0 else None
                 share_a = (n_rows / ana_den) if ana_den > 0 else None
@@ -756,7 +851,9 @@ def _write_evidence_summary(
                         "n_rows": str(n_rows),
                         "share_of_family_rows": _fmt(share_f),
                         "share_of_analysis_rows": _fmt(share_a),
-                        "n_pass_q_threshold": str(int(a["n_pass_q"])),
+                        "n_pass_q_lt_005": str(int(a["n_pass_q_005"])),
+                        "n_pass_q_lt_010": str(int(a["n_pass_q_010"])),
+                        "n_pass_q_threshold": str(int(a["n_pass_q_threshold"])),
                         "n_pass_ci_excludes_zero": str(int(a["n_pass_ci"])),
                         "n_pass_min_n": str(int(a["n_pass_min_n"])),
                     }
@@ -850,8 +947,14 @@ def _write_evidence_markdown(
 
     lines.append("## Notes")
     lines.append("")
-    lines.append("- Evidence tier is derived from q-threshold, CI excluding zero, and minimum-n checks in the CSV outputs.")
-    lines.append("- Treat supportive results as suggestive; avoid strong claims without confirmatory support.")
+    lines.append(
+        "- Confirmatory requires q < q_threshold (default 0.05) and minimum-n checks."
+    )
+    lines.append(
+        "- Supportive requires q < 0.10 and minimum-n checks; treat as suggestive."
+    )
+    lines.append("- CI bounds are reported as effect-size uncertainty context, not as a hard tier gate.")
+    lines.append("- Prefer continuous `q_bh_fdr` and CI width/sign when interpreting strength, not only tier buckets.")
     lines.append("")
 
     text = "\n".join(lines) + "\n"
@@ -879,6 +982,7 @@ def run_randomization(
     output_evidence_summary_csv: Path | None,
     output_evidence_md: Path | None,
     within_president_min_window_days: int,
+    include_diagnostic_metrics: bool,
 ) -> None:
     if not term_metrics_csv.exists():
         raise FileNotFoundError(f"Missing term metrics CSV: {term_metrics_csv}")
@@ -893,6 +997,7 @@ def run_randomization(
         q_threshold=float(q_threshold),
         min_n_obs=max(0, int(min_term_n_obs)),
         primary_only=bool(primary_only),
+        include_diagnostic_metrics=bool(include_diagnostic_metrics),
     )
 
     generated_within_csv: Path | None = None
@@ -914,6 +1019,7 @@ def run_randomization(
             q_threshold=float(q_threshold),
             min_n_within_both=max(0, int(min_within_n_both)),
             primary_only=bool(primary_only),
+            include_diagnostic_metrics=bool(include_diagnostic_metrics),
         )
         generated_within_csv = output_unified_within_term_csv
 
@@ -1031,6 +1137,146 @@ def compare_randomization_outputs(
             base_rows=_load_evidence_rows(base_within_csv),
             alt_rows=_load_evidence_rows(alt_within_csv),
             has_party=True,
+        )
+
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out_csv.with_suffix(out_csv.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8", newline="") as handle:
+        w = csv.DictWriter(handle, fieldnames=header)
+        w.writeheader()
+        for r in rows:
+            w.writerow(r)
+    tmp.replace(out_csv)
+
+
+def _direction_label(v: float | None) -> str:
+    if v is None:
+        return "unknown"
+    if v > 0:
+        return "positive"
+    if v < 0:
+        return "negative"
+    return "flat"
+
+
+def write_claims_table(
+    *,
+    baseline_party_term_csv: Path,
+    strict_party_term_csv: Path,
+    baseline_within_csv: Path | None,
+    strict_within_csv: Path | None,
+    out_csv: Path,
+) -> None:
+    header = [
+        "analysis",
+        "metric_id",
+        "metric_label",
+        "metric_family",
+        "pres_party",
+        "estimand_id",
+        "estimand",
+        "direction",
+        "effect_baseline",
+        "effect_strict",
+        "q_baseline",
+        "q_strict",
+        "q_delta_strict_minus_baseline",
+        "p_baseline",
+        "p_strict",
+        "tier_baseline",
+        "tier_strict",
+        "tier_change",
+        "n_baseline",
+        "n_strict",
+    ]
+    rows: list[dict[str, str]] = []
+
+    def _append_analysis(
+        *,
+        analysis: str,
+        base_rows: list[dict[str, str]],
+        strict_rows: list[dict[str, str]],
+        has_party: bool,
+        effect_col: str,
+        estimand_id: str,
+        estimand_label: str,
+    ) -> None:
+        if not base_rows and not strict_rows:
+            return
+        bmap: dict[tuple[str, str], dict[str, str]] = {}
+        smap: dict[tuple[str, str], dict[str, str]] = {}
+        for r in base_rows:
+            k = ((r.get("metric_id") or "").strip(), (r.get("pres_party") or "").strip() if has_party else "")
+            bmap[k] = r
+        for r in strict_rows:
+            k = ((r.get("metric_id") or "").strip(), (r.get("pres_party") or "").strip() if has_party else "")
+            smap[k] = r
+
+        keys = sorted(set(bmap.keys()) | set(smap.keys()), key=lambda x: (x[0], x[1]))
+        for k in keys:
+            br = bmap.get(k, {})
+            sr = smap.get(k, {})
+            tier_b = (br.get("evidence_tier") or "").strip()
+            tier_s = (sr.get("evidence_tier") or "").strip()
+            rb = _tier_rank(tier_b)
+            rs = _tier_rank(tier_s)
+            if rs > rb:
+                change = "stronger"
+            elif rs < rb:
+                change = "weaker"
+            else:
+                change = "same"
+
+            effect_b = _parse_float(br.get(effect_col) or "")
+            effect_s = _parse_float(sr.get(effect_col) or "")
+            dir_v = effect_b if effect_b is not None else effect_s
+            q_b = _parse_float(br.get("q_bh_fdr") or "")
+            q_s = _parse_float(sr.get("q_bh_fdr") or "")
+            q_delta = (q_s - q_b) if (q_b is not None and q_s is not None) else None
+
+            rows.append(
+                {
+                    "analysis": analysis,
+                    "metric_id": k[0],
+                    "metric_label": (sr.get("metric_label") or br.get("metric_label") or "").strip(),
+                    "metric_family": (sr.get("metric_family") or br.get("metric_family") or "").strip(),
+                    "pres_party": k[1],
+                    "estimand_id": estimand_id,
+                    "estimand": estimand_label,
+                    "direction": _direction_label(dir_v),
+                    "effect_baseline": _fmt(effect_b),
+                    "effect_strict": _fmt(effect_s),
+                    "q_baseline": _fmt(q_b),
+                    "q_strict": _fmt(q_s),
+                    "q_delta_strict_minus_baseline": _fmt(q_delta),
+                    "p_baseline": (br.get("p_two_sided") or "").strip(),
+                    "p_strict": (sr.get("p_two_sided") or "").strip(),
+                    "tier_baseline": tier_b or "missing",
+                    "tier_strict": tier_s or "missing",
+                    "tier_change": change,
+                    "n_baseline": (br.get("n_obs") or br.get("n_presidents_with_both") or "").strip(),
+                    "n_strict": (sr.get("n_obs") or sr.get("n_presidents_with_both") or "").strip(),
+                }
+            )
+
+    _append_analysis(
+        analysis="term_party",
+        base_rows=_load_evidence_rows(baseline_party_term_csv),
+        strict_rows=_load_evidence_rows(strict_party_term_csv),
+        has_party=False,
+        effect_col="observed_diff_d_minus_r",
+        estimand_id="d_minus_r",
+        estimand_label="mean(term_metric | D) - mean(term_metric | R)",
+    )
+    if baseline_within_csv is not None and strict_within_csv is not None:
+        _append_analysis(
+            analysis="within_unified",
+            base_rows=_load_evidence_rows(baseline_within_csv),
+            strict_rows=_load_evidence_rows(strict_within_csv),
+            has_party=True,
+            effect_col="observed_mean_delta_unified_minus_divided",
+            estimand_id="unified_minus_divided_within_term",
+            estimand_label="mean over president-terms of (unified - divided)",
         )
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)

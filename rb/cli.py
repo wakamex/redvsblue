@@ -8,7 +8,7 @@ from rb.congress_control import ensure_congress_control
 from rb.ingest import ingest_from_spec
 from rb.metrics import compute_term_metrics
 from rb.presidents import ensure_presidents
-from rb.randomization import compare_randomization_outputs, run_randomization
+from rb.randomization import compare_randomization_outputs, run_randomization, write_claims_table
 from rb.regimes import ensure_regime_pipeline
 from rb.scoreboard import write_scoreboard_md
 from rb.validate import validate_all
@@ -246,14 +246,14 @@ def _parse_args() -> argparse.Namespace:
         default=Path("reports/permutation_evidence_summary_v1.md"),
         help="Output markdown summary of confirmatory/supportive evidence rows.",
     )
-    randomization.add_argument("--permutations", type=int, default=2000, help="Number of random permutations.")
+    randomization.add_argument("--permutations", type=int, default=10000, help="Number of random permutations.")
     randomization.add_argument("--bootstrap-samples", type=int, default=2000, help="Number of bootstrap samples for CI estimates.")
     randomization.add_argument("--seed", type=int, default=42, help="RNG seed for reproducibility.")
     randomization.add_argument(
         "--q-threshold",
         type=float,
-        default=0.10,
-        help="FDR-adjusted q-value threshold used for evidence tier classification.",
+        default=0.05,
+        help="Confirmatory FDR q-value threshold (default 0.05); supportive tier uses q<0.10.",
     )
     randomization.add_argument(
         "--min-term-n-obs",
@@ -270,7 +270,7 @@ def _parse_args() -> argparse.Namespace:
     randomization.add_argument(
         "--term-block-years",
         type=int,
-        default=0,
+        default=20,
         help="If >0, term-party permutation shuffles labels within term-start-year blocks of this size.",
     )
     randomization.add_argument(
@@ -283,6 +283,11 @@ def _parse_args() -> argparse.Namespace:
         "--all-metrics",
         action="store_true",
         help="Include non-primary metrics (default behavior is primary-only).",
+    )
+    randomization.add_argument(
+        "--include-diagnostic-metrics",
+        action="store_true",
+        help="Include diagnostic-only metrics in randomization outputs (default excludes selected non-headline diagnostics).",
     )
     randomization.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
@@ -318,6 +323,39 @@ def _parse_args() -> argparse.Namespace:
         help="Output CSV comparing evidence tiers and q/p values.",
     )
     compare_rand.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
+    claims = sub.add_parser("claims-table", help="Build machine-readable baseline-vs-strict claims table.")
+    claims.add_argument(
+        "--baseline-party-term",
+        type=Path,
+        default=Path("reports/permutation_party_term_all_v1.csv"),
+        help="Baseline term-level randomization CSV.",
+    )
+    claims.add_argument(
+        "--strict-party-term",
+        type=Path,
+        default=Path("reports/permutation_party_term_block20_all_v1.csv"),
+        help="Strict-profile term-level randomization CSV.",
+    )
+    claims.add_argument(
+        "--baseline-within",
+        type=Path,
+        default=Path("reports/permutation_unified_within_term_all_v1.csv"),
+        help="Baseline within-president randomization CSV (optional).",
+    )
+    claims.add_argument(
+        "--strict-within",
+        type=Path,
+        default=Path("reports/permutation_unified_within_term_min90_all_v1.csv"),
+        help="Strict-profile within-president randomization CSV (optional).",
+    )
+    claims.add_argument(
+        "--output",
+        type=Path,
+        default=Path("reports/claims_table_v1.csv"),
+        help="Output machine-readable claims table CSV.",
+    )
+    claims.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
     return p.parse_args()
 
@@ -430,6 +468,7 @@ def main() -> int:
             output_evidence_summary_csv=args.output_evidence_summary,
             output_evidence_md=args.output_evidence_md,
             within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
+            include_diagnostic_metrics=bool(args.include_diagnostic_metrics),
         )
         return 0
 
@@ -447,6 +486,26 @@ def main() -> int:
             alt_party_term_csv=args.alt_party_term,
             base_within_csv=base_within,
             alt_within_csv=alt_within,
+            out_csv=args.output,
+        )
+        return 0
+
+    if args.cmd == "claims-table":
+        if not args.baseline_party_term.exists():
+            raise FileNotFoundError(f"Missing baseline term CSV: {args.baseline_party_term}")
+        if not args.strict_party_term.exists():
+            raise FileNotFoundError(f"Missing strict term CSV: {args.strict_party_term}")
+        base_within = args.baseline_within if args.baseline_within.exists() else None
+        strict_within = args.strict_within if args.strict_within.exists() else None
+        if (base_within is None) != (strict_within is None):
+            raise FileNotFoundError(
+                "Within-president claims require both baseline and strict within CSVs or neither."
+            )
+        write_claims_table(
+            baseline_party_term_csv=args.baseline_party_term,
+            strict_party_term_csv=args.strict_party_term,
+            baseline_within_csv=base_within,
+            strict_within_csv=strict_within,
             out_csv=args.output,
         )
         return 0
