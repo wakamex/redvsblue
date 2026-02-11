@@ -245,3 +245,38 @@ rb scoreboard --all-metrics
 rb randomization --all-metrics
 rb validate
 ```
+
+## Baseline vs Stricter Profile Commands
+
+Baseline (current defaults used in most summaries):
+
+```sh
+rb randomization --all-metrics \
+  --output-party-term reports/permutation_party_term_all_v1.csv \
+  --output-unified-within-term reports/permutation_unified_within_term_all_v1.csv \
+  --output-evidence-summary reports/permutation_evidence_summary_v1.csv \
+  --output-evidence-md reports/permutation_evidence_summary_v1.md
+```
+
+Stricter sensitivity profile:
+
+```sh
+rb randomization --all-metrics \
+  --term-block-years 20 \
+  --within-president-min-window-days 90 \
+  --output-party-term reports/permutation_party_term_block20_all_v1.csv \
+  --output-unified-within-term reports/permutation_unified_within_term_min90_all_v1.csv \
+  --output-evidence-summary reports/permutation_evidence_summary_block20_min90_v1.csv \
+  --output-evidence-md reports/permutation_evidence_summary_block20_min90_v1.md
+```
+
+Compare profiles:
+
+```sh
+rb randomization-compare \
+  --base-party-term reports/permutation_party_term_all_v1.csv \
+  --alt-party-term reports/permutation_party_term_block20_all_v1.csv \
+  --base-within reports/permutation_unified_within_term_all_v1.csv \
+  --alt-within reports/permutation_unified_within_term_min90_all_v1.csv \
+  --output reports/permutation_evidence_compare_v1.csv
+```
