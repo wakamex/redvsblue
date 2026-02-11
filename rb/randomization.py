@@ -1507,3 +1507,144 @@ def write_claims_table(
         for r in rows:
             w.writerow(r)
     tmp.replace(out_csv)
+
+
+def write_inversion_definition_robustness(
+    *,
+    permutation_party_term_csv: Path,
+    out_csv: Path,
+    out_md: Path | None = None,
+) -> None:
+    if not permutation_party_term_csv.exists():
+        raise FileNotFoundError(f"Missing permutation term CSV: {permutation_party_term_csv}")
+
+    rows_by_metric: dict[str, dict[str, str]] = {}
+    with permutation_party_term_csv.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for r in rdr:
+            mid = (r.get("metric_id") or "").strip()
+            if not mid:
+                continue
+            rows_by_metric[mid] = r
+
+    groups: list[tuple[str, list[tuple[str, str]]]] = [
+        (
+            "inversion_share",
+            [
+                ("daily", "yield_curve_t10y2y_inversion_share"),
+                ("monthly_eop", "yield_curve_t10y2y_inversion_share_monthly_eop"),
+                ("monthly_avg", "yield_curve_t10y2y_inversion_share_monthly_avg"),
+            ],
+        ),
+        (
+            "inversion_start_count",
+            [
+                ("daily", "yield_curve_t10y2y_inversion_start_count"),
+                ("monthly_eop", "yield_curve_t10y2y_inversion_start_count_monthly_eop"),
+                ("monthly_avg", "yield_curve_t10y2y_inversion_start_count_monthly_avg"),
+            ],
+        ),
+    ]
+
+    header = [
+        "concept",
+        "definition",
+        "metric_id",
+        "present_in_input",
+        "n_obs",
+        "effect_d_minus_r",
+        "effect_delta_vs_daily",
+        "q_bh_fdr",
+        "q_delta_vs_daily",
+        "p_two_sided",
+        "evidence_tier",
+        "bootstrap_ci95_low",
+        "bootstrap_ci95_high",
+    ]
+    out_rows: list[dict[str, str]] = []
+
+    for concept, defs in groups:
+        daily_row = rows_by_metric.get(defs[0][1], {})
+        daily_effect = _parse_float(daily_row.get("observed_diff_d_minus_r") or "")
+        daily_q = _parse_float(daily_row.get("q_bh_fdr") or "")
+        for definition, metric_id in defs:
+            r = rows_by_metric.get(metric_id, {})
+            effect = _parse_float(r.get("observed_diff_d_minus_r") or "")
+            q = _parse_float(r.get("q_bh_fdr") or "")
+            out_rows.append(
+                {
+                    "concept": concept,
+                    "definition": definition,
+                    "metric_id": metric_id,
+                    "present_in_input": "1" if r else "0",
+                    "n_obs": (r.get("n_obs") or "").strip(),
+                    "effect_d_minus_r": _fmt(effect),
+                    "effect_delta_vs_daily": _fmt((effect - daily_effect) if (effect is not None and daily_effect is not None) else None),
+                    "q_bh_fdr": _fmt(q),
+                    "q_delta_vs_daily": _fmt((q - daily_q) if (q is not None and daily_q is not None) else None),
+                    "p_two_sided": (r.get("p_two_sided") or "").strip(),
+                    "evidence_tier": (r.get("evidence_tier") or "").strip(),
+                    "bootstrap_ci95_low": (r.get("bootstrap_ci95_low") or "").strip(),
+                    "bootstrap_ci95_high": (r.get("bootstrap_ci95_high") or "").strip(),
+                }
+            )
+
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    tmp_csv = out_csv.with_suffix(out_csv.suffix + ".tmp")
+    with tmp_csv.open("w", encoding="utf-8", newline="") as handle:
+        w = csv.DictWriter(handle, fieldnames=header)
+        w.writeheader()
+        for r in out_rows:
+            w.writerow(r)
+    tmp_csv.replace(out_csv)
+
+    if out_md is None:
+        return
+
+    lines: list[str] = []
+    lines.append("# Inversion Definition Robustness")
+    lines.append("")
+    lines.append(f"Source: `{permutation_party_term_csv}`")
+    lines.append("")
+    lines.append("Compares D-R estimates for T10Y2Y inversion metrics under three definitions:")
+    lines.append("- daily observations")
+    lines.append("- monthly end-of-period (EOP)")
+    lines.append("- monthly average (AVG)")
+    lines.append("")
+
+    for concept, defs in groups:
+        lines.append(f"## {concept}")
+        lines.append("")
+        lines.append("| Definition | n_obs | Effect (D-R) | Delta vs daily | q | Delta q vs daily | Tier | CI95 |")
+        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|")
+        for definition, metric_id in defs:
+            r = next((x for x in out_rows if x["metric_id"] == metric_id), None)
+            if not r:
+                continue
+            ci = ""
+            lo = (r.get("bootstrap_ci95_low") or "").strip()
+            hi = (r.get("bootstrap_ci95_high") or "").strip()
+            if lo or hi:
+                ci = f"[{lo}, {hi}]"
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        definition,
+                        r.get("n_obs", ""),
+                        r.get("effect_d_minus_r", ""),
+                        r.get("effect_delta_vs_daily", ""),
+                        r.get("q_bh_fdr", ""),
+                        r.get("q_delta_vs_daily", ""),
+                        r.get("evidence_tier", ""),
+                        ci,
+                    ]
+                )
+                + " |"
+            )
+        lines.append("")
+
+    out_md.parent.mkdir(parents=True, exist_ok=True)
+    tmp_md = out_md.with_suffix(out_md.suffix + ".tmp")
+    tmp_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    tmp_md.replace(out_md)

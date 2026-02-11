@@ -145,11 +145,18 @@ Daily vs monthly inversion robustness snapshot (latest run):
   - `n_obs=37`, diff(D-R)=`-0.75`, `q=0.878`, exploratory
 - `yield_curve_t10y2y_inversion_start_count_monthly_eop`:
   - `n_obs=37`, diff(D-R)=`-0.11`, `q=1.000`, exploratory
+- `yield_curve_t10y2y_inversion_share_monthly_avg`:
+  - `n_obs=10`, diff(D-R)=`22.05` pp, `q=0.355`, exploratory
+- `yield_curve_t10y2y_inversion_start_count_monthly_avg`:
+  - `n_obs=37`, diff(D-R)=`-0.06`, `q=1.000`, exploratory
 
 Read:
 
-- Inversion-share signal is directionally stable under daily vs monthly-EOP definitions, but remains non-confirmatory.
-- Inversion-start counts are weak under both definitions; monthly resampling further attenuates differences.
+- Inversion-share signal is directionally stable under daily, monthly-EOP, and monthly-AVG definitions, but remains non-confirmatory.
+- Inversion-start counts are weak under all definitions; monthly resampling attenuates differences further.
+- We now maintain a dedicated generated artifact for this check via:
+  - `rb inversion-robustness`
+  - outputs: `reports/inversion_definition_robustness_v1.csv` and `.md`
 
 ## Threshold Sensitivity Snapshot (Within-President U-D)
 

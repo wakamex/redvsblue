@@ -9,7 +9,13 @@ from rb.ingest import ingest_from_spec
 from rb.inference import write_inference_table
 from rb.metrics import compute_term_metrics
 from rb.presidents import ensure_presidents
-from rb.randomization import compare_randomization_outputs, run_randomization, run_randomization_seed_stability, write_claims_table
+from rb.randomization import (
+    compare_randomization_outputs,
+    run_randomization,
+    run_randomization_seed_stability,
+    write_claims_table,
+    write_inversion_definition_robustness,
+)
 from rb.regimes import ensure_regime_pipeline
 from rb.scoreboard import write_scoreboard_md
 from rb.validate import validate_all
@@ -433,6 +439,27 @@ def _parse_args() -> argparse.Namespace:
     )
     claims.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
+    inversion = sub.add_parser("inversion-robustness", help="Build daily-vs-monthly T10Y2Y inversion definition comparison report.")
+    inversion.add_argument(
+        "--permutation-party-term",
+        type=Path,
+        default=Path("reports/permutation_party_term_v1.csv"),
+        help="Permutation term-party CSV containing inversion metrics (typically from `rb randomization --all-metrics`).",
+    )
+    inversion.add_argument(
+        "--output-csv",
+        type=Path,
+        default=Path("reports/inversion_definition_robustness_v1.csv"),
+        help="Output CSV path.",
+    )
+    inversion.add_argument(
+        "--output-md",
+        type=Path,
+        default=Path("reports/inversion_definition_robustness_v1.md"),
+        help="Output markdown path.",
+    )
+    inversion.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
     return p.parse_args()
 
 
@@ -621,6 +648,14 @@ def main() -> int:
             baseline_within_csv=base_within,
             strict_within_csv=strict_within,
             out_csv=args.output,
+        )
+        return 0
+
+    if args.cmd == "inversion-robustness":
+        write_inversion_definition_robustness(
+            permutation_party_term_csv=args.permutation_party_term,
+            out_csv=args.output_csv,
+            out_md=args.output_md,
         )
         return 0
 

@@ -88,6 +88,9 @@ Legend:
 - `t10y2y_yield_spread_monthly_eop`
   - `covered`: inversion share, inversion start count (monthly EOP resample via FRED API).
   - `note`: used as a robustness comparison against trading-day inversion definitions.
+- `t10y2y_yield_spread_monthly_avg`
+  - `covered`: inversion share, inversion start count (monthly average resample via FRED API).
+  - `note`: smoothing variant to compare with EOP and trading-day definitions.
 
 ### Recessions
 
@@ -105,7 +108,7 @@ Legend:
 ## Suggested v2 Additions (Priority Order)
 
 1. Decide whether SA CPI level-term percent/CAGR variants should be added as explicit alternates.
-2. Add an alternate monthly-average (`aggregation_method=avg`) inversion variant to compare against monthly-EOP and trading-day definitions.
+2. Add a fixed report artifact comparing inversion definitions (daily, monthly-EOP, monthly-AVG) each run.
 3. Wire `rb validate` into CI so the new symmetry checks fail pull requests when transform coverage regresses.
 
 ## Change-Control Rule

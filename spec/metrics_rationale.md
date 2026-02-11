@@ -133,7 +133,7 @@ For each, we include:
 - for `T10Y2Y` specifically, inversion diagnostics:
   - inversion share of trading days (`T10Y2Y < 0`)
   - inversion start count (`0->1` transitions in the inversion indicator)
-  - monthly-EOP inversion share and inversion starts as a resampled robustness view
+  - monthly-EOP inversion share/starts and monthly-AVG inversion share/starts as resampled robustness views
 
 Rationale:
 
@@ -141,7 +141,7 @@ Rationale:
 - Level and pp-change transforms are interpretable and avoid percent-change-on-rate confusion.
 - Keeping a symmetric transform set across all three avoids one-off metric selection.
 - Explicit inversion metrics make recession-risk signaling auditable instead of implicit in spread means.
-- The monthly-EOP inversion variants reduce sensitivity to daily noise and provide a coarser-horizon cross-check against trading-day definitions.
+- Monthly-EOP and monthly-AVG variants reduce sensitivity to daily noise and provide coarser-horizon cross-checks against trading-day definitions.
 
 Guardrail:
 
