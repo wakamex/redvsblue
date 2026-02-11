@@ -512,6 +512,7 @@ def write_scoreboard_md(
     within_randomization_csv: Path | None = Path("reports/permutation_unified_within_term_v1.csv"),
     output_within_president_deltas_csv: Path | None = None,
     within_president_min_window_days: int = 0,
+    show_robustness_links: bool = True,
 ) -> None:
     spec = load_spec(spec_path)
     metrics_cfg: list[dict] = spec.get("metrics") or []
@@ -604,20 +605,21 @@ def write_scoreboard_md(
         lines.append("")
         lines.append("Significance columns are blank until `rb randomization` has been run.")
 
-    robustness_links: list[tuple[str, Path]] = []
-    cpi_robust_path = Path("reports/cpi_sa_nsa_robustness_v1.md")
-    if cpi_robust_path.exists():
-        robustness_links.append(("CPI SA-vs-NSA sensitivity", cpi_robust_path))
-    inversion_robust_path = Path("reports/inversion_definition_robustness_v1.md")
-    if inversion_robust_path.exists():
-        robustness_links.append(("Yield-curve inversion-definition sensitivity", inversion_robust_path))
+    if show_robustness_links:
+        robustness_links: list[tuple[str, Path]] = []
+        cpi_robust_path = Path("reports/cpi_sa_nsa_robustness_v1.md")
+        if cpi_robust_path.exists():
+            robustness_links.append(("CPI SA-vs-NSA sensitivity", cpi_robust_path))
+        inversion_robust_path = Path("reports/inversion_definition_robustness_v1.md")
+        if inversion_robust_path.exists():
+            robustness_links.append(("Yield-curve inversion-definition sensitivity", inversion_robust_path))
 
-    if robustness_links:
-        lines.append("")
-        lines.append("## Robustness Artifacts")
-        lines.append("")
-        for label, path in robustness_links:
-            lines.append(f"- {label}: `{path}`")
+        if robustness_links:
+            lines.append("")
+            lines.append("## Robustness Artifacts")
+            lines.append("")
+            for label, path in robustness_links:
+                lines.append(f"- {label}: `{path}`")
 
     within_pres_deltas: dict[tuple[str, str], dict[str, Any]] = {}
 

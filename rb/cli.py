@@ -215,6 +215,11 @@ def _parse_args() -> argparse.Namespace:
         default=0,
         help="Minimum window_days required for rows used in within-president unified-vs-divided diagnostics.",
     )
+    scoreboard.add_argument(
+        "--no-robustness-links",
+        action="store_true",
+        help="Hide the optional robustness-artifact links section from the markdown output.",
+    )
     scoreboard.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
     randomization = sub.add_parser("randomization", help="Run permutation/randomization robustness checks.")
@@ -607,6 +612,7 @@ def main() -> int:
             window_labels_csv=args.window_labels if args.window_labels.exists() else None,
             output_within_president_deltas_csv=args.output_within_president_deltas,
             within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
+            show_robustness_links=not bool(args.no_robustness_links),
         )
         return 0
 
