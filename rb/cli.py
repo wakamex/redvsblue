@@ -254,6 +254,23 @@ def _parse_args() -> argparse.Namespace:
         default=Path("reports/permutation_evidence_summary_v1.md"),
         help="Output markdown summary of confirmatory/supportive evidence rows.",
     )
+    randomization.add_argument(
+        "--output-inversion-robustness-csv",
+        type=Path,
+        default=Path("reports/inversion_definition_robustness_v1.csv"),
+        help="Output CSV for T10Y2Y inversion-definition comparison (generated only with --all-metrics).",
+    )
+    randomization.add_argument(
+        "--output-inversion-robustness-md",
+        type=Path,
+        default=Path("reports/inversion_definition_robustness_v1.md"),
+        help="Output markdown for T10Y2Y inversion-definition comparison (generated only with --all-metrics).",
+    )
+    randomization.add_argument(
+        "--skip-inversion-robustness",
+        action="store_true",
+        help="Do not generate inversion-definition robustness outputs.",
+    )
     randomization.add_argument("--permutations", type=int, default=10000, help="Number of random permutations.")
     randomization.add_argument("--bootstrap-samples", type=int, default=2000, help="Number of bootstrap samples for CI estimates.")
     randomization.add_argument("--seed", type=int, default=42, help="RNG seed for reproducibility.")
@@ -571,6 +588,8 @@ def main() -> int:
             output_unified_within_term_csv=args.output_unified_within_term,
             output_evidence_summary_csv=args.output_evidence_summary,
             output_evidence_md=args.output_evidence_md,
+            output_inversion_robustness_csv=(None if bool(args.skip_inversion_robustness) else args.output_inversion_robustness_csv),
+            output_inversion_robustness_md=(None if bool(args.skip_inversion_robustness) else args.output_inversion_robustness_md),
             within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
             include_diagnostic_metrics=bool(args.include_diagnostic_metrics),
         )
