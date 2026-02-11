@@ -40,3 +40,17 @@ jobs:
             --presidents tests/fixtures/presidents_min.csv \
             --term-metrics /tmp/term_metrics_smoke.csv \
             --party-summary /tmp/party_summary_smoke.csv
+
+      - name: Smoke pipeline (daily + non-FRED source)
+        run: |
+          .venv/bin/rb ingest --spec spec/metrics_ci_smoke_nonfred.yaml --refresh
+          .venv/bin/rb compute \
+            --spec spec/metrics_ci_smoke_nonfred.yaml \
+            --presidents tests/fixtures/presidents_min.csv \
+            --output-terms /tmp/term_metrics_smoke_nonfred.csv \
+            --output-party /tmp/party_summary_smoke_nonfred.csv
+          .venv/bin/rb validate \
+            --spec spec/metrics_ci_smoke_nonfred.yaml \
+            --presidents tests/fixtures/presidents_min.csv \
+            --term-metrics /tmp/term_metrics_smoke_nonfred.csv \
+            --party-summary /tmp/party_summary_smoke_nonfred.csv

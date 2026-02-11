@@ -160,6 +160,7 @@ Read:
   - outputs: `reports/inversion_definition_robustness_v1.csv` and `.md`
 - We wired spec/presidents validation into CI via `.github/workflows/validate.yml` so transform-symmetry drift is caught on PRs.
 - CI now also runs a minimal end-to-end smoke pipeline (`ingest -> compute -> validate`) against `spec/metrics_ci_smoke.yaml`.
+- CI now includes a second smoke profile with a daily market series and non-FRED source (`spec/metrics_ci_smoke_nonfred.yaml`) to catch source-integration regressions earlier.
 - We added SA CPI term-level percent/CAGR alternates (`cpi_price_level_term_pct_change_sa`, `cpi_price_level_term_cagr_pct_sa`) so NSA-vs-SA CPI level sensitivity is explicit and auditable.
 - Latest SA-vs-NSA CPI level snapshot (all-metrics randomization):
   - NSA level metrics (`*_nsa`) show larger D-R differences than SA level metrics (`*_sa`) in the current run.

@@ -108,7 +108,7 @@ Legend:
 
 1. Add a `--no-robustness-links` scoreboard option for cleaner exports when consumers want only core tables.
 2. Add a fixed report artifact comparing inversion definitions (daily, monthly-EOP, monthly-AVG) each run.
-3. Add a second CI smoke profile that includes at least one daily market series and one non-FRED source.
+3. Add retry/backoff handling in CI smoke steps for transient external-source failures (network/provider hiccups).
 
 ## Change-Control Rule
 
