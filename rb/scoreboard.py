@@ -169,12 +169,12 @@ def _load_claims_term_rows(path: Path) -> dict[str, dict[str, str]]:
     return out
 
 
-def _load_claims_within_rows(path: Path) -> dict[tuple[str, str], dict[str, str]]:
+def _load_claims_by_analysis_rows(path: Path, *, analysis: str) -> dict[tuple[str, str], dict[str, str]]:
     out: dict[tuple[str, str], dict[str, str]] = {}
     with path.open("r", encoding="utf-8", newline="") as handle:
         rdr = csv.DictReader(handle)
         for r in rdr:
-            if (r.get("analysis") or "").strip() != "within_unified":
+            if (r.get("analysis") or "").strip() != analysis:
                 continue
             mid = (r.get("metric_id") or "").strip()
             pres_party = (r.get("pres_party") or "").strip()
@@ -564,6 +564,7 @@ def write_scoreboard_md(
     window_labels_csv: Path | None,
     term_randomization_csv: Path | None = Path("reports/permutation_party_term_v1.csv"),
     within_randomization_csv: Path | None = Path("reports/permutation_unified_within_term_v1.csv"),
+    unified_binary_randomization_csv: Path | None = Path("reports/permutation_unified_binary_v1.csv"),
     inference_stability_summary_csv: Path | None = Path("reports/inference_wild_cluster_stability_summary_v1.csv"),
     claims_table_csv: Path | None = Path("reports/claims_table_v1.csv"),
     output_within_president_deltas_csv: Path | None = None,
@@ -618,6 +619,12 @@ def write_scoreboard_md(
         within_rand_path = within_randomization_csv
         within_rand = _load_within_randomization(within_randomization_csv)
 
+    unified_binary_rand_path: Path | None = None
+    unified_binary_rand: dict[tuple[str, str], dict[str, str]] = {}
+    if unified_binary_randomization_csv is not None and unified_binary_randomization_csv.exists():
+        unified_binary_rand_path = unified_binary_randomization_csv
+        unified_binary_rand = _load_within_randomization(unified_binary_randomization_csv)
+
     inf_stability_path: Path | None = None
     inf_stability: dict[str, dict[str, str]] = {}
     if inference_stability_summary_csv is not None and inference_stability_summary_csv.exists():
@@ -627,15 +634,21 @@ def write_scoreboard_md(
     term_claims_path: Path | None = None
     term_claims: dict[str, dict[str, str]] = {}
     within_claims: dict[tuple[str, str], dict[str, str]] = {}
+    congress_binary_claims: dict[tuple[str, str], dict[str, str]] = {}
     if claims_table_csv is not None and claims_table_csv.exists():
         term_claims_path = claims_table_csv
         term_claims = _load_claims_term_rows(claims_table_csv)
-        within_claims = _load_claims_within_rows(claims_table_csv)
+        within_claims = _load_claims_by_analysis_rows(claims_table_csv, analysis="within_unified")
+        congress_binary_claims = _load_claims_by_analysis_rows(claims_table_csv, analysis="congress_unified_binary")
     show_pub_cols = bool(show_publication_tiers and term_claims)
     show_stability_cols = bool(show_inference_stability_columns and inf_stability)
     show_within_pub_cols = bool(show_publication_tiers and within_claims)
+    show_congress_pub_cols = bool(show_publication_tiers and congress_binary_claims)
     has_publication_tiers = any((r.get("tier_strict_publication") or "").strip() for r in term_claims.values())
     has_within_publication_tiers = any((r.get("tier_strict_publication") or "").strip() for r in within_claims.values())
+    has_congress_publication_tiers = any(
+        (r.get("tier_strict_publication") or "").strip() for r in congress_binary_claims.values()
+    )
 
     lines: list[str] = []
     lines.append("# Scoreboard (v1)")
@@ -1038,6 +1051,108 @@ def write_scoreboard_md(
             lines.append("Within-section publication-tier columns are blank until `rb claims-table --publication-mode` has been run.")
 
         lines.append("")
+        lines.append("## Congress Unified vs Divided Inference (Window-Level)")
+        lines.append("")
+        lines.append(
+            "Window-level check for Congress control as a potential confounder: compare unified vs divided windows, "
+            "with permutation labels shuffled within president-term blocks."
+        )
+        lines.append("")
+        congress_header = [
+            "Metric",
+            "Units",
+            "P party",
+            "Diff(U-D)",
+            "n(windows)",
+            "n(U)",
+            "n(D)",
+            "n(terms with both)",
+            "Small-cell?",
+            "q",
+            "p",
+            "CI95(U-D)",
+            "Tier",
+        ]
+        congress_sep = [
+            "---",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+        ]
+        if show_congress_pub_cols:
+            congress_header.extend(["Strict q", "Strict tier", "Publication tier"])
+            congress_sep.extend(["---:", "---:", "---:"])
+        lines.append("| " + " | ".join(congress_header) + " |")
+        lines.append("| " + " | ".join(congress_sep) + " |")
+
+        congress_rows_written = 0
+        for mid in metric_ids:
+            for pres_party in ("all", "D", "R"):
+                gr = unified_binary_rand.get((mid, pres_party), {})
+                if not gr:
+                    continue
+                label = (gr.get("metric_label") or mid).replace("|", "\\|")
+                units = (gr.get("units") or "").replace("|", "\\|")
+                row_values = [
+                    label,
+                    units,
+                    pres_party,
+                    _fmt(_parse_float(gr.get("observed_diff_unified_minus_divided") or "")),
+                    str(int(_parse_int(gr.get("n_windows_total") or "") or 0)),
+                    str(int(_parse_int(gr.get("n_windows_unified") or "") or 0)),
+                    str(int(_parse_int(gr.get("n_windows_divided") or "") or 0)),
+                    str(int(_parse_int(gr.get("n_terms_with_both") or "") or 0)),
+                    "yes" if (gr.get("small_cell_warning") or "").strip() == "1" else "no",
+                    _fmt(_parse_float(gr.get("q_bh_fdr") or "")),
+                    _fmt(_parse_float(gr.get("p_two_sided") or "")),
+                    _fmt_ci(
+                        _parse_float(gr.get("bootstrap_ci95_low") or ""),
+                        _parse_float(gr.get("bootstrap_ci95_high") or ""),
+                    ),
+                    (gr.get("evidence_tier") or "").strip(),
+                ]
+                if show_congress_pub_cols:
+                    cr = congress_binary_claims.get((mid, pres_party), {})
+                    row_values.extend(
+                        [
+                            _fmt(_parse_float(cr.get("q_strict") or "")),
+                            (cr.get("tier_strict") or "").strip(),
+                            (cr.get("tier_strict_publication") or "").strip(),
+                        ]
+                    )
+                lines.append("| " + " | ".join(row_values) + " |")
+                congress_rows_written += 1
+
+        if congress_rows_written == 0:
+            placeholder = ["(no rows)"] + [""] * max(0, len(congress_header) - 1)
+            lines.append("| " + " | ".join(placeholder) + " |")
+        lines.append("")
+        lines.append(
+            "Small-cell warning is triggered when minimum windows-per-state or term-overlap thresholds are not met; "
+            "treat flagged rows as exploratory diagnostics."
+        )
+        if unified_binary_rand_path is not None:
+            lines.append(f"Significance columns in this section are sourced from `{unified_binary_rand_path}`.")
+        if show_congress_pub_cols and term_claims_path is not None and has_congress_publication_tiers:
+            lines.append(f"Congress-binary publication-tier columns sourced from `{term_claims_path}`.")
+        elif show_congress_pub_cols and term_claims_path is not None:
+            lines.append(
+                f"Congress-binary strict columns sourced from `{term_claims_path}`; publication-tier values are blank "
+                "until `rb claims-table --publication-mode` is used."
+            )
+        elif show_publication_tiers:
+            lines.append("Congress-binary publication-tier columns are blank until `rb claims-table --publication-mode` has been run.")
+
+        lines.append("")
         lines.append("## President Alignment With Congress (House vs Senate)")
         lines.append("")
         lines.append("Breakout by whether the president's party controls: both chambers, only House, only Senate, or neither.")
@@ -1101,6 +1216,8 @@ def write_scoreboard_md(
         lines.append(f"- `{term_claims_path}`")
     if within_rand_path is not None:
         lines.append(f"- `{within_rand_path}`")
+    if unified_binary_rand_path is not None:
+        lines.append(f"- `{unified_binary_rand_path}`")
     lines.append("")
     lines.append("Rebuild:")
     lines.append("```sh")

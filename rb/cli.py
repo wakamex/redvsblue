@@ -42,6 +42,10 @@ PUB_DEFAULT_BASELINE_WITHIN_PRIMARY = Path("reports/permutation_unified_within_t
 PUB_DEFAULT_BASELINE_WITHIN_ALL = Path("reports/permutation_unified_within_term_all_v1.csv")
 PUB_DEFAULT_STRICT_WITHIN_PRIMARY = Path("reports/permutation_unified_within_term_min90_v1.csv")
 PUB_DEFAULT_STRICT_WITHIN_ALL = Path("reports/permutation_unified_within_term_min90_all_v1.csv")
+PUB_DEFAULT_BASELINE_UNIFIED_BINARY_PRIMARY = Path("reports/permutation_unified_binary_v1.csv")
+PUB_DEFAULT_BASELINE_UNIFIED_BINARY_ALL = Path("reports/permutation_unified_binary_all_v1.csv")
+PUB_DEFAULT_STRICT_UNIFIED_BINARY_PRIMARY = Path("reports/permutation_unified_binary_min90_v1.csv")
+PUB_DEFAULT_STRICT_UNIFIED_BINARY_ALL = Path("reports/permutation_unified_binary_min90_all_v1.csv")
 
 
 def _sha256_file(path: Path) -> str:
@@ -533,6 +537,12 @@ def _parse_args() -> argparse.Namespace:
         help="Output CSV for within-president unified-vs-divided permutation test.",
     )
     randomization.add_argument(
+        "--output-unified-binary",
+        type=Path,
+        default=Path("reports/permutation_unified_binary_v1.csv"),
+        help="Output CSV for congress unified-vs-divided binary window-level permutation test.",
+    )
+    randomization.add_argument(
         "--output-evidence-summary",
         type=Path,
         default=Path("reports/permutation_evidence_summary_v1.csv"),
@@ -610,6 +620,18 @@ def _parse_args() -> argparse.Namespace:
         type=int,
         default=0,
         help="Minimum window_days to include in within-president unified-vs-divided permutation test.",
+    )
+    randomization.add_argument(
+        "--unified-binary-min-windows-each",
+        type=int,
+        default=6,
+        help="Minimum windows in each congress state (unified/divided) for congress binary rows to pass min-n checks.",
+    )
+    randomization.add_argument(
+        "--unified-binary-min-terms-with-both",
+        type=int,
+        default=4,
+        help="Minimum president-terms containing both unified and divided windows for congress binary rows to pass min-n checks.",
     )
     randomization.add_argument(
         "--all-metrics",
@@ -778,6 +800,18 @@ def _parse_args() -> argparse.Namespace:
         help="Alternative within-president randomization CSV (optional).",
     )
     compare_rand.add_argument(
+        "--base-unified-binary",
+        type=Path,
+        default=Path("reports/permutation_unified_binary_all_v1.csv"),
+        help="Baseline congress unified-vs-divided binary randomization CSV (optional).",
+    )
+    compare_rand.add_argument(
+        "--alt-unified-binary",
+        type=Path,
+        default=None,
+        help="Alternative congress unified-vs-divided binary randomization CSV (optional).",
+    )
+    compare_rand.add_argument(
         "--output",
         type=Path,
         default=Path("reports/permutation_evidence_compare_v1.csv"),
@@ -809,6 +843,18 @@ def _parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("reports/permutation_unified_within_term_min90_all_v1.csv"),
         help="Strict-profile within-president randomization CSV (optional).",
+    )
+    claims.add_argument(
+        "--baseline-unified-binary",
+        type=Path,
+        default=Path("reports/permutation_unified_binary_all_v1.csv"),
+        help="Baseline congress unified-vs-divided binary randomization CSV (optional).",
+    )
+    claims.add_argument(
+        "--strict-unified-binary",
+        type=Path,
+        default=Path("reports/permutation_unified_binary_min90_all_v1.csv"),
+        help="Strict-profile congress unified-vs-divided binary randomization CSV (optional).",
     )
     claims.add_argument(
         "--output",
@@ -948,6 +994,24 @@ def _parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Strict-profile within-president randomization CSV (optional). "
+            "Default is mode-aware primary/all file based on `--all-metrics`."
+        ),
+    )
+    pub.add_argument(
+        "--baseline-unified-binary",
+        type=Path,
+        default=None,
+        help=(
+            "Baseline congress unified-vs-divided binary randomization CSV (optional). "
+            "Default is mode-aware primary/all file based on `--all-metrics`."
+        ),
+    )
+    pub.add_argument(
+        "--strict-unified-binary",
+        type=Path,
+        default=None,
+        help=(
+            "Strict-profile congress unified-vs-divided binary randomization CSV (optional). "
             "Default is mode-aware primary/all file based on `--all-metrics`."
         ),
     )
@@ -1255,6 +1319,7 @@ def main() -> int:
             window_metrics_csv=args.window_metrics if args.window_metrics.exists() else None,
             window_labels_csv=args.window_labels if args.window_labels.exists() else None,
             output_unified_within_term_csv=args.output_unified_within_term,
+            output_unified_binary_csv=args.output_unified_binary,
             output_evidence_summary_csv=args.output_evidence_summary,
             output_evidence_md=args.output_evidence_md,
             output_inversion_robustness_csv=(None if bool(args.skip_inversion_robustness) else args.output_inversion_robustness_csv),
@@ -1262,6 +1327,8 @@ def main() -> int:
             output_cpi_robustness_csv=(None if bool(args.skip_cpi_robustness) else args.output_cpi_robustness_csv),
             output_cpi_robustness_md=(None if bool(args.skip_cpi_robustness) else args.output_cpi_robustness_md),
             within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
+            unified_binary_min_windows_each=max(0, int(args.unified_binary_min_windows_each)),
+            unified_binary_min_terms_with_both=max(0, int(args.unified_binary_min_terms_with_both)),
             include_diagnostic_metrics=bool(args.include_diagnostic_metrics),
         )
         return 0
@@ -1332,8 +1399,12 @@ def main() -> int:
             raise FileNotFoundError(f"Missing alt term CSV: {args.alt_party_term}")
         alt_within = args.alt_within if args.alt_within is not None else None
         base_within = args.base_within if args.base_within.exists() else None
+        alt_unified_binary = args.alt_unified_binary if args.alt_unified_binary is not None else None
+        base_unified_binary = args.base_unified_binary if args.base_unified_binary.exists() else None
         if alt_within is not None and not alt_within.exists():
             raise FileNotFoundError(f"Missing alt within CSV: {alt_within}")
+        if alt_unified_binary is not None and not alt_unified_binary.exists():
+            raise FileNotFoundError(f"Missing alt unified-binary CSV: {alt_unified_binary}")
         scope_paths: list[tuple[Path, str]] = [
             (args.base_party_term, "base_party_term"),
             (args.alt_party_term, "alt_party_term"),
@@ -1341,12 +1412,17 @@ def main() -> int:
         if base_within is not None and alt_within is not None:
             scope_paths.append((base_within, "base_within"))
             scope_paths.append((alt_within, "alt_within"))
+        if base_unified_binary is not None and alt_unified_binary is not None:
+            scope_paths.append((base_unified_binary, "base_unified_binary"))
+            scope_paths.append((alt_unified_binary, "alt_unified_binary"))
         _assert_randomization_scopes_compatible(paths=scope_paths)
         compare_randomization_outputs(
             base_party_term_csv=args.base_party_term,
             alt_party_term_csv=args.alt_party_term,
             base_within_csv=base_within,
             alt_within_csv=alt_within,
+            base_unified_binary_csv=base_unified_binary,
+            alt_unified_binary_csv=alt_unified_binary,
             out_csv=args.output,
         )
         return 0
@@ -1358,9 +1434,15 @@ def main() -> int:
             raise FileNotFoundError(f"Missing strict term CSV: {args.strict_party_term}")
         base_within = args.baseline_within if args.baseline_within.exists() else None
         strict_within = args.strict_within if args.strict_within.exists() else None
+        base_unified_binary = args.baseline_unified_binary if args.baseline_unified_binary.exists() else None
+        strict_unified_binary = args.strict_unified_binary if args.strict_unified_binary.exists() else None
         if (base_within is None) != (strict_within is None):
             raise FileNotFoundError(
                 "Within-president claims require both baseline and strict within CSVs or neither."
+            )
+        if (base_unified_binary is None) != (strict_unified_binary is None):
+            raise FileNotFoundError(
+                "Congress unified-binary claims require both baseline and strict unified-binary CSVs or neither."
             )
         scope_paths: list[tuple[Path, str]] = [
             (args.baseline_party_term, "baseline_party_term"),
@@ -1369,12 +1451,17 @@ def main() -> int:
         if base_within is not None and strict_within is not None:
             scope_paths.append((base_within, "baseline_within"))
             scope_paths.append((strict_within, "strict_within"))
+        if base_unified_binary is not None and strict_unified_binary is not None:
+            scope_paths.append((base_unified_binary, "baseline_unified_binary"))
+            scope_paths.append((strict_unified_binary, "strict_unified_binary"))
         _assert_randomization_scopes_compatible(paths=scope_paths)
         write_claims_table(
             baseline_party_term_csv=args.baseline_party_term,
             strict_party_term_csv=args.strict_party_term,
             baseline_within_csv=base_within,
             strict_within_csv=strict_within,
+            baseline_unified_binary_csv=base_unified_binary,
+            strict_unified_binary_csv=strict_unified_binary,
             out_csv=args.output,
             inference_table_csv=args.inference_table if args.inference_table.exists() else None,
             inference_stability_summary_csv=(
@@ -1454,6 +1541,24 @@ def main() -> int:
                 else PUB_DEFAULT_STRICT_WITHIN_PRIMARY
             )
         )
+        baseline_unified_binary_candidate = (
+            args.baseline_unified_binary
+            if args.baseline_unified_binary is not None
+            else (
+                PUB_DEFAULT_BASELINE_UNIFIED_BINARY_ALL
+                if all_metrics_mode
+                else PUB_DEFAULT_BASELINE_UNIFIED_BINARY_PRIMARY
+            )
+        )
+        strict_unified_binary_candidate = (
+            args.strict_unified_binary
+            if args.strict_unified_binary is not None
+            else (
+                PUB_DEFAULT_STRICT_UNIFIED_BINARY_ALL
+                if all_metrics_mode
+                else PUB_DEFAULT_STRICT_UNIFIED_BINARY_PRIMARY
+            )
+        )
 
         if not baseline_party_term.exists():
             raise FileNotFoundError(f"Missing baseline term CSV: {baseline_party_term}")
@@ -1463,12 +1568,22 @@ def main() -> int:
             strict_party_term = baseline_party_term
             base_within = baseline_within_candidate if baseline_within_candidate.exists() else None
             strict_within = base_within
+            base_unified_binary = (
+                baseline_unified_binary_candidate if baseline_unified_binary_candidate.exists() else None
+            )
+            strict_unified_binary = base_unified_binary
         else:
             strict_party_term = strict_party_term_candidate
             if not strict_party_term.exists():
                 raise FileNotFoundError(f"Missing strict term CSV: {strict_party_term}")
             base_within = baseline_within_candidate if baseline_within_candidate.exists() else None
             strict_within = strict_within_candidate if strict_within_candidate.exists() else None
+            base_unified_binary = (
+                baseline_unified_binary_candidate if baseline_unified_binary_candidate.exists() else None
+            )
+            strict_unified_binary = (
+                strict_unified_binary_candidate if strict_unified_binary_candidate.exists() else None
+            )
 
         _assert_randomization_scope_matches_mode(
             path=baseline_party_term,
@@ -1492,10 +1607,26 @@ def main() -> int:
                 all_metrics_mode=all_metrics_mode,
                 label="Strict within-president randomization CSV",
             )
+        if base_unified_binary is not None:
+            _assert_randomization_scope_matches_mode(
+                path=base_unified_binary,
+                all_metrics_mode=all_metrics_mode,
+                label="Baseline congress unified-binary randomization CSV",
+            )
+        if strict_unified_binary is not None:
+            _assert_randomization_scope_matches_mode(
+                path=strict_unified_binary,
+                all_metrics_mode=all_metrics_mode,
+                label="Strict congress unified-binary randomization CSV",
+            )
 
         if (base_within is None) != (strict_within is None):
             raise FileNotFoundError(
                 "Publication bundle requires both baseline/strict within CSVs or neither."
+            )
+        if (base_unified_binary is None) != (strict_unified_binary is None):
+            raise FileNotFoundError(
+                "Publication bundle requires both baseline/strict congress unified-binary CSVs or neither."
             )
 
         within_backfill: dict[str, dict[str, int]] = {}
@@ -1546,6 +1677,8 @@ def main() -> int:
             strict_party_term_csv=strict_party_term,
             baseline_within_csv=base_within,
             strict_within_csv=strict_within,
+            baseline_unified_binary_csv=base_unified_binary,
+            strict_unified_binary_csv=strict_unified_binary,
             out_csv=args.output_claims,
             inference_table_csv=args.output_inference_csv if args.output_inference_csv.exists() else None,
             inference_stability_summary_csv=(
@@ -1573,6 +1706,7 @@ def main() -> int:
             window_labels_csv=args.window_labels if args.window_labels.exists() else None,
             term_randomization_csv=baseline_party_term,
             within_randomization_csv=base_within,
+            unified_binary_randomization_csv=base_unified_binary,
             inference_stability_summary_csv=(
                 args.output_inference_stability_summary_csv if not bool(args.skip_inference_stability) else None
             ),
@@ -1631,6 +1765,18 @@ def main() -> int:
                     "strict_within_used": _file_meta(strict_within),
                     "strict_within_scope_used": (
                         _describe_randomization_scope(strict_within) if strict_within is not None else ""
+                    ),
+                    "baseline_unified_binary": _file_meta(base_unified_binary),
+                    "baseline_unified_binary_scope": (
+                        _describe_randomization_scope(base_unified_binary)
+                        if base_unified_binary is not None
+                        else ""
+                    ),
+                    "strict_unified_binary_used": _file_meta(strict_unified_binary),
+                    "strict_unified_binary_scope_used": (
+                        _describe_randomization_scope(strict_unified_binary)
+                        if strict_unified_binary is not None
+                        else ""
                     ),
                     "window_metrics": _file_meta(args.window_metrics if args.window_metrics.exists() else None),
                     "window_labels": _file_meta(args.window_labels if args.window_labels.exists() else None),

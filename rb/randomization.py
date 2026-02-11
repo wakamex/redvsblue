@@ -509,6 +509,14 @@ class _WindowObs:
     days: int
 
 
+@dataclass(frozen=True)
+class _UnifiedBinaryObs:
+    value: float
+    unified: int
+    term_id: str
+    pres_party: str
+
+
 def _load_window_labels(path: Path) -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
     with path.open("r", encoding="utf-8", newline="") as handle:
@@ -541,6 +549,16 @@ def _term_delta_from_entries(entries: list[_WindowObs], flags: list[int]) -> flo
     d = [(e.value, e.days) for e, f in zip(entries, flags) if f == 0]
     mu_u = _weighted_or_unweighted_mean(u)
     mu_d = _weighted_or_unweighted_mean(d)
+    if mu_u is None or mu_d is None:
+        return None
+    return mu_u - mu_d
+
+
+def _diff_unified_minus_divided(values: list[float], flags: list[int]) -> float | None:
+    u_vals = [v for v, f in zip(values, flags) if f == 1]
+    d_vals = [v for v, f in zip(values, flags) if f == 0]
+    mu_u = _mean(u_vals)
+    mu_d = _mean(d_vals)
     if mu_u is None or mu_d is None:
         return None
     return mu_u - mu_d
@@ -760,6 +778,260 @@ def _compute_unified_within_term_permutation(
     tmp.replace(out_csv)
 
 
+def _compute_unified_binary_window_permutation(
+    *,
+    window_metrics_csv: Path,
+    window_labels_csv: Path,
+    out_csv: Path,
+    permutations: int,
+    seed: int,
+    bootstrap_samples: int,
+    min_window_days: int,
+    q_threshold: float,
+    min_windows_each: int,
+    min_terms_with_both: int,
+    primary_only: bool,
+    include_diagnostic_metrics: bool,
+) -> None:
+    labels = _load_window_labels(window_labels_csv)
+    rng = random.Random(seed)
+    boot_rng = random.Random(seed + 3000007)
+
+    # (metric_id, pres_party_group) where pres_party_group in {"all","D","R"}.
+    groups: dict[tuple[str, str], dict[str, Any]] = {}
+    with window_metrics_csv.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for row in rdr:
+            metric_id = (row.get("metric_id") or "").strip()
+            if not metric_id:
+                continue
+            if primary_only and (row.get("metric_primary") or "").strip() != "1":
+                continue
+            if not include_diagnostic_metrics and metric_id in DIAGNOSTIC_ONLY_METRIC_IDS:
+                continue
+            wid = (row.get("term_id") or "").strip()
+            lab = labels.get(wid)
+            if not lab:
+                continue
+            pres_party = (lab.get("pres_party") or "").strip()
+            if pres_party not in {"D", "R"}:
+                continue
+            days = int(lab.get("window_days") or 0)
+            if days < min_window_days:
+                continue
+            term_id = (lab.get("president_term_id") or "").strip()
+            if not term_id:
+                continue
+            unified = int(lab.get("unified_government") or 0)
+            v = _parse_float(row.get("value") or "")
+            if v is None:
+                continue
+
+            for group_party in ("all", pres_party):
+                k = (metric_id, group_party)
+                g = groups.get(k)
+                if g is None:
+                    g = {
+                        "metric_id": metric_id,
+                        "metric_label": (row.get("metric_label") or metric_id).strip(),
+                        "metric_family": (row.get("metric_family") or "").strip(),
+                        "metric_primary": (row.get("metric_primary") or "").strip(),
+                        "agg_kind": (row.get("agg_kind") or "").strip(),
+                        "units": (row.get("units") or "").strip(),
+                        "pres_party": group_party,
+                        "obs": [],
+                    }
+                    groups[k] = g
+                g["obs"].append(
+                    _UnifiedBinaryObs(
+                        value=v,
+                        unified=unified,
+                        term_id=term_id,
+                        pres_party=pres_party,
+                    )
+                )
+
+    header = [
+        "metric_id",
+        "metric_label",
+        "metric_family",
+        "metric_primary",
+        "inference_scope",
+        "agg_kind",
+        "units",
+        "pres_party",
+        "observed_diff_unified_minus_divided",
+        "n_obs",
+        "n_windows_total",
+        "n_windows_unified",
+        "n_windows_divided",
+        "n_terms_total",
+        "n_terms_with_both",
+        "small_cell_warning",
+        "perm_mean",
+        "perm_std",
+        "z_score",
+        "bootstrap_ci95_low",
+        "bootstrap_ci95_high",
+        "p_two_sided",
+        "q_bh_fdr",
+        "passes_q_threshold",
+        "passes_q_lt_005",
+        "passes_q_lt_010",
+        "passes_ci_excludes_zero",
+        "passes_min_n",
+        "evidence_tier",
+        "q_threshold",
+        "q_threshold_supportive",
+        "min_n_threshold",
+        "min_windows_each_threshold",
+        "min_terms_with_both_threshold",
+        "permutations",
+        "bootstrap_samples",
+        "seed",
+        "min_window_days_filter",
+    ]
+    rows: list[dict[str, str]] = []
+
+    party_order = {"all": 0, "D": 1, "R": 2}
+    for metric_id, pres_group in sorted(
+        groups.keys(),
+        key=lambda k: (k[0], party_order.get(k[1], 99), k[1]),
+    ):
+        g = groups[(metric_id, pres_group)]
+        obs: list[_UnifiedBinaryObs] = list(g["obs"])
+        if not obs:
+            continue
+
+        values = [o.value for o in obs]
+        flags = [o.unified for o in obs]
+        term_ids = [o.term_id for o in obs]
+        n_windows_total = len(obs)
+        n_windows_unified = sum(1 for f in flags if f == 1)
+        n_windows_divided = sum(1 for f in flags if f == 0)
+
+        term_to_flags: dict[str, set[int]] = {}
+        for o in obs:
+            term_to_flags.setdefault(o.term_id, set()).add(int(o.unified))
+        n_terms_total = len(term_to_flags)
+        n_terms_with_both = sum(1 for fs in term_to_flags.values() if 0 in fs and 1 in fs)
+
+        observed = _diff_unified_minus_divided(values, flags)
+        u_vals = [v for v, f in zip(values, flags) if f == 1]
+        d_vals = [v for v, f in zip(values, flags) if f == 0]
+
+        perm_stats: list[float] = []
+        if observed is not None and permutations > 0 and n_windows_unified > 0 and n_windows_divided > 0:
+            term_to_idx: dict[str, list[int]] = {}
+            for i, tid in enumerate(term_ids):
+                term_to_idx.setdefault(tid, []).append(i)
+            for _ in range(permutations):
+                perm_flags = list(flags)
+                for idxs in term_to_idx.values():
+                    sub = [perm_flags[i] for i in idxs]
+                    rng.shuffle(sub)
+                    for j, i in enumerate(idxs):
+                        perm_flags[i] = sub[j]
+                d = _diff_unified_minus_divided(values, perm_flags)
+                if d is not None:
+                    perm_stats.append(d)
+
+        perm_mean = _mean(perm_stats)
+        perm_std = _std_population(perm_stats)
+        z = None
+        if observed is not None and perm_mean is not None and perm_std is not None and perm_std > 0:
+            z = (observed - perm_mean) / perm_std
+        p_two = None
+        if observed is not None and perm_stats:
+            extreme = sum(1 for s in perm_stats if abs(s) >= abs(observed))
+            p_two = (1 + extreme) / (1 + len(perm_stats))
+        ci_lo, ci_hi = _bootstrap_diff_d_minus_r(
+            d_vals=u_vals,
+            r_vals=d_vals,
+            n_samples=max(0, int(bootstrap_samples)),
+            rng=boot_rng,
+        )
+
+        rows.append(
+            {
+                "metric_id": metric_id,
+                "metric_label": g["metric_label"],
+                "metric_family": g["metric_family"],
+                "metric_primary": g["metric_primary"],
+                "inference_scope": "primary" if bool(primary_only) else "all",
+                "agg_kind": g["agg_kind"],
+                "units": g["units"],
+                "pres_party": pres_group,
+                "observed_diff_unified_minus_divided": _fmt(observed),
+                "n_obs": str(n_windows_total),
+                "n_windows_total": str(n_windows_total),
+                "n_windows_unified": str(n_windows_unified),
+                "n_windows_divided": str(n_windows_divided),
+                "n_terms_total": str(n_terms_total),
+                "n_terms_with_both": str(n_terms_with_both),
+                "small_cell_warning": "",
+                "perm_mean": _fmt(perm_mean),
+                "perm_std": _fmt(perm_std),
+                "z_score": _fmt(z),
+                "bootstrap_ci95_low": _fmt(ci_lo),
+                "bootstrap_ci95_high": _fmt(ci_hi),
+                "p_two_sided": _fmt(p_two),
+                "q_threshold": _fmt(q_threshold),
+                "q_threshold_supportive": _fmt(SUPPORTIVE_Q_THRESHOLD),
+                "min_n_threshold": str(int(min_windows_each)),
+                "min_windows_each_threshold": str(int(min_windows_each)),
+                "min_terms_with_both_threshold": str(int(min_terms_with_both)),
+                "permutations": str(permutations),
+                "bootstrap_samples": str(bootstrap_samples),
+                "seed": str(seed),
+                "min_window_days_filter": str(min_window_days),
+            }
+        )
+
+    _add_bh_q_values(rows, p_col="p_two_sided", q_col="q_bh_fdr")
+    for r in rows:
+        q = _parse_float(r.get("q_bh_fdr") or "")
+        lo = _parse_float(r.get("bootstrap_ci95_low") or "")
+        hi = _parse_float(r.get("bootstrap_ci95_high") or "")
+        n_u = _parse_int(r.get("n_windows_unified") or "") or 0
+        n_d = _parse_int(r.get("n_windows_divided") or "") or 0
+        n_tb = _parse_int(r.get("n_terms_with_both") or "") or 0
+        n_effective = min(n_u, n_d)
+        ev = _classify_evidence(
+            q=q,
+            ci_lo=lo,
+            ci_hi=hi,
+            n=n_effective,
+            q_threshold=q_threshold,
+            min_n=min_windows_each,
+        )
+        pass_min_n = ((ev.get("passes_min_n") or "") == "1") and (n_tb >= int(min_terms_with_both))
+        pass_q_thr = (ev.get("passes_q_threshold") or "") == "1"
+        pass_q_010 = (ev.get("passes_q_lt_010") or "") == "1"
+        if pass_q_thr and pass_min_n:
+            tier = "confirmatory"
+        elif pass_q_010 and pass_min_n:
+            tier = "supportive"
+        else:
+            tier = "exploratory"
+        r["passes_q_threshold"] = ev.get("passes_q_threshold") or "0"
+        r["passes_q_lt_005"] = ev.get("passes_q_lt_005") or "0"
+        r["passes_q_lt_010"] = ev.get("passes_q_lt_010") or "0"
+        r["passes_ci_excludes_zero"] = ev.get("passes_ci_excludes_zero") or "0"
+        r["passes_min_n"] = "1" if pass_min_n else "0"
+        r["evidence_tier"] = tier
+        r["small_cell_warning"] = "0" if pass_min_n else "1"
+
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out_csv.with_suffix(out_csv.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8", newline="") as handle:
+        w = csv.DictWriter(handle, fieldnames=header)
+        w.writeheader()
+        for r in rows:
+            w.writerow(r)
+    tmp.replace(out_csv)
+
+
 def ensure_within_mde_columns(
     *,
     within_csv: Path,
@@ -925,6 +1197,7 @@ def _write_evidence_summary(
     *,
     term_party_csv: Path | None,
     within_unified_csv: Path | None,
+    unified_binary_csv: Path | None,
     out_csv: Path,
 ) -> None:
     analyses: list[tuple[str, Path]] = []
@@ -932,6 +1205,8 @@ def _write_evidence_summary(
         analyses.append(("term_party", term_party_csv))
     if within_unified_csv is not None and within_unified_csv.exists():
         analyses.append(("within_unified", within_unified_csv))
+    if unified_binary_csv is not None and unified_binary_csv.exists():
+        analyses.append(("congress_unified_binary", unified_binary_csv))
 
     tier_order = ("confirmatory", "supportive", "exploratory")
     aggregate: dict[tuple[str, str, str], dict[str, int]] = {}
@@ -1147,6 +1422,7 @@ def _write_evidence_markdown(
     *,
     term_party_csv: Path | None,
     within_unified_csv: Path | None,
+    unified_binary_csv: Path | None,
     summary_csv: Path | None,
     out_md: Path,
 ) -> None:
@@ -1158,6 +1434,7 @@ def _write_evidence_markdown(
 
     term_rows = _read_rows(term_party_csv)
     within_rows = _read_rows(within_unified_csv)
+    congress_binary_rows = _read_rows(unified_binary_csv)
     summary_rows = _read_rows(summary_csv)
 
     lines: list[str] = []
@@ -1228,6 +1505,7 @@ def _write_evidence_markdown(
 
     _render_detail("Term-Level Party Differences", term_rows, has_party=False)
     _render_detail("Within-President Unified vs Divided", within_rows, has_party=True)
+    _render_detail("Congress Unified vs Divided (Window-Level)", congress_binary_rows, has_party=True)
 
     lines.append("## Notes")
     lines.append("")
@@ -1263,6 +1541,7 @@ def run_randomization(
     window_metrics_csv: Path | None,
     window_labels_csv: Path | None,
     output_unified_within_term_csv: Path | None,
+    output_unified_binary_csv: Path | None,
     output_evidence_summary_csv: Path | None,
     output_evidence_md: Path | None,
     output_inversion_robustness_csv: Path | None,
@@ -1270,6 +1549,8 @@ def run_randomization(
     output_cpi_robustness_csv: Path | None,
     output_cpi_robustness_md: Path | None,
     within_president_min_window_days: int,
+    unified_binary_min_windows_each: int,
+    unified_binary_min_terms_with_both: int,
     include_diagnostic_metrics: bool,
 ) -> None:
     if not term_metrics_csv.exists():
@@ -1289,6 +1570,7 @@ def run_randomization(
     )
 
     generated_within_csv: Path | None = None
+    generated_unified_binary_csv: Path | None = None
     if (
         window_metrics_csv is not None
         and window_labels_csv is not None
@@ -1310,17 +1592,35 @@ def run_randomization(
             include_diagnostic_metrics=bool(include_diagnostic_metrics),
         )
         generated_within_csv = output_unified_within_term_csv
+        if output_unified_binary_csv is not None:
+            _compute_unified_binary_window_permutation(
+                window_metrics_csv=window_metrics_csv,
+                window_labels_csv=window_labels_csv,
+                out_csv=output_unified_binary_csv,
+                permutations=max(0, int(permutations)),
+                bootstrap_samples=max(0, int(bootstrap_samples)),
+                seed=int(seed),
+                min_window_days=max(0, int(within_president_min_window_days)),
+                q_threshold=float(q_threshold),
+                min_windows_each=max(0, int(unified_binary_min_windows_each)),
+                min_terms_with_both=max(0, int(unified_binary_min_terms_with_both)),
+                primary_only=bool(primary_only),
+                include_diagnostic_metrics=bool(include_diagnostic_metrics),
+            )
+            generated_unified_binary_csv = output_unified_binary_csv
 
     if output_evidence_summary_csv is not None:
         _write_evidence_summary(
             term_party_csv=output_party_term_csv,
             within_unified_csv=generated_within_csv,
+            unified_binary_csv=generated_unified_binary_csv,
             out_csv=output_evidence_summary_csv,
         )
     if output_evidence_md is not None:
         _write_evidence_markdown(
             term_party_csv=output_party_term_csv,
             within_unified_csv=generated_within_csv,
+            unified_binary_csv=generated_unified_binary_csv,
             summary_csv=output_evidence_summary_csv,
             out_md=output_evidence_md,
         )
@@ -1502,6 +1802,8 @@ def compare_randomization_outputs(
     alt_party_term_csv: Path,
     base_within_csv: Path | None,
     alt_within_csv: Path | None,
+    base_unified_binary_csv: Path | None,
+    alt_unified_binary_csv: Path | None,
     out_csv: Path,
 ) -> None:
     header = [
@@ -1578,6 +1880,13 @@ def compare_randomization_outputs(
             analysis="within_unified",
             base_rows=_load_evidence_rows(base_within_csv),
             alt_rows=_load_evidence_rows(alt_within_csv),
+            has_party=True,
+        )
+    if base_unified_binary_csv is not None and alt_unified_binary_csv is not None:
+        _append_analysis(
+            analysis="congress_unified_binary",
+            base_rows=_load_evidence_rows(base_unified_binary_csv),
+            alt_rows=_load_evidence_rows(alt_unified_binary_csv),
             has_party=True,
         )
 
@@ -1699,6 +2008,8 @@ def write_claims_table(
     strict_party_term_csv: Path,
     baseline_within_csv: Path | None,
     strict_within_csv: Path | None,
+    baseline_unified_binary_csv: Path | None,
+    strict_unified_binary_csv: Path | None,
     out_csv: Path,
     inference_table_csv: Path | None = None,
     inference_stability_summary_csv: Path | None = None,
@@ -1896,6 +2207,16 @@ def write_claims_table(
             effect_col="observed_mean_delta_unified_minus_divided",
             estimand_id="unified_minus_divided_within_term",
             estimand_label="mean over president-terms of (unified - divided)",
+        )
+    if baseline_unified_binary_csv is not None and strict_unified_binary_csv is not None:
+        _append_analysis(
+            analysis="congress_unified_binary",
+            base_rows=_load_evidence_rows(baseline_unified_binary_csv),
+            strict_rows=_load_evidence_rows(strict_unified_binary_csv),
+            has_party=True,
+            effect_col="observed_diff_unified_minus_divided",
+            estimand_id="unified_minus_divided_window_level",
+            estimand_label="mean(window_metric | unified) - mean(window_metric | divided), blocked by president-term in permutation",
         )
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
