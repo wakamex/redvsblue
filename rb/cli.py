@@ -473,6 +473,18 @@ def _parse_args() -> argparse.Namespace:
         default=1,
         help="Newey-West lag length for HAC standard errors.",
     )
+    inference.add_argument(
+        "--wild-cluster-draws",
+        type=int,
+        default=1999,
+        help="Rademacher wild-cluster bootstrap draws for president-cluster p-values (0 disables).",
+    )
+    inference.add_argument(
+        "--wild-cluster-seed",
+        type=int,
+        default=42,
+        help="RNG seed for wild-cluster bootstrap reproducibility.",
+    )
     inference.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
     compare_rand = sub.add_parser("randomization-compare", help="Compare evidence tiers between two randomization runs.")
@@ -640,6 +652,18 @@ def _parse_args() -> argparse.Namespace:
         help="Minimum window_days filter used in scoreboard within-president diagnostics.",
     )
     pub.add_argument("--nw-lags", type=int, default=1, help="Newey-West lag length for inference table.")
+    pub.add_argument(
+        "--wild-cluster-draws",
+        type=int,
+        default=1999,
+        help="Rademacher wild-cluster bootstrap draws for president-cluster p-values (0 disables).",
+    )
+    pub.add_argument(
+        "--wild-cluster-seed",
+        type=int,
+        default=42,
+        help="RNG seed for wild-cluster bootstrap reproducibility.",
+    )
     pub.add_argument(
         "--publication-hac-p-threshold",
         type=float,
@@ -888,6 +912,8 @@ def main() -> int:
             out_csv=args.output_csv,
             out_md=args.output_md,
             nw_lags=max(0, int(args.nw_lags)),
+            wild_cluster_draws=max(0, int(args.wild_cluster_draws)),
+            wild_cluster_seed=int(args.wild_cluster_seed),
         )
         return 0
 
@@ -975,6 +1001,8 @@ def main() -> int:
             out_csv=args.output_inference_csv,
             out_md=args.output_inference_md,
             nw_lags=max(0, int(args.nw_lags)),
+            wild_cluster_draws=max(0, int(args.wild_cluster_draws)),
+            wild_cluster_seed=int(args.wild_cluster_seed),
         )
         write_claims_table(
             baseline_party_term_csv=args.baseline_party_term,
@@ -1015,6 +1043,8 @@ def main() -> int:
                     "all_metrics": bool(args.all_metrics),
                     "within_president_min_window_days": max(0, int(args.within_president_min_window_days)),
                     "nw_lags": max(0, int(args.nw_lags)),
+                    "wild_cluster_draws": max(0, int(args.wild_cluster_draws)),
+                    "wild_cluster_seed": int(args.wild_cluster_seed),
                     "publication_hac_p_threshold": float(args.publication_hac_p_threshold),
                 },
                 "environment": {

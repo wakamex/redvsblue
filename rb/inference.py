@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import math
+import random
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -203,6 +204,51 @@ def _ols_nw(
     return beta, se_beta, z, p_two
 
 
+def _wild_cluster_bootstrap_p(
+    *,
+    y: list[float],
+    d: list[int],
+    clusters: list[str],
+    draws: int,
+    seed: int,
+) -> float | None:
+    # Null-imposed Rademacher wild cluster bootstrap for H0: beta = 0.
+    n = len(y)
+    if draws <= 0 or n < 3 or n != len(d) or n != len(clusters):
+        return None
+
+    beta_obs, se_obs, z_obs, _, g = _ols_cluster(y=y, d=d, clusters=clusters)
+    if beta_obs is None or se_obs is None or z_obs is None or g < 2:
+        return None
+
+    # Null model y = alpha + u.
+    alpha_null = sum(y) / float(n)
+    u_null = [yi - alpha_null for yi in y]
+    unique_clusters = sorted(set(clusters))
+    if len(unique_clusters) < 2:
+        return None
+
+    rng = random.Random(int(seed))
+    hits = 0
+    valid = 0
+    for _ in range(int(draws)):
+        w_by_cluster: dict[str, float] = {}
+        for cid in unique_clusters:
+            w_by_cluster[cid] = 1.0 if rng.getrandbits(1) else -1.0
+        y_star = [alpha_null + w_by_cluster[cid] * u for cid, u in zip(clusters, u_null)]
+        _, se_b, z_b, _, _ = _ols_cluster(y=y_star, d=d, clusters=clusters)
+        if se_b is None or z_b is None:
+            continue
+        valid += 1
+        if abs(z_b) >= abs(z_obs):
+            hits += 1
+
+    if valid <= 0:
+        return None
+    # Phipson-Smyth style finite-sample correction.
+    return (1.0 + float(hits)) / (1.0 + float(valid))
+
+
 def _ols_cluster(
     *,
     y: list[float],
@@ -355,6 +401,8 @@ def write_inference_table(
     out_csv: Path,
     out_md: Path | None,
     nw_lags: int,
+    wild_cluster_draws: int = 1999,
+    wild_cluster_seed: int = 42,
 ) -> None:
     groups = _load_term_groups(term_metrics_csv)
     perm_rows = _load_permutation_rows(permutation_party_term_csv)
@@ -386,6 +434,11 @@ def write_inference_table(
         "cluster_president_p_two_sided_norm",
         "cluster_president_p_lt_005",
         "cluster_president_p_lt_010",
+        "cluster_president_wild_draws",
+        "cluster_president_wild_seed",
+        "cluster_president_wild_p_two_sided",
+        "cluster_president_wild_p_lt_005",
+        "cluster_president_wild_p_lt_010",
         "perm_effect_d_minus_r",
         "perm_p_two_sided",
         "perm_q_bh_fdr",
@@ -420,6 +473,13 @@ def write_inference_table(
         mde_abs = _rough_mde_abs_two_sample(d_vals=d_vals, r_vals=r_vals)
         beta, se, z, p_hac = _ols_nw(y=y, d=d, nw_lags=max(0, int(nw_lags)))
         _, c_se, c_z, c_p, c_g = _ols_cluster(y=y, d=d, clusters=clusters)
+        c_wild_p = _wild_cluster_bootstrap_p(
+            y=y,
+            d=d,
+            clusters=clusters,
+            draws=max(0, int(wild_cluster_draws)),
+            seed=int(wild_cluster_seed),
+        )
         effect_over_mde = None
         if beta is not None and mde_abs is not None and mde_abs > 0.0:
             effect_over_mde = abs(beta) / mde_abs
@@ -466,6 +526,11 @@ def write_inference_table(
                 "cluster_president_p_two_sided_norm": _fmt(c_p),
                 "cluster_president_p_lt_005": _bool_to_flag(_p_flag(c_p, 0.05)),
                 "cluster_president_p_lt_010": _bool_to_flag(_p_flag(c_p, 0.10)),
+                "cluster_president_wild_draws": str(max(0, int(wild_cluster_draws))),
+                "cluster_president_wild_seed": str(int(wild_cluster_seed)),
+                "cluster_president_wild_p_two_sided": _fmt(c_wild_p),
+                "cluster_president_wild_p_lt_005": _bool_to_flag(_p_flag(c_wild_p, 0.05)),
+                "cluster_president_wild_p_lt_010": _bool_to_flag(_p_flag(c_wild_p, 0.10)),
                 "perm_effect_d_minus_r": _fmt(perm_eff),
                 "perm_p_two_sided": _fmt(p_perm),
                 "perm_q_bh_fdr": _fmt(q_perm),
@@ -502,11 +567,15 @@ def write_inference_table(
     lines.append(f"- HAC/Newey-West lags: `{max(0, int(nw_lags))}`")
     lines.append("- HAC p-values use a normal approximation for two-sided p-values.")
     lines.append("- Cluster p-values are president-cluster sandwich estimates with finite-sample correction and normal-approximation p-values.")
+    lines.append(
+        f"- Wild-cluster p-values use null-imposed Rademacher bootstrap "
+        f"(draws={max(0, int(wild_cluster_draws))}, seed={int(wild_cluster_seed)})."
+    )
     lines.append("- Rough MDE uses a two-sample normal approximation (alpha=0.05, power=0.80) and is a scale diagnostic, not a hard decision rule.")
     lines.append("")
 
-    lines.append("| Metric | Family | Effect (D-R) | Rough MDE | |Effect|/MDE | HAC p | Cluster p | Perm q | Perm tier | Disagree@0.05 |")
-    lines.append("|---|---|---:|---:|---:|---:|---:|---:|---|---:|")
+    lines.append("| Metric | Family | Effect (D-R) | Rough MDE | |Effect|/MDE | HAC p | Cluster p | Wild-cluster p | Perm q | Perm tier | Disagree@0.05 |")
+    lines.append("|---|---|---:|---:|---:|---:|---:|---:|---:|---|---:|")
     for r in sorted(
         rows,
         key=lambda rr: (
@@ -526,6 +595,7 @@ def write_inference_table(
                     _fmt(_parse_float(r.get("rough_effect_over_mde_abs") or "")),
                     _fmt(_parse_float(r.get("hac_nw_p_two_sided_norm") or "")),
                     _fmt(_parse_float(r.get("cluster_president_p_two_sided_norm") or "")),
+                    _fmt(_parse_float(r.get("cluster_president_wild_p_two_sided") or "")),
                     _fmt(_parse_float(r.get("perm_q_bh_fdr") or "")),
                     (r.get("perm_tier") or "").replace("|", "\\|"),
                     (r.get("sig_disagree_005") or ""),
