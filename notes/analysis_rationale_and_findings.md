@@ -234,6 +234,12 @@ Operational status:
 - A multi-seed stability report is now available via:
   - `rb randomization-stability --seeds 42,137,271`
   - Output: `reports/permutation_seed_stability_v1.csv`
+- A dual-inference primary table is now available via:
+  - `rb inference-table --nw-lags 1`
+  - Outputs:
+    - `reports/inference_table_primary_v1.csv`
+    - `reports/inference_table_primary_v1.md`
+  - Table includes side-by-side permutation (`p`, `q`, tier) and HAC/Newey-West diagnostics (SE, z, p), plus disagreement flags.
 - Historical all-metrics tier counts (pre-hardening defaults; retained for comparison context):
   - Term-level party differences: `confirmatory=2`, `supportive=5`, `exploratory=30`.
   - Within-president unified/divided: `confirmatory=0`, `supportive=0`, `exploratory=74`.
