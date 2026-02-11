@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import platform
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -74,6 +75,93 @@ def _git_head(cwd: Path) -> str:
         return out.decode("utf-8").strip()
     except Exception:
         return ""
+
+
+_ARTIFACT_TS_RE = re.compile(r"^(\d{8}T\d{6}Z)__sha256_")
+
+
+def _artifact_ts_from_name(name: str) -> str:
+    m = _ARTIFACT_TS_RE.match(name)
+    if not m:
+        return ""
+    return m.group(1)
+
+
+def _latest_raw_source_artifacts(raw_root: Path = Path("data/raw")) -> dict[str, dict[str, object]]:
+    out: dict[str, dict[str, object]] = {}
+    if not raw_root.exists():
+        return out
+    for source_dir in sorted(p for p in raw_root.iterdir() if p.is_dir()):
+        latest_path: Path | None = None
+        latest_ts = ""
+        for p in source_dir.rglob("*"):
+            if not p.is_file():
+                continue
+            if p.name.endswith(".meta.json"):
+                continue
+            ts = _artifact_ts_from_name(p.name)
+            if not ts:
+                continue
+            if latest_path is None or ts > latest_ts:
+                latest_path = p
+                latest_ts = ts
+        if latest_path is None:
+            out[source_dir.name] = {"exists": False}
+            continue
+        out[source_dir.name] = {
+            "exists": True,
+            "artifact_timestamp_utc_compact": latest_ts,
+            "artifact_path": str(latest_path),
+            "artifact_sha256_from_name": (
+                latest_path.name.split("__sha256_")[-1].split(".")[0] if "__sha256_" in latest_path.name else ""
+            ),
+        }
+    return out
+
+
+def _fred_vintage_summary(raw_root: Path = Path("data/raw")) -> dict[str, object]:
+    root = raw_root / "fred" / "series"
+    if not root.exists() or not root.is_dir():
+        return {"exists": False}
+
+    starts: list[str] = []
+    ends: list[str] = []
+    latest_updates: list[str] = []
+    n_series = 0
+    for series_dir in sorted(p for p in root.iterdir() if p.is_dir()):
+        candidates = sorted(
+            p for p in series_dir.glob("*.json") if not p.name.endswith(".meta.json")
+        )
+        if not candidates:
+            continue
+        latest = candidates[-1]
+        try:
+            obj = json.loads(latest.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        n_series += 1
+        rs = str(obj.get("realtime_start") or "").strip()
+        re_ = str(obj.get("realtime_end") or "").strip()
+        if rs:
+            starts.append(rs)
+        if re_:
+            ends.append(re_)
+        seriess = obj.get("seriess") or []
+        if isinstance(seriess, list) and seriess:
+            lu = str((seriess[0] or {}).get("last_updated") or "").strip()
+            if lu:
+                latest_updates.append(lu)
+
+    return {
+        "exists": True,
+        "n_series_dirs_with_snapshots": n_series,
+        "realtime_start_min": min(starts) if starts else "",
+        "realtime_start_max": max(starts) if starts else "",
+        "realtime_end_min": min(ends) if ends else "",
+        "realtime_end_max": max(ends) if ends else "",
+        "last_updated_min": min(latest_updates) if latest_updates else "",
+        "last_updated_max": max(latest_updates) if latest_updates else "",
+    }
 
 
 def _parse_args() -> argparse.Namespace:
@@ -1065,6 +1153,10 @@ def main() -> int:
                     "window_labels": _file_meta(args.window_labels if args.window_labels.exists() else None),
                     "pyproject_toml": _file_meta(Path("pyproject.toml") if Path("pyproject.toml").exists() else None),
                     "uv_lock": _file_meta(Path("uv.lock") if Path("uv.lock").exists() else None),
+                },
+                "upstream": {
+                    "raw_source_latest_artifacts": _latest_raw_source_artifacts(Path("data/raw")),
+                    "fred_vintage_summary": _fred_vintage_summary(Path("data/raw")),
                 },
                 "outputs": {
                     "inference_csv": _file_meta(args.output_inference_csv),
