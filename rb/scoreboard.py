@@ -729,7 +729,8 @@ def write_scoreboard_md(
             missing_family_rows += 1
 
     if not family_primary_metric_ids:
-        lines.append("| (none) | (none) |  |  |  |  |  |  |  |  |")
+        placeholder_row = ["(none)", "(none)"] + [""] * max(0, len(family_header) - 2)
+        lines.append("| " + " | ".join(placeholder_row) + " |")
     if missing_family_rows:
         lines.append("")
         lines.append(
