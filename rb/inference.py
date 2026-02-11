@@ -61,6 +61,52 @@ def _sign(v: float | None) -> int:
     return 0
 
 
+def _sample_std(xs: list[float]) -> float | None:
+    n = len(xs)
+    if n < 2:
+        return None
+    mu = sum(xs) / float(n)
+    var = sum((x - mu) ** 2 for x in xs) / float(n - 1)
+    if var < 0.0:
+        if var > -1e-12:
+            var = 0.0
+        else:
+            return None
+    return math.sqrt(var)
+
+
+def _rough_mde_abs_two_sample(
+    *,
+    d_vals: list[float],
+    r_vals: list[float],
+    alpha_two_sided: float = 0.05,
+    power: float = 0.80,
+) -> float | None:
+    # Normal-approximation MDE for two-sample mean-difference:
+    # (z_{1-alpha/2} + z_{power}) * s_pooled * sqrt(1/n_d + 1/n_r)
+    # We use fixed z-values for common settings to keep dependencies minimal.
+    nd = len(d_vals)
+    nr = len(r_vals)
+    if nd < 2 or nr < 2:
+        return None
+    sd = _sample_std(d_vals)
+    sr = _sample_std(r_vals)
+    if sd is None or sr is None:
+        return None
+    pooled_var_num = float((nd - 1)) * (sd**2) + float((nr - 1)) * (sr**2)
+    pooled_var_den = float((nd - 1) + (nr - 1))
+    if pooled_var_den <= 0.0:
+        return None
+    pooled_sd = math.sqrt(max(0.0, pooled_var_num / pooled_var_den))
+    if pooled_sd <= 0.0:
+        return 0.0
+
+    # Defaults used in output labels/notes.
+    z_alpha = 1.959963984540054 if abs(alpha_two_sided - 0.05) <= 1e-12 else 1.959963984540054
+    z_power = 0.8416212335729143 if abs(power - 0.80) <= 1e-12 else 0.8416212335729143
+    return (z_alpha + z_power) * pooled_sd * math.sqrt((1.0 / float(nd)) + (1.0 / float(nr)))
+
+
 def _mat2_mul(a: list[list[float]], b: list[list[float]]) -> list[list[float]]:
     return [
         [
@@ -247,7 +293,12 @@ def write_inference_table(
         "n_obs",
         "n_d",
         "n_r",
+        "n_clusters_total",
+        "n_clusters_d",
+        "n_clusters_r",
         "effect_d_minus_r",
+        "rough_mde_abs_alpha005_power080",
+        "rough_effect_over_mde_abs",
         "hac_nw_lags",
         "hac_nw_se",
         "hac_nw_z",
@@ -280,7 +331,15 @@ def write_inference_table(
         n_obs = len(obs)
         n_d = sum(1 for x in d if x == 1)
         n_r = n_obs - n_d
+        d_vals = [o.value for o in obs if o.party == "D"]
+        r_vals = [o.value for o in obs if o.party == "R"]
+        d_term_ids = {o.term_id for o in obs if o.party == "D"}
+        r_term_ids = {o.term_id for o in obs if o.party == "R"}
+        mde_abs = _rough_mde_abs_two_sample(d_vals=d_vals, r_vals=r_vals)
         beta, se, z, p_hac = _ols_nw(y=y, d=d, nw_lags=max(0, int(nw_lags)))
+        effect_over_mde = None
+        if beta is not None and mde_abs is not None and mde_abs > 0.0:
+            effect_over_mde = abs(beta) / mde_abs
 
         pr = perm_rows.get(metric_id, {})
         p_perm = _parse_float(pr.get("p_two_sided") or "")
@@ -306,7 +365,12 @@ def write_inference_table(
                 "n_obs": str(n_obs),
                 "n_d": str(n_d),
                 "n_r": str(n_r),
+                "n_clusters_total": str(len({o.term_id for o in obs if o.term_id})),
+                "n_clusters_d": str(len({tid for tid in d_term_ids if tid})),
+                "n_clusters_r": str(len({tid for tid in r_term_ids if tid})),
                 "effect_d_minus_r": _fmt(beta),
+                "rough_mde_abs_alpha005_power080": _fmt(mde_abs),
+                "rough_effect_over_mde_abs": _fmt(effect_over_mde),
                 "hac_nw_lags": str(max(0, int(nw_lags))),
                 "hac_nw_se": _fmt(se),
                 "hac_nw_z": _fmt(z),
@@ -348,10 +412,11 @@ def write_inference_table(
         lines.append(f"- Permutation table: `{permutation_party_term_csv}`")
     lines.append(f"- HAC/Newey-West lags: `{max(0, int(nw_lags))}`")
     lines.append("- HAC p-values use a normal approximation for two-sided p-values.")
+    lines.append("- Rough MDE uses a two-sample normal approximation (alpha=0.05, power=0.80) and is a scale diagnostic, not a hard decision rule.")
     lines.append("")
 
-    lines.append("| Metric | Family | Effect (D-R) | HAC p | Perm q | Perm tier | Disagree@0.05 |")
-    lines.append("|---|---|---:|---:|---:|---|---:|")
+    lines.append("| Metric | Family | Effect (D-R) | Rough MDE | |Effect|/MDE | HAC p | Perm q | Perm tier | Disagree@0.05 |")
+    lines.append("|---|---|---:|---:|---:|---:|---:|---|---:|")
     for r in sorted(
         rows,
         key=lambda rr: (
@@ -367,6 +432,8 @@ def write_inference_table(
                     (r.get("metric_id") or "").replace("|", "\\|"),
                     (r.get("metric_family") or "").replace("|", "\\|"),
                     _fmt(_parse_float(r.get("effect_d_minus_r") or "")),
+                    _fmt(_parse_float(r.get("rough_mde_abs_alpha005_power080") or "")),
+                    _fmt(_parse_float(r.get("rough_effect_over_mde_abs") or "")),
                     _fmt(_parse_float(r.get("hac_nw_p_two_sided_norm") or "")),
                     _fmt(_parse_float(r.get("perm_q_bh_fdr") or "")),
                     (r.get("perm_tier") or "").replace("|", "\\|"),

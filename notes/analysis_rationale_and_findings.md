@@ -319,6 +319,10 @@ Operational status:
     - `reports/inference_table_primary_v1.csv`
     - `reports/inference_table_primary_v1.md`
   - Table includes side-by-side permutation (`p`, `q`, tier) and HAC/Newey-West diagnostics (SE, z, p), plus disagreement flags.
+  - Table now also includes rough power diagnostics for primary term-level metrics:
+    - effective cluster counts
+    - rough MDE proxy (`rough_mde_abs_alpha005_power080`)
+    - `|effect|/MDE` scale ratio
 - `rb claims-table` now supports publication-mode gating for term-level claims:
   - `--publication-mode --inference-table reports/inference_table_primary_v1.csv`
   - Confirmatory labels are downgraded when HAC significance/direction checks do not agree.
@@ -393,7 +397,7 @@ Current weaknesses / gaps:
 - Explanatory decomposition is less developed.
   - Blinder-Watson-style decomposition of the growth gap into candidate channels (oil, productivity, global growth, etc.) is not yet implemented.
 - Small-cell/power diagnostics are not explicit enough.
-  - We flag low `n`, but do not yet report minimum detectable effects or power proxies for each estimand.
+  - We now report a rough MDE proxy for primary term-level metrics in `rb inference-table`, but we do not yet have equivalent power diagnostics for within-president estimands.
 - Endpoint/vintage uncertainty is still under-documented.
   - We note data revision risk, but we do not yet version full vintages or publish a revision sensitivity panel.
 - Congress-control interpretation remains diagnostic.
@@ -406,7 +410,7 @@ Current weaknesses / gaps:
 2. Pre-register a primary metric set and transform hierarchy in the spec:
    - one primary metric per family, with secondaries explicitly labeled.
 3. Add power/precision diagnostics:
-   - report `n`, effective clusters, bootstrap SE, and a rough minimum-detectable-effect column.
+   - extend the current primary-term MDE diagnostics to within-president estimands and add bootstrap-SE style uncertainty diagnostics in the same table.
 4. Implement a decomposition module for growth and labor gaps:
    - start with oil shock proxies, global growth, productivity, and initial-condition controls.
 5. Add a historical-vintage sensitivity panel:
@@ -419,9 +423,9 @@ Current weaknesses / gaps:
 ## Immediate Next Steps
 
 1. Add power diagnostics to the dual-inference outputs:
-   - include effective sample/cluster counts and a rough minimum-detectable-effect column for primary metrics.
-2. Add a short publication-ready narrative template that maps directly from claims-table and inference-table rows (no manual cherry-picking).
-3. Add a few-cluster-robust inference variant alongside HAC in `rb inference-table`.
+   - extend beyond primary term-level metrics and add equivalent diagnostics for within-president rows.
+2. Add a few-cluster-robust inference variant alongside HAC in `rb inference-table`.
+3. Add a short publication-ready narrative template that maps directly from claims-table and inference-table rows (no manual cherry-picking).
 
 ## Claims Table
 
