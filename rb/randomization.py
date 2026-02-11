@@ -930,3 +930,114 @@ def run_randomization(
             summary_csv=output_evidence_summary_csv,
             out_md=output_evidence_md,
         )
+
+
+def _load_evidence_rows(path: Path) -> list[dict[str, str]]:
+    if not path.exists():
+        return []
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
+def _tier_rank(tier: str) -> int:
+    t = (tier or "").strip()
+    if t == "confirmatory":
+        return 2
+    if t == "supportive":
+        return 1
+    return 0
+
+
+def compare_randomization_outputs(
+    *,
+    base_party_term_csv: Path,
+    alt_party_term_csv: Path,
+    base_within_csv: Path | None,
+    alt_within_csv: Path | None,
+    out_csv: Path,
+) -> None:
+    header = [
+        "analysis",
+        "metric_id",
+        "pres_party",
+        "metric_family",
+        "tier_base",
+        "tier_alt",
+        "tier_change",
+        "q_base",
+        "q_alt",
+        "p_base",
+        "p_alt",
+        "n_base",
+        "n_alt",
+    ]
+    rows: list[dict[str, str]] = []
+
+    def _append_analysis(*, analysis: str, base_rows: list[dict[str, str]], alt_rows: list[dict[str, str]], has_party: bool) -> None:
+        if not base_rows and not alt_rows:
+            return
+        bmap: dict[tuple[str, str], dict[str, str]] = {}
+        amap: dict[tuple[str, str], dict[str, str]] = {}
+        for r in base_rows:
+            k = ((r.get("metric_id") or "").strip(), (r.get("pres_party") or "").strip() if has_party else "")
+            bmap[k] = r
+        for r in alt_rows:
+            k = ((r.get("metric_id") or "").strip(), (r.get("pres_party") or "").strip() if has_party else "")
+            amap[k] = r
+        keys = sorted(set(bmap.keys()) | set(amap.keys()), key=lambda x: (x[0], x[1]))
+        for k in keys:
+            br = bmap.get(k, {})
+            ar = amap.get(k, {})
+            tier_b = (br.get("evidence_tier") or "").strip()
+            tier_a = (ar.get("evidence_tier") or "").strip()
+            rb = _tier_rank(tier_b)
+            ra = _tier_rank(tier_a)
+            if ra > rb:
+                change = "stronger"
+            elif ra < rb:
+                change = "weaker"
+            else:
+                change = "same"
+            family = (ar.get("metric_family") or br.get("metric_family") or "").strip()
+            n_base = (br.get("n_obs") or br.get("n_presidents_with_both") or "").strip()
+            n_alt = (ar.get("n_obs") or ar.get("n_presidents_with_both") or "").strip()
+            rows.append(
+                {
+                    "analysis": analysis,
+                    "metric_id": k[0],
+                    "pres_party": k[1],
+                    "metric_family": family,
+                    "tier_base": tier_b or "missing",
+                    "tier_alt": tier_a or "missing",
+                    "tier_change": change,
+                    "q_base": (br.get("q_bh_fdr") or "").strip(),
+                    "q_alt": (ar.get("q_bh_fdr") or "").strip(),
+                    "p_base": (br.get("p_two_sided") or "").strip(),
+                    "p_alt": (ar.get("p_two_sided") or "").strip(),
+                    "n_base": n_base,
+                    "n_alt": n_alt,
+                }
+            )
+
+    _append_analysis(
+        analysis="term_party",
+        base_rows=_load_evidence_rows(base_party_term_csv),
+        alt_rows=_load_evidence_rows(alt_party_term_csv),
+        has_party=False,
+    )
+    if base_within_csv is not None and alt_within_csv is not None:
+        _append_analysis(
+            analysis="within_unified",
+            base_rows=_load_evidence_rows(base_within_csv),
+            alt_rows=_load_evidence_rows(alt_within_csv),
+            has_party=True,
+        )
+
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out_csv.with_suffix(out_csv.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8", newline="") as handle:
+        w = csv.DictWriter(handle, fieldnames=header)
+        w.writeheader()
+        for r in rows:
+            w.writerow(r)
+    tmp.replace(out_csv)

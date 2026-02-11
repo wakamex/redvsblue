@@ -133,6 +133,7 @@ Current outputs:
 - `reports/permutation_unified_within_term_all_v1.csv` (all metrics)
 - `reports/permutation_evidence_summary_v1.csv` (compact evidence-tier summary by analysis and metric family)
 - `reports/permutation_evidence_summary_v1.md` (human-readable confirmatory/supportive summary)
+- `reports/permutation_evidence_compare_v1.csv` (baseline vs stricter-profile tier comparison)
 
 What it does:
 
@@ -206,15 +207,30 @@ Operational status:
 - This policy is now encoded in `rb randomization` outputs.
 - A compact family-level summary table is now generated automatically.
 - A narrative markdown summary is now generated automatically.
+- A comparison table is now generated via `rb randomization-compare` to track baseline-vs-stricter tier shifts metric-by-metric.
 - Current all-metrics tier counts:
   - Term-level party differences: `confirmatory=7`, `supportive=4`, `exploratory=26`.
   - Within-president unified/divided: `confirmatory=0`, `supportive=3`, `exploratory=71`.
+- Sensitivity check (stricter settings: `term_block_years=20`, `within-president-min-window-days=90`):
+  - Term-level party differences shift to `confirmatory=0`, `supportive=11`, `exploratory=26`.
+  - Within-president unified/divided remains weak (`confirmatory=0`, `supportive=4`, `exploratory=70`).
+
+Interpretation of this sensitivity:
+
+- Some baseline “confirmatory” term-level findings are sensitive to stronger temporal-block assumptions.
+- Publication claims should therefore distinguish:
+  - baseline-confirmatory (under default randomization settings), versus
+  - robustness-confirmatory (still confirmatory/supportive under stricter settings).
+- At the moment, evidence is stronger for “supportive macro/labor pattern” than for hard confirmatory claims robust to stricter blocking.
+- In the current baseline-vs-stricter comparison (`reports/permutation_evidence_compare_v1.csv`):
+  - term-level rows: `30 same`, `7 weaker`, `0 stronger`
+  - within-president rows: `73 same`, `1 stronger`, `0 weaker`
 
 ## Immediate Next Steps
 
 1. Decide and document the default published threshold for `within-president-min-window-days` (after sensitivity review).
-2. Decide/report default randomization settings for publication tables (`permutations`, `bootstrap_samples`, `term_block_years`, `q_threshold`, min-`n` rules).
-3. Add a narrative export (short markdown) that highlights only confirmatory/supportive rows and key caveats.
+2. Decide/report default randomization settings for publication tables (`permutations`, `bootstrap_samples`, `term_block_years`, `q_threshold`, min-`n` rules), plus one stricter sensitivity profile.
+3. Add a small comparison report that contrasts baseline vs stricter profile evidence tiers metric-by-metric.
 
 ## Reproduce Current Outputs
 

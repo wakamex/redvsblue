@@ -8,7 +8,7 @@ from rb.congress_control import ensure_congress_control
 from rb.ingest import ingest_from_spec
 from rb.metrics import compute_term_metrics
 from rb.presidents import ensure_presidents
-from rb.randomization import run_randomization
+from rb.randomization import compare_randomization_outputs, run_randomization
 from rb.regimes import ensure_regime_pipeline
 from rb.scoreboard import write_scoreboard_md
 from rb.validate import validate_all
@@ -286,6 +286,39 @@ def _parse_args() -> argparse.Namespace:
     )
     randomization.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
+    compare_rand = sub.add_parser("randomization-compare", help="Compare evidence tiers between two randomization runs.")
+    compare_rand.add_argument(
+        "--base-party-term",
+        type=Path,
+        default=Path("reports/permutation_party_term_all_v1.csv"),
+        help="Baseline term-level randomization CSV.",
+    )
+    compare_rand.add_argument(
+        "--alt-party-term",
+        type=Path,
+        required=True,
+        help="Alternative term-level randomization CSV to compare against baseline.",
+    )
+    compare_rand.add_argument(
+        "--base-within",
+        type=Path,
+        default=Path("reports/permutation_unified_within_term_all_v1.csv"),
+        help="Baseline within-president randomization CSV (optional).",
+    )
+    compare_rand.add_argument(
+        "--alt-within",
+        type=Path,
+        default=None,
+        help="Alternative within-president randomization CSV (optional).",
+    )
+    compare_rand.add_argument(
+        "--output",
+        type=Path,
+        default=Path("reports/permutation_evidence_compare_v1.csv"),
+        help="Output CSV comparing evidence tiers and q/p values.",
+    )
+    compare_rand.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
     return p.parse_args()
 
 
@@ -397,6 +430,24 @@ def main() -> int:
             output_evidence_summary_csv=args.output_evidence_summary,
             output_evidence_md=args.output_evidence_md,
             within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
+        )
+        return 0
+
+    if args.cmd == "randomization-compare":
+        if not args.base_party_term.exists():
+            raise FileNotFoundError(f"Missing base term CSV: {args.base_party_term}")
+        if not args.alt_party_term.exists():
+            raise FileNotFoundError(f"Missing alt term CSV: {args.alt_party_term}")
+        alt_within = args.alt_within if args.alt_within is not None else None
+        base_within = args.base_within if args.base_within.exists() else None
+        if alt_within is not None and not alt_within.exists():
+            raise FileNotFoundError(f"Missing alt within CSV: {alt_within}")
+        compare_randomization_outputs(
+            base_party_term_csv=args.base_party_term,
+            alt_party_term_csv=args.alt_party_term,
+            base_within_csv=base_within,
+            alt_within_csv=alt_within,
+            out_csv=args.output,
         )
         return 0
 
