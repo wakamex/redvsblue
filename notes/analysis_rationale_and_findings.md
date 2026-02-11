@@ -164,6 +164,10 @@ Read:
 - Latest SA-vs-NSA CPI level snapshot (all-metrics randomization):
   - NSA level metrics (`*_nsa`) show larger D-R differences than SA level metrics (`*_sa`) in the current run.
   - SA level metrics are currently lower-coverage (`n_obs=15` vs `21` for NSA), so this is treated as a sensitivity read, not a headline conclusion.
+  - We now maintain dedicated generated artifacts:
+    - `rb cpi-robustness`
+    - and automatically during `rb randomization --all-metrics` (unless `--skip-cpi-robustness`)
+    - outputs: `reports/cpi_sa_nsa_robustness_v1.csv` and `.md`
 
 ## Threshold Sensitivity Snapshot (Within-President U-D)
 

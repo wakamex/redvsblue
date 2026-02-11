@@ -13,6 +13,7 @@ from rb.randomization import (
     compare_randomization_outputs,
     run_randomization,
     run_randomization_seed_stability,
+    write_cpi_sa_nsa_level_robustness,
     write_claims_table,
     write_inversion_definition_robustness,
 )
@@ -271,6 +272,23 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Do not generate inversion-definition robustness outputs.",
     )
+    randomization.add_argument(
+        "--output-cpi-robustness-csv",
+        type=Path,
+        default=Path("reports/cpi_sa_nsa_robustness_v1.csv"),
+        help="Output CSV for CPI SA-vs-NSA level-metric comparison (generated only with --all-metrics).",
+    )
+    randomization.add_argument(
+        "--output-cpi-robustness-md",
+        type=Path,
+        default=Path("reports/cpi_sa_nsa_robustness_v1.md"),
+        help="Output markdown for CPI SA-vs-NSA level-metric comparison (generated only with --all-metrics).",
+    )
+    randomization.add_argument(
+        "--skip-cpi-robustness",
+        action="store_true",
+        help="Do not generate CPI SA-vs-NSA robustness outputs.",
+    )
     randomization.add_argument("--permutations", type=int, default=10000, help="Number of random permutations.")
     randomization.add_argument("--bootstrap-samples", type=int, default=2000, help="Number of bootstrap samples for CI estimates.")
     randomization.add_argument("--seed", type=int, default=42, help="RNG seed for reproducibility.")
@@ -477,6 +495,27 @@ def _parse_args() -> argparse.Namespace:
     )
     inversion.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
+    cpi = sub.add_parser("cpi-robustness", help="Build SA-vs-NSA CPI level-metric comparison report.")
+    cpi.add_argument(
+        "--permutation-party-term",
+        type=Path,
+        default=Path("reports/permutation_party_term_v1.csv"),
+        help="Permutation term-party CSV containing CPI SA/NSA level metrics (typically from `rb randomization --all-metrics`).",
+    )
+    cpi.add_argument(
+        "--output-csv",
+        type=Path,
+        default=Path("reports/cpi_sa_nsa_robustness_v1.csv"),
+        help="Output CSV path.",
+    )
+    cpi.add_argument(
+        "--output-md",
+        type=Path,
+        default=Path("reports/cpi_sa_nsa_robustness_v1.md"),
+        help="Output markdown path.",
+    )
+    cpi.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
     return p.parse_args()
 
 
@@ -590,6 +629,8 @@ def main() -> int:
             output_evidence_md=args.output_evidence_md,
             output_inversion_robustness_csv=(None if bool(args.skip_inversion_robustness) else args.output_inversion_robustness_csv),
             output_inversion_robustness_md=(None if bool(args.skip_inversion_robustness) else args.output_inversion_robustness_md),
+            output_cpi_robustness_csv=(None if bool(args.skip_cpi_robustness) else args.output_cpi_robustness_csv),
+            output_cpi_robustness_md=(None if bool(args.skip_cpi_robustness) else args.output_cpi_robustness_md),
             within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
             include_diagnostic_metrics=bool(args.include_diagnostic_metrics),
         )
@@ -672,6 +713,14 @@ def main() -> int:
 
     if args.cmd == "inversion-robustness":
         write_inversion_definition_robustness(
+            permutation_party_term_csv=args.permutation_party_term,
+            out_csv=args.output_csv,
+            out_md=args.output_md,
+        )
+        return 0
+
+    if args.cmd == "cpi-robustness":
+        write_cpi_sa_nsa_level_robustness(
             permutation_party_term_csv=args.permutation_party_term,
             out_csv=args.output_csv,
             out_md=args.output_md,

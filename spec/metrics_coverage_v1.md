@@ -106,7 +106,7 @@ Legend:
 
 ## Suggested v2 Additions (Priority Order)
 
-1. Add a standard SA-vs-NSA divergence diagnostic table for CPI level-term metrics in reporting.
+1. Extend SA-vs-NSA divergence reporting to include CPI YoY pair (`cpi_inflation_yoy_mean_nsa` vs `cpi_inflation_yoy_mean`) alongside level-term metrics.
 2. Add a fixed report artifact comparing inversion definitions (daily, monthly-EOP, monthly-AVG) each run.
 3. Add a second CI smoke profile that includes at least one daily market series and one non-FRED source.
 

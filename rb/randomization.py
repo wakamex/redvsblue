@@ -1063,6 +1063,8 @@ def run_randomization(
     output_evidence_md: Path | None,
     output_inversion_robustness_csv: Path | None,
     output_inversion_robustness_md: Path | None,
+    output_cpi_robustness_csv: Path | None,
+    output_cpi_robustness_md: Path | None,
     within_president_min_window_days: int,
     include_diagnostic_metrics: bool,
 ) -> None:
@@ -1125,6 +1127,12 @@ def run_randomization(
             permutation_party_term_csv=output_party_term_csv,
             out_csv=output_inversion_robustness_csv,
             out_md=output_inversion_robustness_md,
+        )
+    if (not primary_only) and output_cpi_robustness_csv is not None:
+        write_cpi_sa_nsa_level_robustness(
+            permutation_party_term_csv=output_party_term_csv,
+            out_csv=output_cpi_robustness_csv,
+            out_md=output_cpi_robustness_md,
         )
 
 
@@ -1646,6 +1654,144 @@ def write_inversion_definition_robustness(
                         r.get("effect_delta_vs_daily", ""),
                         r.get("q_bh_fdr", ""),
                         r.get("q_delta_vs_daily", ""),
+                        r.get("evidence_tier", ""),
+                        ci,
+                    ]
+                )
+                + " |"
+            )
+        lines.append("")
+
+    out_md.parent.mkdir(parents=True, exist_ok=True)
+    tmp_md = out_md.with_suffix(out_md.suffix + ".tmp")
+    tmp_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    tmp_md.replace(out_md)
+
+
+def write_cpi_sa_nsa_level_robustness(
+    *,
+    permutation_party_term_csv: Path,
+    out_csv: Path,
+    out_md: Path | None = None,
+) -> None:
+    if not permutation_party_term_csv.exists():
+        raise FileNotFoundError(f"Missing permutation term CSV: {permutation_party_term_csv}")
+
+    rows_by_metric: dict[str, dict[str, str]] = {}
+    with permutation_party_term_csv.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for r in rdr:
+            mid = (r.get("metric_id") or "").strip()
+            if not mid:
+                continue
+            rows_by_metric[mid] = r
+
+    groups: list[tuple[str, list[tuple[str, str]]]] = [
+        (
+            "cpi_level_term_pct_change",
+            [
+                ("nsa", "cpi_price_level_term_pct_change_nsa"),
+                ("sa", "cpi_price_level_term_pct_change_sa"),
+            ],
+        ),
+        (
+            "cpi_level_term_cagr_pct",
+            [
+                ("nsa", "cpi_price_level_term_cagr_pct_nsa"),
+                ("sa", "cpi_price_level_term_cagr_pct_sa"),
+            ],
+        ),
+    ]
+
+    header = [
+        "concept",
+        "definition",
+        "metric_id",
+        "present_in_input",
+        "n_obs",
+        "effect_d_minus_r",
+        "effect_delta_vs_nsa",
+        "q_bh_fdr",
+        "q_delta_vs_nsa",
+        "p_two_sided",
+        "evidence_tier",
+        "bootstrap_ci95_low",
+        "bootstrap_ci95_high",
+    ]
+    out_rows: list[dict[str, str]] = []
+
+    for concept, defs in groups:
+        nsa_row = rows_by_metric.get(defs[0][1], {})
+        nsa_effect = _parse_float(nsa_row.get("observed_diff_d_minus_r") or "")
+        nsa_q = _parse_float(nsa_row.get("q_bh_fdr") or "")
+        for definition, metric_id in defs:
+            r = rows_by_metric.get(metric_id, {})
+            effect = _parse_float(r.get("observed_diff_d_minus_r") or "")
+            q = _parse_float(r.get("q_bh_fdr") or "")
+            out_rows.append(
+                {
+                    "concept": concept,
+                    "definition": definition,
+                    "metric_id": metric_id,
+                    "present_in_input": "1" if r else "0",
+                    "n_obs": (r.get("n_obs") or "").strip(),
+                    "effect_d_minus_r": _fmt(effect),
+                    "effect_delta_vs_nsa": _fmt((effect - nsa_effect) if (effect is not None and nsa_effect is not None) else None),
+                    "q_bh_fdr": _fmt(q),
+                    "q_delta_vs_nsa": _fmt((q - nsa_q) if (q is not None and nsa_q is not None) else None),
+                    "p_two_sided": (r.get("p_two_sided") or "").strip(),
+                    "evidence_tier": (r.get("evidence_tier") or "").strip(),
+                    "bootstrap_ci95_low": (r.get("bootstrap_ci95_low") or "").strip(),
+                    "bootstrap_ci95_high": (r.get("bootstrap_ci95_high") or "").strip(),
+                }
+            )
+
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    tmp_csv = out_csv.with_suffix(out_csv.suffix + ".tmp")
+    with tmp_csv.open("w", encoding="utf-8", newline="") as handle:
+        w = csv.DictWriter(handle, fieldnames=header)
+        w.writeheader()
+        for r in out_rows:
+            w.writerow(r)
+    tmp_csv.replace(out_csv)
+
+    if out_md is None:
+        return
+
+    lines: list[str] = []
+    lines.append("# CPI SA vs NSA Level Robustness")
+    lines.append("")
+    lines.append(f"Source: `{permutation_party_term_csv}`")
+    lines.append("")
+    lines.append("Compares D-R estimates for CPI level-term metrics under:")
+    lines.append("- NSA CPI definitions")
+    lines.append("- SA CPI alternate definitions")
+    lines.append("")
+
+    for concept, defs in groups:
+        lines.append(f"## {concept}")
+        lines.append("")
+        lines.append("| Definition | n_obs | Effect (D-R) | Delta vs NSA | q | Delta q vs NSA | Tier | CI95 |")
+        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|")
+        for definition, metric_id in defs:
+            r = next((x for x in out_rows if x["metric_id"] == metric_id), None)
+            if not r:
+                continue
+            ci = ""
+            lo = (r.get("bootstrap_ci95_low") or "").strip()
+            hi = (r.get("bootstrap_ci95_high") or "").strip()
+            if lo or hi:
+                ci = f"[{lo}, {hi}]"
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        definition,
+                        r.get("n_obs", ""),
+                        r.get("effect_d_minus_r", ""),
+                        r.get("effect_delta_vs_nsa", ""),
+                        r.get("q_bh_fdr", ""),
+                        r.get("q_delta_vs_nsa", ""),
                         r.get("evidence_tier", ""),
                         ci,
                     ]
