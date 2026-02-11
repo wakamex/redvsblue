@@ -13,12 +13,13 @@ from pathlib import Path
 from rb.env import load_dotenv
 from rb.congress_control import ensure_congress_control
 from rb.ingest import ingest_from_spec
-from rb.inference import write_inference_table
+from rb.inference import write_inference_table, write_wild_cluster_stability_table
 from rb.metrics import compute_term_metrics
 from rb.narrative import write_publication_narrative_template
 from rb.presidents import ensure_presidents
 from rb.randomization import (
     compare_randomization_outputs,
+    ensure_within_mde_columns,
     run_randomization,
     run_randomization_seed_stability,
     write_cpi_sa_nsa_level_robustness,
@@ -575,6 +576,28 @@ def _parse_args() -> argparse.Namespace:
     )
     inference.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
+    inference_stability = sub.add_parser("inference-stability", help="Run seed-stability diagnostics for wild-cluster p-values on primary metrics.")
+    inference_stability.add_argument("--term-metrics", type=Path, default=Path("reports/term_metrics_v1.csv"), help="Term metrics CSV.")
+    inference_stability.add_argument(
+        "--output",
+        type=Path,
+        default=Path("reports/inference_wild_cluster_stability_v1.csv"),
+        help="Output CSV with wild-cluster p-value ranges across seeds.",
+    )
+    inference_stability.add_argument(
+        "--seeds",
+        type=str,
+        default="42,137,271",
+        help="Comma-separated RNG seeds (e.g., 42,137,271).",
+    )
+    inference_stability.add_argument(
+        "--wild-cluster-draws",
+        type=int,
+        default=1999,
+        help="Rademacher wild-cluster bootstrap draws per seed (0 disables).",
+    )
+    inference_stability.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
     compare_rand = sub.add_parser("randomization-compare", help="Compare evidence tiers between two randomization runs.")
     compare_rand.add_argument(
         "--base-party-term",
@@ -738,6 +761,11 @@ def _parse_args() -> argparse.Namespace:
         type=int,
         default=0,
         help="Minimum window_days filter used in scoreboard within-president diagnostics.",
+    )
+    pub.add_argument(
+        "--no-backfill-within-mde",
+        action="store_true",
+        help="Skip automatic backfill of within-president rough-MDE columns when input CSVs are stale.",
     )
     pub.add_argument("--nw-lags", type=int, default=1, help="Newey-West lag length for inference table.")
     pub.add_argument(
@@ -1005,6 +1033,26 @@ def main() -> int:
         )
         return 0
 
+    if args.cmd == "inference-stability":
+        seeds_raw = [s.strip() for s in str(args.seeds).split(",")]
+        seeds: list[int] = []
+        for s in seeds_raw:
+            if not s:
+                continue
+            try:
+                seeds.append(int(s))
+            except ValueError as exc:
+                raise ValueError(f"Invalid seed {s!r} in --seeds={args.seeds!r}") from exc
+        if not seeds:
+            raise ValueError("No valid seeds parsed from --seeds")
+        write_wild_cluster_stability_table(
+            term_metrics_csv=args.term_metrics,
+            out_csv=args.output,
+            seeds=seeds,
+            draws=max(0, int(args.wild_cluster_draws)),
+        )
+        return 0
+
     if args.cmd == "randomization-compare":
         if not args.base_party_term.exists():
             raise FileNotFoundError(f"Missing base term CSV: {args.base_party_term}")
@@ -1083,6 +1131,19 @@ def main() -> int:
                 "Publication bundle requires both baseline/strict within CSVs or neither."
             )
 
+        within_backfill: dict[str, dict[str, int]] = {}
+        if not bool(args.no_backfill_within_mde):
+            for name, path in (("baseline_within", base_within), ("strict_within", strict_within)):
+                if path is None:
+                    continue
+                stats = ensure_within_mde_columns(
+                    within_csv=path,
+                    window_metrics_csv=args.window_metrics,
+                    window_labels_csv=args.window_labels,
+                )
+                if int(stats.get("file_rewritten", 0)) == 1:
+                    within_backfill[name] = stats
+
         write_inference_table(
             term_metrics_csv=args.term_metrics,
             permutation_party_term_csv=args.baseline_party_term,
@@ -1130,6 +1191,7 @@ def main() -> int:
                 "parameters": {
                     "all_metrics": bool(args.all_metrics),
                     "within_president_min_window_days": max(0, int(args.within_president_min_window_days)),
+                    "backfill_within_mde": not bool(args.no_backfill_within_mde),
                     "nw_lags": max(0, int(args.nw_lags)),
                     "wild_cluster_draws": max(0, int(args.wild_cluster_draws)),
                     "wild_cluster_seed": int(args.wild_cluster_seed),
@@ -1164,6 +1226,9 @@ def main() -> int:
                     "claims_csv": _file_meta(args.output_claims),
                     "narrative_md": _file_meta(args.output_narrative),
                     "scoreboard_md": _file_meta(args.output_scoreboard),
+                },
+                "mutations": {
+                    "within_mde_backfill": within_backfill,
                 },
             }
             _write_json_atomic(args.output_manifest, manifest)
