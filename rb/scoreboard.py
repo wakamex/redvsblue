@@ -577,6 +577,8 @@ def write_scoreboard_md(
 
     party = _load_party_summary(party_summary_csv)
 
+    metric_cfg_by_id: dict[str, dict[str, Any]] = {}
+    selected_metrics_cfg: list[dict[str, Any]] = []
     metric_ids: list[str] = []
     for m in metrics_cfg:
         mid = (m.get("id") or "").strip()
@@ -584,7 +586,23 @@ def write_scoreboard_md(
             continue
         if primary_only and not bool(m.get("primary")):
             continue
+        selected_metrics_cfg.append(m)
+        metric_cfg_by_id[mid] = m
         metric_ids.append(mid)
+
+    family_primary_metric_ids: list[tuple[str, str]] = []
+    families_with_primary: set[str] = set()
+    families_in_scope: set[str] = set()
+    for m in selected_metrics_cfg:
+        mid = (m.get("id") or "").strip()
+        if not mid:
+            continue
+        family = (m.get("family") or "").strip() or "(none)"
+        families_in_scope.add(family)
+        if bool(m.get("primary")) and family not in families_with_primary:
+            families_with_primary.add(family)
+            family_primary_metric_ids.append((family, mid))
+    families_without_primary = sorted(f for f in families_in_scope if f not in families_with_primary)
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
 
@@ -623,6 +641,107 @@ def write_scoreboard_md(
     lines.append("# Scoreboard (v1)")
     lines.append("")
     lines.append(f"Generated: `{now}`")
+    lines.append("")
+    lines.append("## Family Headline Summary (Primary Metrics)")
+    lines.append("")
+    lines.append("One pre-declared primary metric per family, for a compact cross-family read.")
+    lines.append("")
+    family_header = [
+        "Family",
+        "Metric",
+        "Units",
+        "D-R mean",
+        "q",
+        "p",
+        "CI95(D-R)",
+        "q<0.05",
+        "q<0.10",
+        "Tier",
+    ]
+    family_sep = [
+        "---",
+        "---",
+        "---:",
+        "---:",
+        "---:",
+        "---:",
+        "---:",
+        "---:",
+        "---:",
+        "---:",
+    ]
+    if show_pub_cols:
+        family_header.extend(["Strict q", "Strict tier", "Publication tier"])
+        family_sep.extend(["---:", "---:", "---:"])
+    if show_stability_cols:
+        family_header.extend(["Stab@0.05", "Stab@0.10"])
+        family_sep.extend(["---:", "---:"])
+
+    lines.append("| " + " | ".join(family_header) + " |")
+    lines.append("| " + " | ".join(family_sep) + " |")
+    missing_family_rows = 0
+    for family, mid in family_primary_metric_ids:
+        d = party.get(("D", mid))
+        r = party.get(("R", mid))
+        cfg = metric_cfg_by_id.get(mid, {})
+        label = d.label if d else (r.label if r else (str(cfg.get("label") or mid)))
+        units = d.units if d and d.units else (r.units if r and r.units else "")
+        d_mean = d.mean if d else None
+        r_mean = r.mean if r else None
+        diff = (d_mean - r_mean) if (d_mean is not None and r_mean is not None) else None
+        tr = term_rand.get(mid, {})
+
+        row_values = [
+            family.replace("|", "\\|"),
+            label.replace("|", "\\|"),
+            units.replace("|", "\\|"),
+            _fmt(diff),
+            _fmt(_parse_float(tr.get("q_bh_fdr") or "")),
+            _fmt(_parse_float(tr.get("p_two_sided") or "")),
+            _fmt_ci(
+                _parse_float(tr.get("bootstrap_ci95_low") or ""),
+                _parse_float(tr.get("bootstrap_ci95_high") or ""),
+            ),
+            _derive_q_flag(tr, key="passes_q_lt_005", threshold=0.05),
+            _derive_q_flag(tr, key="passes_q_lt_010", threshold=0.10),
+            (tr.get("evidence_tier") or "").strip(),
+        ]
+        if show_pub_cols:
+            cr = term_claims.get(mid, {})
+            row_values.extend(
+                [
+                    _fmt(_parse_float(cr.get("q_strict") or "")),
+                    (cr.get("tier_strict") or "").strip(),
+                    (cr.get("tier_strict_publication") or "").strip(),
+                ]
+            )
+        if show_stability_cols:
+            sr = inf_stability.get(mid, {})
+            row_values.extend(
+                [
+                    _compact_stability_status(sr.get("status_005") or ""),
+                    _compact_stability_status(sr.get("status_010") or ""),
+                ]
+            )
+
+        lines.append("| " + " | ".join(row_values) + " |")
+        if d is None or r is None:
+            missing_family_rows += 1
+
+    if not family_primary_metric_ids:
+        lines.append("| (none) | (none) |  |  |  |  |  |  |  |  |")
+    if missing_family_rows:
+        lines.append("")
+        lines.append(
+            f"Note: {missing_family_rows} family headline row(s) are missing D or R values in `{party_summary_csv}`."
+        )
+    if families_without_primary:
+        lines.append("")
+        lines.append(
+            "Note: families in scope without a declared primary metric are excluded from this headline table: "
+            + ", ".join(f"`{f}`" for f in families_without_primary)
+            + "."
+        )
     lines.append("")
     lines.append("## Party Summary (President Party Only)")
     lines.append("")
