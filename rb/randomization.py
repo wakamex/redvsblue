@@ -730,8 +730,11 @@ def _write_evidence_summary(
 
     tier_order = ("confirmatory", "supportive", "exploratory")
     aggregate: dict[tuple[str, str, str], dict[str, int]] = {}
+    aggregate_primary: dict[tuple[str, str, str], dict[str, int]] = {}
     family_counts: dict[tuple[str, str], int] = {}
+    family_counts_primary: dict[tuple[str, str], int] = {}
     analysis_counts: dict[str, int] = {}
+    analysis_counts_primary: dict[str, int] = {}
 
     def _flag(v: str | None) -> bool:
         return (v or "").strip() == "1"
@@ -741,6 +744,7 @@ def _write_evidence_summary(
             rdr = csv.DictReader(handle)
             for r in rdr:
                 fam = (r.get("metric_family") or "").strip() or "(none)"
+                is_primary = (r.get("metric_primary") or "").strip() == "1"
                 tier = (r.get("evidence_tier") or "").strip() or "exploratory"
                 if tier not in tier_order:
                     tier = "exploratory"
@@ -808,7 +812,61 @@ def _write_evidence_summary(
                 family_counts[(analysis, "__all__")] = family_counts.get((analysis, "__all__"), 0) + 1
                 analysis_counts[analysis] = analysis_counts.get(analysis, 0) + 1
 
+                if is_primary:
+                    kp = (analysis, fam, tier)
+                    ap = aggregate_primary.get(kp)
+                    if ap is None:
+                        ap = {
+                            "n_rows": 0,
+                            "n_pass_q_threshold": 0,
+                            "n_pass_q_005": 0,
+                            "n_pass_q_010": 0,
+                            "n_pass_ci": 0,
+                            "n_pass_min_n": 0,
+                        }
+                        aggregate_primary[kp] = ap
+                    ap["n_rows"] += 1
+                    if pass_q_threshold:
+                        ap["n_pass_q_threshold"] += 1
+                    if pass_q_005:
+                        ap["n_pass_q_005"] += 1
+                    if pass_q_010:
+                        ap["n_pass_q_010"] += 1
+                    if pass_ci:
+                        ap["n_pass_ci"] += 1
+                    if pass_min_n:
+                        ap["n_pass_min_n"] += 1
+
+                    kp_all = (analysis, "__all__", tier)
+                    bp = aggregate_primary.get(kp_all)
+                    if bp is None:
+                        bp = {
+                            "n_rows": 0,
+                            "n_pass_q_threshold": 0,
+                            "n_pass_q_005": 0,
+                            "n_pass_q_010": 0,
+                            "n_pass_ci": 0,
+                            "n_pass_min_n": 0,
+                        }
+                        aggregate_primary[kp_all] = bp
+                    bp["n_rows"] += 1
+                    if pass_q_threshold:
+                        bp["n_pass_q_threshold"] += 1
+                    if pass_q_005:
+                        bp["n_pass_q_005"] += 1
+                    if pass_q_010:
+                        bp["n_pass_q_010"] += 1
+                    if pass_ci:
+                        bp["n_pass_ci"] += 1
+                    if pass_min_n:
+                        bp["n_pass_min_n"] += 1
+
+                    family_counts_primary[(analysis, fam)] = family_counts_primary.get((analysis, fam), 0) + 1
+                    family_counts_primary[(analysis, "__all__")] = family_counts_primary.get((analysis, "__all__"), 0) + 1
+                    analysis_counts_primary[analysis] = analysis_counts_primary.get(analysis, 0) + 1
+
     header = [
+        "scope",
         "analysis",
         "metric_family",
         "evidence_tier",
@@ -822,42 +880,53 @@ def _write_evidence_summary(
         "n_pass_min_n",
     ]
     rows: list[dict[str, str]] = []
-    for analysis, _path in analyses:
-        families = sorted({fam for (a, fam) in family_counts.keys() if a == analysis and fam != "__all__"})
-        families = ["__all__"] + families
-        for fam in families:
-            fam_den = family_counts.get((analysis, fam), 0)
-            ana_den = analysis_counts.get(analysis, 0)
-            for tier in tier_order:
-                a = aggregate.get(
-                    (analysis, fam, tier),
-                    {
-                        "n_rows": 0,
-                        "n_pass_q_threshold": 0,
-                        "n_pass_q_005": 0,
-                        "n_pass_q_010": 0,
-                        "n_pass_ci": 0,
-                        "n_pass_min_n": 0,
-                    },
-                )
-                n_rows = int(a["n_rows"])
-                share_f = (n_rows / fam_den) if fam_den > 0 else None
-                share_a = (n_rows / ana_den) if ana_den > 0 else None
-                rows.append(
-                    {
-                        "analysis": analysis,
-                        "metric_family": fam,
-                        "evidence_tier": tier,
-                        "n_rows": str(n_rows),
-                        "share_of_family_rows": _fmt(share_f),
-                        "share_of_analysis_rows": _fmt(share_a),
-                        "n_pass_q_lt_005": str(int(a["n_pass_q_005"])),
-                        "n_pass_q_lt_010": str(int(a["n_pass_q_010"])),
-                        "n_pass_q_threshold": str(int(a["n_pass_q_threshold"])),
-                        "n_pass_ci_excludes_zero": str(int(a["n_pass_ci"])),
-                        "n_pass_min_n": str(int(a["n_pass_min_n"])),
-                    }
-                )
+    def _emit_scope(
+        *,
+        scope: str,
+        agg: dict[tuple[str, str, str], dict[str, int]],
+        fam_counts: dict[tuple[str, str], int],
+        ana_counts: dict[str, int],
+    ) -> None:
+        for analysis, _path in analyses:
+            families = sorted({fam for (a, fam) in fam_counts.keys() if a == analysis and fam != "__all__"})
+            families = ["__all__"] + families
+            for fam in families:
+                fam_den = fam_counts.get((analysis, fam), 0)
+                ana_den = ana_counts.get(analysis, 0)
+                for tier in tier_order:
+                    a = agg.get(
+                        (analysis, fam, tier),
+                        {
+                            "n_rows": 0,
+                            "n_pass_q_threshold": 0,
+                            "n_pass_q_005": 0,
+                            "n_pass_q_010": 0,
+                            "n_pass_ci": 0,
+                            "n_pass_min_n": 0,
+                        },
+                    )
+                    n_rows = int(a["n_rows"])
+                    share_f = (n_rows / fam_den) if fam_den > 0 else None
+                    share_a = (n_rows / ana_den) if ana_den > 0 else None
+                    rows.append(
+                        {
+                            "scope": scope,
+                            "analysis": analysis,
+                            "metric_family": fam,
+                            "evidence_tier": tier,
+                            "n_rows": str(n_rows),
+                            "share_of_family_rows": _fmt(share_f),
+                            "share_of_analysis_rows": _fmt(share_a),
+                            "n_pass_q_lt_005": str(int(a["n_pass_q_005"])),
+                            "n_pass_q_lt_010": str(int(a["n_pass_q_010"])),
+                            "n_pass_q_threshold": str(int(a["n_pass_q_threshold"])),
+                            "n_pass_ci_excludes_zero": str(int(a["n_pass_ci"])),
+                            "n_pass_min_n": str(int(a["n_pass_min_n"])),
+                        }
+                    )
+
+    _emit_scope(scope="all_metrics", agg=aggregate, fam_counts=family_counts, ana_counts=analysis_counts)
+    _emit_scope(scope="primary_only", agg=aggregate_primary, fam_counts=family_counts_primary, ana_counts=analysis_counts_primary)
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     tmp = out_csv.with_suffix(out_csv.suffix + ".tmp")
@@ -893,19 +962,29 @@ def _write_evidence_markdown(
     lines.append("")
 
     if summary_rows:
-        lines.append("## Tier Counts")
-        lines.append("")
-        lines.append("| Analysis | Confirmatory | Supportive | Exploratory |")
-        lines.append("|---|---:|---:|---:|")
-        for analysis in sorted({r.get("analysis", "") for r in summary_rows}):
-            if not analysis:
-                continue
-            by_tier = {r.get("evidence_tier", ""): r for r in summary_rows if r.get("analysis") == analysis and r.get("metric_family") == "__all__"}
-            c = by_tier.get("confirmatory", {}).get("n_rows", "0")
-            s = by_tier.get("supportive", {}).get("n_rows", "0")
-            e = by_tier.get("exploratory", {}).get("n_rows", "0")
-            lines.append(f"| {analysis} | {c} | {s} | {e} |")
-        lines.append("")
+        def _render_tier_counts(scope: str, title: str) -> None:
+            lines.append(f"## {title}")
+            lines.append("")
+            lines.append("| Analysis | Confirmatory | Supportive | Exploratory |")
+            lines.append("|---|---:|---:|---:|")
+            for analysis in sorted({r.get("analysis", "") for r in summary_rows}):
+                if not analysis:
+                    continue
+                by_tier = {
+                    r.get("evidence_tier", ""): r
+                    for r in summary_rows
+                    if (r.get("analysis") == analysis)
+                    and (r.get("metric_family") == "__all__")
+                    and ((r.get("scope") or "all_metrics") == scope)
+                }
+                c = by_tier.get("confirmatory", {}).get("n_rows", "0")
+                s = by_tier.get("supportive", {}).get("n_rows", "0")
+                e = by_tier.get("exploratory", {}).get("n_rows", "0")
+                lines.append(f"| {analysis} | {c} | {s} | {e} |")
+            lines.append("")
+
+        _render_tier_counts("all_metrics", "Tier Counts (All Metrics)")
+        _render_tier_counts("primary_only", "Tier Counts (Primary Metrics)")
 
     def _render_detail(title: str, rows: list[dict[str, str]], *, has_party: bool) -> None:
         if not rows:
