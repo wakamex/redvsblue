@@ -55,6 +55,22 @@ def _fmt_int(v: int | None) -> str:
     return "" if v is None else str(v)
 
 
+def _fmt_ci(lo: float | None, hi: float | None) -> str:
+    if lo is None or hi is None:
+        return ""
+    return f"[{_fmt(lo)}, {_fmt(hi)}]"
+
+
+def _derive_q_flag(row: dict[str, str], *, key: str, threshold: float) -> str:
+    raw = (row.get(key) or "").strip()
+    if raw in {"0", "1"}:
+        return raw
+    q = _parse_float(row.get("q_bh_fdr") or "")
+    if q is None:
+        return ""
+    return "1" if q < threshold else "0"
+
+
 def _median(xs: list[float]) -> float | None:
     if not xs:
         return None
@@ -86,6 +102,31 @@ def _load_party_summary(path: Path) -> dict[tuple[str, str], PartyMetricRow]:
                 mean=_parse_float(r.get("mean") or ""),
                 median=_parse_float(r.get("median") or ""),
             )
+    return out
+
+
+def _load_term_randomization(path: Path) -> dict[str, dict[str, str]]:
+    out: dict[str, dict[str, str]] = {}
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for r in rdr:
+            mid = (r.get("metric_id") or "").strip()
+            if not mid:
+                continue
+            out[mid] = r
+    return out
+
+
+def _load_within_randomization(path: Path) -> dict[tuple[str, str], dict[str, str]]:
+    out: dict[tuple[str, str], dict[str, str]] = {}
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for r in rdr:
+            mid = (r.get("metric_id") or "").strip()
+            pres_party = (r.get("pres_party") or "").strip()
+            if not mid or not pres_party:
+                continue
+            out[(mid, pres_party)] = r
     return out
 
 
@@ -467,6 +508,8 @@ def write_scoreboard_md(
     primary_only: bool,
     window_metrics_csv: Path | None,
     window_labels_csv: Path | None,
+    term_randomization_csv: Path | None = Path("reports/permutation_party_term_v1.csv"),
+    within_randomization_csv: Path | None = Path("reports/permutation_unified_within_term_v1.csv"),
     output_within_president_deltas_csv: Path | None = None,
     within_president_min_window_days: int = 0,
 ) -> None:
@@ -486,6 +529,18 @@ def write_scoreboard_md(
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
 
+    term_rand_path: Path | None = None
+    term_rand: dict[str, dict[str, str]] = {}
+    if term_randomization_csv is not None and term_randomization_csv.exists():
+        term_rand_path = term_randomization_csv
+        term_rand = _load_term_randomization(term_randomization_csv)
+
+    within_rand_path: Path | None = None
+    within_rand: dict[tuple[str, str], dict[str, str]] = {}
+    if within_randomization_csv is not None and within_randomization_csv.exists():
+        within_rand_path = within_randomization_csv
+        within_rand = _load_within_randomization(within_randomization_csv)
+
     lines: list[str] = []
     lines.append("# Scoreboard (v1)")
     lines.append("")
@@ -495,8 +550,8 @@ def write_scoreboard_md(
     lines.append("")
     lines.append("Equal weight per presidential term/tenure window (not day-weighted).")
     lines.append("")
-    lines.append("| Metric | Units | D mean | R mean | D-R mean | D median | R median | n(D) | n(R) |")
-    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|")
+    lines.append("| Metric | Units | D mean | R mean | D-R mean | D median | R median | n(D) | n(R) | q | p | CI95(D-R) | q<0.05 | q<0.10 | Tier |")
+    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
 
     missing_party_rows = 0
     for mid in metric_ids:
@@ -509,6 +564,7 @@ def write_scoreboard_md(
         r_mean = r.mean if r else None
         diff = (d_mean - r_mean) if (d_mean is not None and r_mean is not None) else None
 
+        tr = term_rand.get(mid, {})
         lines.append(
             "| "
             + " | ".join(
@@ -522,6 +578,15 @@ def write_scoreboard_md(
                     _fmt(r.median if r else None),
                     _fmt_int(d.n_terms if d else None),
                     _fmt_int(r.n_terms if r else None),
+                    _fmt(_parse_float(tr.get("q_bh_fdr") or "")),
+                    _fmt(_parse_float(tr.get("p_two_sided") or "")),
+                    _fmt_ci(
+                        _parse_float(tr.get("bootstrap_ci95_low") or ""),
+                        _parse_float(tr.get("bootstrap_ci95_high") or ""),
+                    ),
+                    _derive_q_flag(tr, key="passes_q_lt_005", threshold=0.05),
+                    _derive_q_flag(tr, key="passes_q_lt_010", threshold=0.10),
+                    (tr.get("evidence_tier") or "").strip(),
                 ]
             )
             + " |"
@@ -532,6 +597,12 @@ def write_scoreboard_md(
     if missing_party_rows:
         lines.append("")
         lines.append(f"Note: {missing_party_rows} metric(s) are missing D or R rows in `{party_summary_csv}`.")
+    if term_rand_path is not None:
+        lines.append("")
+        lines.append(f"Significance columns sourced from `{term_rand_path}`.")
+    else:
+        lines.append("")
+        lines.append("Significance columns are blank until `rb randomization` has been run.")
 
     within_pres_deltas: dict[tuple[str, str], dict[str, Any]] = {}
 
@@ -588,8 +659,8 @@ def write_scoreboard_md(
         lines.append("Each president-term acts as its own control: compute (unified mean - divided mean) within the same term, then average those deltas.")
         lines.append(f"Applied filter: include only regime windows with `window_days >= {int(within_president_min_window_days)}`.")
         lines.append("")
-        lines.append("| Metric | Units | P party | Mean delta (U-D) | Median delta (U-D) | n(pres with both) | n(with unified) | n(with divided) |")
-        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|")
+        lines.append("| Metric | Units | P party | Mean delta (U-D) | Median delta (U-D) | n(pres with both) | n(with unified) | n(with divided) | q | p | CI95(U-D) | q<0.05 | q<0.10 | Tier |")
+        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
 
         for mid in metric_ids:
             for pres_party in ("D", "R"):
@@ -598,6 +669,7 @@ def write_scoreboard_md(
                     continue
                 label = (g.get("metric_label") or mid).replace("|", "\\|")
                 units = (g.get("units") or "").replace("|", "\\|")
+                wr = within_rand.get((mid, pres_party), {})
                 lines.append(
                     "| "
                     + " | ".join(
@@ -610,6 +682,15 @@ def write_scoreboard_md(
                             str(int(g.get("n_with_both") or 0)),
                             str(int(g.get("n_with_unified") or 0)),
                             str(int(g.get("n_with_divided") or 0)),
+                            _fmt(_parse_float(wr.get("q_bh_fdr") or "")),
+                            _fmt(_parse_float(wr.get("p_two_sided") or "")),
+                            _fmt_ci(
+                                _parse_float(wr.get("bootstrap_ci95_low") or ""),
+                                _parse_float(wr.get("bootstrap_ci95_high") or ""),
+                            ),
+                            _derive_q_flag(wr, key="passes_q_lt_005", threshold=0.05),
+                            _derive_q_flag(wr, key="passes_q_lt_010", threshold=0.10),
+                            (wr.get("evidence_tier") or "").strip(),
                         ]
                     )
                     + " |"
@@ -617,6 +698,8 @@ def write_scoreboard_md(
 
         lines.append("")
         lines.append("Caution: small `n(pres with both)` means unstable estimates; interpret as a diagnostic, not a causal estimate.")
+        if within_rand_path is not None:
+            lines.append(f"Significance columns in this section are sourced from `{within_rand_path}`.")
 
         lines.append("")
         lines.append("## President Alignment With Congress (House vs Senate)")
@@ -676,6 +759,10 @@ def write_scoreboard_md(
     if window_metrics_csv and window_labels_csv:
         lines.append(f"- `{window_metrics_csv}`")
         lines.append(f"- `{window_labels_csv}`")
+    if term_rand_path is not None:
+        lines.append(f"- `{term_rand_path}`")
+    if within_rand_path is not None:
+        lines.append(f"- `{within_rand_path}`")
     lines.append("")
     lines.append("Rebuild:")
     lines.append("```sh")
