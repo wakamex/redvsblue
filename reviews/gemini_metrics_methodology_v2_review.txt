@@ -1,0 +1,37 @@
+1. Must Fix Before Publish
+*   **Serial Correlation in "Confirmatory" Inference:** The current permutation test (swapping party labels on terms) implicitly assumes observations are independent (i.i.d.). Macro variables (Debt/GDP, Unemployment) have high persistence (serial correlation). Treating terms as independent inflates significance (p-values are too low).
+    *   **Fix:** Mandate `term_block_years` (e.g., `4` or `8`) > 0 for any result labeled "Confirmatory", or implement Newey-West (HAC) standard errors as a required cross-check.
+*   **Arithmetic vs. Geometric Return Confusion:** `ff_mkt_excess_return_ann_arith` ($Mean \times 12$) is included. For long-run "performance" claims, this significantly overstates wealth generation compared to Compound/CAGR ($ (1+R)^{12}-1 $).
+    *   **Fix:** Mark `ann_arith` explicitly as "Diagnostic Only" (for Sharpe denominator use) or remove it from the primary scoreboard to prevent "Average Return" quotes that mislead on realized wealth.
+*   **Fiscal Attribution Lag:** `fyfsgda188s` (Surplus/Deficit) is annual. If attribution naively maps this to the sitting president without a lag, it attributes the first ~9 months of a new term (legacy budget) to the new president.
+    *   **Fix:** Verify `spec/attribution_v1.yaml` applies a 1-year lag to annual fiscal data, or prefer quarterly `gfdegdq188s` (Debt % GDP) change as the primary fiscal flow metric.
+
+2. Should Improve Soon
+*   **Inflation Primary Definition:** Using `nsa` (Not Seasonally Adjusted) CPI as primary (`cpi_inflation_yoy_mean_nsa`) mitigates revision risks but introduces boundary noise if terms start/end in different seasonal months.
+    *   **Improvement:** Promote `cpi_inflation_yoy_mean` (SA) to Co-Primary or add a specific "SA vs NSA divergence" check in the validation report.
+*   **Small-Sample Power Warning:** The "Within-President" check often has $N < 5$. Lack of significance is likely Type II error (low power).
+    *   **Improvement:** Calculate and report a rough "Minimum Detectable Effect" (MDE) for these cells (e.g., "Need difference > 2.5% to detect with N=4") to contextualize "no significant difference."
+*   **GDP vs. Welfare:** GDP per capita is a crude proxy for voter welfare.
+    *   **Improvement:** Add **Real Disposable Personal Income per Capita** (`A229RX0`) as a primary "Voter Welfare" metric.
+
+3. Metrics To Add/Remove
+*   **Add: Labor Force Participation Rate (`CIVPART`)**
+    *   **Reason:** Essential context for Unemployment Rate (`UNRATE`). A drop in unemployment due to workforce exit is different from job creation.
+*   **Add: Real Private Fixed Investment (`PFI` or similar)**
+    *   **Reason:** Differentiates "consumption-led" vs "investment-led" growth narratives.
+*   **Remove (from Scoreboard): `ff_mkt_excess_return_ann_arith`**
+    *   **Reason:** High risk of misuse. Keep in code for Sharpe calculation, but hide from "Performance" output.
+*   **Add: Real Wages (Alternative)**
+    *   **Reason:** `LES1252881600Q` (Median Weekly Earnings) is good but quarterly. Consider **Average Hourly Earnings of Production and Nonsupervisory Employees** (deflated by CPI) for a monthly, longer-history alternative (series `AHETPI` starts 1964).
+
+4. Methodology Assessment
+*   **Validity:** The tiered evidence framework (Confirmatory/Supportive/Exploratory) using FDR (`q_bh_fdr`) and Bootstrap CIs is **above standard** for this genre of analysis.
+*   **Weakness:** The reliance on simple permutation (without blocking) as the baseline for "Confirmatory" is the main validity threat. Persistent macro series do not satisfy the exchangeability assumption of a simple permutation test.
+*   **Score:** **B+**. The logic is rigorous, but the time-series dependence needs a stricter default handling to merit an "A" on econometric validity.
+
+5. Minimal Next Iteration Plan (5 Steps)
+1.  **Update Spec:** Add `labor_force_participation_rate` to `spec/metrics_v1.yaml` and demote `ff_mkt_excess_return_ann_arith` to `primary: false` (or hide).
+2.  **Harden Inference:** Modify `rb randomization` to default to `term_block_years=4` (or similar) to account for persistence. Re-run `reports/permutation_*.csv`.
+3.  **Fiscal Audit:** Check `spec/attribution_v1.yaml` for annual fiscal lags. If missing, implement a `lag_years: 1` override for annual fiscal series.
+4.  **Comparison Run:** Execute a specific comparison of `CPI NSA` vs `CPI SA` means by term. If difference > 0.1pp on average, swap Primary to SA.
+5.  **Docs Update:** Update `analysis_rationale_and_findings.md` to explicitly state: "Confirmatory results require robustness to block-permutation to rule out serial correlation effects."

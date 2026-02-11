@@ -1,0 +1,1655 @@
+You are reviewing a reproducible economics analysis pipeline comparing performance under Democratic vs Republican presidents.
+Focus on: (1) metric choices and transform symmetry, (2) inference methodology validity for small samples, (3) risks of over-interpretation/causal claims, (4) concrete pre-publication fixes.
+
+Return exactly these sections:
+1. Must Fix Before Publish
+2. Should Improve Soon
+3. Metrics To Add/Remove (with reasons)
+4. Methodology Assessment (is current significance usage valid/standard?)
+5. Minimal Next Iteration Plan (5-8 steps)
+
+Be specific. Reference metric IDs when possible. Prefer practical recommendations over theory.
+
+--- FILE: spec/metrics_v1.yaml ---
+version: 1
+name: metrics_v1
+created: "2026-02-09"
+description: >
+  v1 metric registry for the initial D-vs-R scoreboard. This file defines:
+  (1) base series pulled from online sources, and (2) derived metrics and
+  term-level aggregations.
+
+  Notes:
+  - All percent units are in "percentage points" unless otherwise stated.
+  - For growth/return metrics, we prefer log-diff annualization unless noted.
+  - Term attribution (e.g., inauguration/boundary rules, lag rules) is specified
+    in `spec/attribution_v1.yaml`; this file only specifies metric definitions.
+  - Term aggregation semantics are specified in `spec/aggregation_kinds_v1.yaml`.
+
+sources:
+  fred:
+    kind: fred
+    api_base_url: "https://api.stlouisfed.org/fred"
+    api_key_env: FRED_API_KEY
+    api_default_file_type: json
+    graph_csv_url_template: "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+    notes:
+      - "Prefer the official FRED API when FRED_API_KEY is available; fall back to graph CSV when it is not."
+      - "FRED API requires an api_key; graph CSV usually does not, but is less stable and has less metadata."
+  nber:
+    kind: json
+    url: "https://data.nber.org/data/cycles/business_cycle_dates.json"
+  ken_french_ff_factors:
+    kind: zip_csv
+    url: "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip"
+    encoding: latin-1
+    parse_hints:
+      inner_filename_regex: "(?i)^F-F_Research_Data_Factors.*\\.csv$"
+      skip_rows_until: "regex:^\\s*\\d{6}"
+      date_format: "%Y%m"
+      date_column_index: 0
+      table_separator: "blank_line"
+      use_table_index: 0
+      missing_values:
+        - "-99.99"
+        - "-999"
+    notes:
+      - "Monthly Fama/French factors; includes Mkt-RF and RF in percent."
+      - "CSV is not a simple header+data file; it contains descriptive preamble text and multiple tables (monthly then annual)."
+  stooq:
+    kind: csv
+    url_template: "https://stooq.com/q/d/l/?s={symbol}&i=d"
+    notes:
+      - "Stooq provides historical quotes as CSV with columns: Date,Open,High,Low,Close,Volume."
+      - "Index symbols are prefixed with '^' (e.g., ^spx, ^dji)."
+
+series:
+  # Macro: output
+  gdpc1_real_gdp:
+    source: fred
+    series_id: GDPC1
+    frequency: Q
+    units: "billions of chained dollars (SAAR)"
+    description: "Real Gross Domestic Product (BEA)."
+  a939rx0q048sbea_real_gdp_per_capita:
+    source: fred
+    series_id: A939RX0Q048SBEA
+    frequency: Q
+    units: "chained dollars per person"
+    description: "Real GDP per capita (BEA)."
+
+  # Labor market
+  payems_payroll_employment:
+    source: fred
+    series_id: PAYEMS
+    frequency: M
+    units: "thousands of persons"
+    description: "All Employees: Total Nonfarm Payrolls (BLS CES, SA)."
+  ce16ov_household_employment:
+    source: fred
+    series_id: CE16OV
+    frequency: M
+    units: "thousands of persons"
+    description: "Civilian Employment Level (BLS CPS)."
+  unrate_unemployment_rate:
+    source: fred
+    series_id: UNRATE
+    frequency: M
+    units: "percent"
+    description: "Civilian Unemployment Rate (BLS CPS, SA)."
+
+  # Wages
+  les1252881600q_real_median_weekly_earnings:
+    source: fred
+    series_id: LES1252881600Q
+    frequency: Q
+    units: "1982-84 dollars per week"
+    description: "Employed full time: Median usual weekly real earnings (CPS; CPI-adjusted)."
+
+  # Prices
+  cpiaucsl_cpi:
+    source: fred
+    series_id: CPIAUCSL
+    frequency: M
+    units: "index"
+    description: "CPI-U: All Items (BLS, SA)."
+    seasonal_adjustment: SA
+  cpiaucns_cpi_unadjusted:
+    source: fred
+    series_id: CPIAUCNS
+    frequency: M
+    units: "index"
+    description: "CPI-U: All Items (BLS, not seasonally adjusted)."
+    seasonal_adjustment: NSA
+  pcepi_pce_price_index:
+    source: fred
+    series_id: PCEPI
+    frequency: M
+    units: "index"
+    description: "PCE Price Index (BEA, SA)."
+    seasonal_adjustment: SA
+
+  # Business cycle labels
+  usrec_recession_indicator:
+    source: fred
+    series_id: USREC
+    frequency: M
+    units: "0/1 indicator"
+    description: "NBER based Recession Indicators for the United States."
+  nber_business_cycle_dates:
+    source: nber
+    frequency: irregular
+    units: "peaks/troughs"
+    description: "NBER business cycle chronology (peaks/troughs)."
+
+  # Fiscal (note: some fiscal series are annual/fiscal-year based)
+  gfdegdq188s_federal_debt_pct_gdp:
+    source: fred
+    series_id: GFDEGDQ188S
+    frequency: Q
+    units: "percent of GDP"
+    description: "Federal Debt: Total Public Debt as Percent of GDP."
+  fyfsgda188s_federal_surplus_deficit_pct_gdp:
+    source: fred
+    series_id: FYFSGDA188S
+    frequency: A
+    units: "percent of GDP"
+    description: "Federal Surplus or Deficit [-] as Percent of GDP (annual)."
+
+  # Finance (returns)
+  ff_factors_monthly:
+    source: ken_french_ff_factors
+    dataset: "F-F_Research_Data_Factors"
+    frequency: M
+    units: "percent"
+    columns:
+      mkt_rf: "Mkt-RF"
+      rf: "RF"
+    derived_columns:
+      mkt_total:
+        expr: "mkt_rf + rf"
+        units: "percent"
+    description: "Fama/French Research Factors (monthly)."
+
+  # Finance (index levels; price-only, excludes dividends)
+  sp500_sp500_index:
+    source: stooq
+    symbol: "^spx"
+    frequency: D
+    units: "index"
+    column: Close
+    description: "S&P 500 index level (close; price index, excludes dividends)."
+    filters:
+      start_date: "1957-01-02"
+    notes:
+      - "Stooq's ^spx download includes earlier monthly values; we drop observations before 1957-01-02 (S&P 500 inception)."
+  sp500_spx_backfilled_pre1957:
+    source: stooq
+    symbol: "^spx"
+    frequency: D
+    units: "index"
+    column: Close
+    description: "SPX backfilled historical level from Stooq (pre-1957 segment only; not the modern 500-stock index definition)."
+    filters:
+      end_date: "1956-12-31"
+    notes:
+      - "Used only as a separate historical-composite view for pre-1957 windows."
+      - "Do not stitch with the modern post-1957 S&P 500 in one continuous headline series."
+  djia_dow_jones:
+    source: stooq
+    symbol: "^dji"
+    frequency: D
+    units: "index"
+    column: Close
+    description: "Dow Jones Industrial Average index level (close; price index, excludes dividends)."
+
+metrics:
+  # GDP growth
+  - id: gdp_growth_real_qoq_ann_logdiff
+    family: gdp_growth
+    primary: true
+    label: "Real GDP growth (QoQ annualized, log diff)"
+    inputs:
+      series: gdpc1_real_gdp
+    period_transform:
+      kind: growth_rate
+      method: logdiff
+      lag: 1
+      annualize_periods_per_year: 4
+      scale: 100
+      notes:
+        - "Formula: 100 * 4 * ln(GDPC1_t / GDPC1_{t-1})."
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: gdp_growth_real_percap_qoq_ann_logdiff
+    family: gdp_growth
+    primary: false
+    label: "Real GDP per capita growth (QoQ annualized, log diff)"
+    inputs:
+      series: a939rx0q048sbea_real_gdp_per_capita
+    period_transform:
+      kind: growth_rate
+      method: logdiff
+      lag: 1
+      annualize_periods_per_year: 4
+      scale: 100
+      notes:
+        - "Formula: 100 * 4 * ln(RGDPPC_t / RGDPPC_{t-1})."
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: gdp_growth_real_term_cagr
+    family: gdp_growth
+    primary: false
+    label: "Real GDP growth (term CAGR from start/end)"
+    inputs:
+      series: gdpc1_real_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      periods_per_year: 4
+      scale: 100
+      units: "percent"
+      notes:
+        - "Uses first/last observation in the attributed window."
+
+  - id: gdp_growth_real_term_pct_change
+    family: gdp_growth
+    primary: false
+    label: "Real GDP growth (term total percent change from start/end)"
+    inputs:
+      series: gdpc1_real_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+      notes:
+        - "Uses first/last observation in the attributed window."
+
+  - id: gdp_growth_real_percap_term_pct_change
+    family: gdp_growth
+    primary: false
+    label: "Real GDP per capita growth (term total percent change from start/end)"
+    inputs:
+      series: a939rx0q048sbea_real_gdp_per_capita
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+      notes:
+        - "Uses first/last observation in the attributed window."
+
+  - id: gdp_growth_real_percap_term_cagr
+    family: gdp_growth
+    primary: false
+    label: "Real GDP per capita growth (term CAGR from start/end)"
+    inputs:
+      series: a939rx0q048sbea_real_gdp_per_capita
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      periods_per_year: 4
+      scale: 100
+      units: "percent"
+      notes:
+        - "Uses first/last observation in the attributed window."
+
+  # Employment
+  - id: payroll_jobs_change_total
+    family: jobs
+    primary: true
+    label: "Payroll employment change (total, end minus start)"
+    inputs:
+      series: payems_payroll_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "thousands of persons"
+
+  - id: payroll_jobs_change_per_year
+    family: jobs
+    primary: false
+    label: "Payroll employment change (per year, end minus start divided by term years)"
+    inputs:
+      series: payems_payroll_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "thousands of persons per year"
+
+  - id: household_employment_change_total
+    family: jobs
+    primary: false
+    label: "Household employment change (CPS, total, end minus start)"
+    inputs:
+      series: ce16ov_household_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "thousands of persons"
+
+  - id: household_employment_change_per_year
+    family: jobs
+    primary: false
+    label: "Household employment change (CPS, per year, end minus start divided by term years)"
+    inputs:
+      series: ce16ov_household_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "thousands of persons per year"
+
+  - id: payroll_jobs_term_pct_change
+    family: jobs
+    primary: false
+    label: "Payroll employment percent change (term total, end vs start)"
+    inputs:
+      series: payems_payroll_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: payroll_jobs_term_cagr_pct
+    family: jobs
+    primary: false
+    label: "Payroll employment CAGR (term annualized from start/end)"
+    inputs:
+      series: payems_payroll_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+
+  - id: household_employment_term_pct_change
+    family: jobs
+    primary: false
+    label: "Household employment percent change (CPS, term total, end vs start)"
+    inputs:
+      series: ce16ov_household_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: household_employment_term_cagr_pct
+    family: jobs
+    primary: false
+    label: "Household employment CAGR (CPS, term annualized from start/end)"
+    inputs:
+      series: ce16ov_household_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+
+  # Unemployment
+  - id: unemployment_rate_mean
+    family: unemployment
+    primary: true
+    label: "Unemployment rate (mean during term)"
+    inputs:
+      series: unrate_unemployment_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: unemployment_rate_end
+    family: unemployment
+    primary: false
+    label: "Unemployment rate (end-of-term value)"
+    inputs:
+      series: unrate_unemployment_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: last
+      units: "percent"
+
+  - id: unemployment_rate_change_pp
+    family: unemployment
+    primary: false
+    label: "Unemployment rate change (percentage points, end minus start)"
+    inputs:
+      series: unrate_unemployment_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "percentage points"
+
+  - id: unemployment_rate_change_pp_per_year
+    family: unemployment
+    primary: false
+    label: "Unemployment rate change (percentage points per year, end minus start divided by term years)"
+    inputs:
+      series: unrate_unemployment_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "percentage points per year"
+
+  # Wages
+  - id: real_median_weekly_earnings_term_pct_change
+    family: wages
+    primary: true
+    label: "Real median weekly earnings percent change (term total, end vs start; LES1252881600Q)"
+    inputs:
+      series: les1252881600q_real_median_weekly_earnings
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: real_median_weekly_earnings_mean
+    family: wages
+    primary: false
+    label: "Real median weekly earnings (mean during term; LES1252881600Q)"
+    inputs:
+      series: les1252881600q_real_median_weekly_earnings
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean
+      units: "1982-84 dollars per week"
+
+  - id: real_median_weekly_earnings_end
+    family: wages
+    primary: false
+    label: "Real median weekly earnings (end-of-term value; LES1252881600Q)"
+    inputs:
+      series: les1252881600q_real_median_weekly_earnings
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: last
+      units: "1982-84 dollars per week"
+
+  - id: real_median_weekly_earnings_term_cagr_pct
+    family: wages
+    primary: false
+    label: "Real median weekly earnings CAGR (term annualized from start/end; LES1252881600Q)"
+    inputs:
+      series: les1252881600q_real_median_weekly_earnings
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+      notes:
+        - "Uses start/end levels and actual elapsed time to annualize."
+
+  # Inflation
+  - id: cpi_inflation_yoy_mean
+    family: inflation
+    primary: false
+    label: "CPI inflation (YoY, mean during term; based on SA CPI index)"
+    inputs:
+      series: cpiaucsl_cpi
+    period_transform:
+      kind: pct_change
+      lag: 12
+      scale: 100
+      notes:
+        - "Formula: 100 * (CPI_t / CPI_{t-12} - 1)."
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: cpi_inflation_yoy_mean_nsa
+    family: inflation
+    primary: true
+    label: "CPI inflation (YoY, mean during term; based on unadjusted CPI index)"
+    inputs:
+      series: cpiaucns_cpi_unadjusted
+    period_transform:
+      kind: pct_change
+      lag: 12
+      scale: 100
+      notes:
+        - "Formula: 100 * (CPI_t / CPI_{t-12} - 1)."
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: pce_inflation_yoy_mean
+    family: inflation
+    primary: false
+    label: "PCE inflation (YoY, mean during term)"
+    inputs:
+      series: pcepi_pce_price_index
+    period_transform:
+      kind: pct_change
+      lag: 12
+      scale: 100
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: pce_inflation_mom_ann_logdiff_mean
+    family: inflation
+    primary: false
+    label: "PCE inflation (MoM annualized, log diff, mean during term)"
+    inputs:
+      series: pcepi_pce_price_index
+    period_transform:
+      kind: growth_rate
+      method: logdiff
+      lag: 1
+      annualize_periods_per_year: 12
+      scale: 100
+      notes:
+        - "Formula: 100 * 12 * ln(PCEPI_t / PCEPI_{t-1})."
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: cpi_inflation_mom_ann_logdiff_mean
+    family: inflation
+    primary: false
+    label: "CPI inflation (MoM annualized, log diff, mean during term)"
+    inputs:
+      series: cpiaucsl_cpi
+    period_transform:
+      kind: growth_rate
+      method: logdiff
+      lag: 1
+      annualize_periods_per_year: 12
+      scale: 100
+      notes:
+        - "Formula: 100 * 12 * ln(CPI_t / CPI_{t-1})."
+    term_aggregation:
+      kind: mean
+      units: "percent"
+
+  - id: cpi_price_level_term_pct_change_nsa
+    family: inflation
+    primary: false
+    label: "CPI price level percent change (term total, end vs start; CPIAUCNS)"
+    inputs:
+      series: cpiaucns_cpi_unadjusted
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: cpi_price_level_term_cagr_pct_nsa
+    family: inflation
+    primary: false
+    label: "CPI price level CAGR (term annualized from start/end; CPIAUCNS)"
+    inputs:
+      series: cpiaucns_cpi_unadjusted
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+
+  - id: pce_price_level_term_pct_change
+    family: inflation
+    primary: false
+    label: "PCE price level percent change (term total, end vs start; PCEPI)"
+    inputs:
+      series: pcepi_pce_price_index
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: pce_price_level_term_cagr_pct
+    family: inflation
+    primary: false
+    label: "PCE price level CAGR (term annualized from start/end; PCEPI)"
+    inputs:
+      series: pcepi_pce_price_index
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+
+  # Stock returns (excess)
+  - id: ff_mkt_excess_return_ann_compound
+    family: stock_returns
+    primary: true
+    label: "Stock market excess return (annualized, compounded; Ken French Mkt-RF)"
+    inputs:
+      table: ff_factors_monthly
+      column: mkt_rf
+    period_transform:
+      kind: identity
+      notes:
+        - "Input is percent simple return per month."
+    term_aggregation:
+      kind: compound_annualized
+      periods_per_year: 12
+      input_units: "percent"
+      output_units: "percent"
+
+  - id: ff_mkt_excess_return_ann_arith
+    family: stock_returns
+    primary: false
+    label: "Stock market excess return (annualized, arithmetic; Ken French Mkt-RF)"
+    inputs:
+      table: ff_factors_monthly
+      column: mkt_rf
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean_times_periods_per_year
+      periods_per_year: 12
+      units: "percent"
+
+  - id: ff_mkt_total_return_ann_compound
+    family: stock_returns
+    primary: false
+    label: "Stock market total return (annualized, compounded; Ken French Mkt-RF + RF)"
+    inputs:
+      table: ff_factors_monthly
+      column: mkt_total
+    period_transform:
+      kind: identity
+      notes:
+        - "Derived monthly total return: (Mkt-RF + RF), in percent simple return per month."
+    term_aggregation:
+      kind: compound_annualized
+      periods_per_year: 12
+      input_units: "percent"
+      output_units: "percent"
+
+  - id: ff_mkt_total_return_term_total
+    family: stock_returns
+    primary: false
+    label: "Stock market total return (term total, compounded; Ken French Mkt-RF + RF)"
+    inputs:
+      table: ff_factors_monthly
+      column: mkt_total
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: compound_total
+      input_units: "percent"
+      output_units: "percent"
+      notes:
+        - "Formula: 100 * (prod_t (1 + r_t/100) - 1) over months in the attributed term window."
+
+  - id: ff_mkt_excess_return_term_total
+    family: stock_returns
+    primary: false
+    label: "Stock market excess return (term total, compounded; Ken French Mkt-RF)"
+    inputs:
+      table: ff_factors_monthly
+      column: mkt_rf
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: compound_total
+      input_units: "percent"
+      output_units: "percent"
+      notes:
+        - "Formula: 100 * (prod_t (1 + r_t/100) - 1) over months in the attributed term window."
+
+  - id: ff_mkt_excess_return_volatility_ann
+    family: stock_returns
+    primary: false
+    label: "Stock market excess return volatility (annualized std dev; Ken French Mkt-RF)"
+    inputs:
+      table: ff_factors_monthly
+      column: mkt_rf
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: annualized_std
+      periods_per_year: 12
+      input_units: "percent"
+      output_units: "percent"
+
+  - id: ff_mkt_excess_return_sharpe_ann
+    family: stock_returns
+    primary: false
+    label: "Stock market Sharpe ratio (annualized; Ken French Mkt-RF)"
+    inputs:
+      table: ff_factors_monthly
+      column: mkt_rf
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: sharpe_ratio_annualized
+      periods_per_year: 12
+      units: "ratio"
+      notes:
+        - "Formula: mean(Mkt-RF)*12 / (std(Mkt-RF)*sqrt(12))."
+
+  # Stock index levels (price-only)
+  - id: sp500_term_pct_change
+    family: stock_levels
+    primary: false
+    label: "S&P 500 percent change (term total, end vs start)"
+    inputs:
+      series: sp500_sp500_index
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: sp500_term_cagr_pct
+    family: stock_levels
+    primary: false
+    label: "S&P 500 CAGR (term annualized from start/end)"
+    inputs:
+      series: sp500_sp500_index
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+      notes:
+        - "Uses start/end levels and actual elapsed time to annualize."
+
+  - id: sp500_backfilled_pre1957_term_pct_change
+    family: stock_levels_historical
+    primary: false
+    label: "SPX backfilled historical percent change (pre-1957 windows only)"
+    inputs:
+      series: sp500_spx_backfilled_pre1957
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+      notes:
+        - "Separate historical-composite view; not directly comparable to modern S&P 500 headline metrics."
+
+  - id: sp500_backfilled_pre1957_term_cagr_pct
+    family: stock_levels_historical
+    primary: false
+    label: "SPX backfilled historical CAGR (pre-1957 windows only)"
+    inputs:
+      series: sp500_spx_backfilled_pre1957
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+      notes:
+        - "Separate historical-composite view; not directly comparable to modern S&P 500 headline metrics."
+
+  - id: djia_term_pct_change
+    family: stock_levels
+    primary: false
+    label: "Dow Jones Industrial Average percent change (term total, end vs start)"
+    inputs:
+      series: djia_dow_jones
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: djia_term_cagr_pct
+    family: stock_levels
+    primary: false
+    label: "Dow Jones Industrial Average CAGR (term annualized from start/end)"
+    inputs:
+      series: djia_dow_jones
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
+      notes:
+        - "Uses start/end levels and actual elapsed time to annualize."
+
+  # Recessions
+  - id: recession_month_share
+    family: recessions
+    primary: true
+    label: "Recession share of months (USREC mean)"
+    inputs:
+      series: usrec_recession_indicator
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean
+      post_scale: 100
+      units: "percent of months"
+
+  - id: recession_start_count
+    family: recessions
+    primary: false
+    label: "Recession starts (count of 0->1 transitions in USREC)"
+    inputs:
+      series: usrec_recession_indicator
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: count_transitions
+      from_value: 0
+      to_value: 1
+      units: "count"
+
+  # Fiscal
+  - id: federal_debt_pct_gdp_mean
+    family: fiscal
+    primary: true
+    label: "Federal debt (%GDP, mean; GFDEGDQ188S)"
+    inputs:
+      series: gfdegdq188s_federal_debt_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean
+      units: "percent of GDP"
+
+  - id: federal_debt_pct_gdp_end
+    family: fiscal
+    primary: false
+    label: "Federal debt (%GDP, end-of-term value; GFDEGDQ188S)"
+    inputs:
+      series: gfdegdq188s_federal_debt_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: last
+      units: "percent of GDP"
+
+  - id: federal_debt_pct_gdp_change_pp
+    family: fiscal
+    primary: false
+    label: "Federal debt (%GDP, change in percentage points, end minus start; GFDEGDQ188S)"
+    inputs:
+      series: gfdegdq188s_federal_debt_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "percentage points"
+
+  - id: federal_debt_pct_gdp_change_pp_per_year
+    family: fiscal
+    primary: false
+    label: "Federal debt (%GDP, change in percentage points per year; GFDEGDQ188S)"
+    inputs:
+      series: gfdegdq188s_federal_debt_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "percentage points per year"
+
+  - id: federal_surplus_deficit_pct_gdp_mean
+    family: fiscal
+    primary: false
+    label: "Federal surplus/deficit (%GDP, mean; FYFSGDA188S)"
+    inputs:
+      series: fyfsgda188s_federal_surplus_deficit_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: mean
+      units: "percent of GDP"
+
+  - id: federal_surplus_deficit_pct_gdp_end
+    family: fiscal
+    primary: false
+    label: "Federal surplus/deficit (%GDP, end-of-term value; FYFSGDA188S)"
+    inputs:
+      series: fyfsgda188s_federal_surplus_deficit_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: last
+      units: "percent of GDP"
+
+  - id: federal_surplus_deficit_pct_gdp_change_pp
+    family: fiscal
+    primary: false
+    label: "Federal surplus/deficit (%GDP, change in percentage points, end minus start; FYFSGDA188S)"
+    inputs:
+      series: fyfsgda188s_federal_surplus_deficit_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "percentage points"
+
+  - id: federal_surplus_deficit_pct_gdp_change_pp_per_year
+    family: fiscal
+    primary: false
+    label: "Federal surplus/deficit (%GDP, change in percentage points per year; FYFSGDA188S)"
+    inputs:
+      series: fyfsgda188s_federal_surplus_deficit_pct_gdp
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "percentage points per year"
+
+known_omissions:
+  - family: housing
+    reason: "Deferred to v2 (candidates: CSUSHPISA, HOUST)."
+  - family: interest_rates
+    reason: "Deferred to v2 (candidates: FEDFUNDS, DGS10, T10Y2Y)."
+  - family: trade
+    reason: "Deferred to v2 (candidates: BOPGSTB)."
+  - family: inequality
+    reason: "Deferred to v2 (high-quality distributional metrics are typically annual with lag)."
+
+--- FILE: spec/metrics_rationale.md ---
+# Metrics Rationale (v1)
+
+This document explains the key measurement choices in `spec/metrics_v1.yaml`. The goal is to make disagreements about "Dem vs Rep performance" explicit and auditable: if you disagree, you can point to a specific metric id or spec field, propose an alternative, and we can add it as an alternate definition rather than silently changing results.
+
+Per-series transform inclusion/exclusion decisions are tracked in `spec/metrics_coverage_v1.md` so judgment calls are explicit instead of implicit.
+
+## General Conventions
+
+- Prefer pulling **level series** (indexes/levels) from upstream and computing transforms locally. This keeps formulas explicit and avoids ambiguous upstream "units" transformations.
+- Prefer **log-diff annualization** for growth rates when starting from level series:
+  - QoQ annualized growth: `100 * 4 * ln(x_t / x_{t-1})`
+  - MoM annualized inflation: `100 * 12 * ln(x_t / x_{t-1})`
+- For rates already expressed in percent (e.g., `UNRATE`), use levels and differences (percentage points) rather than re-scaling.
+- Term attribution (lag rules, inauguration/boundary handling, etc.) is **not** a metric decision; it is controlled by the join/attribution config and recorded in the run manifest.
+  - We formalize these rules in `spec/attribution_v1.yaml` so “start/end” are deterministic across implementations.
+  - Term-aggregation semantics are formalized in `spec/aggregation_kinds_v1.yaml` so the metric engine is testable.
+- Data fetching:
+  - For FRED series, prefer the official FRED API when an API key is configured (metadata, stability, vintage support).
+  - Fall back to `fredgraph.csv` only when an API key is unavailable; always cache raw downloads and record retrieval metadata.
+
+## Prices / Inflation (MoM, QoQ, YoY, SAAR)
+
+Question: should we use precomputed MoM/QoQ/YoY series vs computing from price levels?
+
+Choice (v1): **compute inflation from price index levels** (e.g., CPI, PCEPI), and explicitly support both seasonally adjusted (SA) and not seasonally adjusted (NSA) CPI where it matters.
+
+Rationale:
+- CPI/PCE are published as **index levels**, not SAAR levels. "SAAR" is an annualization convention typically applied to growth rates (and to some BEA flow/level series like GDP levels), not to CPI levels.
+- Computing locally makes the exact formula unambiguous (pct-change vs log-diff; annualized vs not).
+- Many "precomputed inflation" series are either not available as plain downloads without special API parameters, or embed transformation assumptions we still need to document.
+
+We include multiple inflation definitions because people argue about them:
+- `cpi_inflation_yoy_mean_nsa` (primary): YoY inflation from the **unadjusted** CPI index, averaged over the attributed window.
+  - Pros: YoY does not require seasonal adjustment; avoids annual revision of seasonally adjusted CPI levels due to seasonal factor updates.
+  - Caveat: if the attribution/join rules produce windows that start/end on different calendar months (e.g., partial-month attribution), NSA YoY can retain residual seasonal bias. We treat SA vs NSA as a measurable sensitivity rather than a hidden choice.
+- `cpi_inflation_yoy_mean` (alternate): YoY inflation from the **seasonally adjusted** CPI index, averaged over the attributed window.
+  - Pros: included for completeness; should be very close to the NSA YoY in most periods.
+- `cpi_inflation_mom_ann_logdiff_mean` (alternate): MoM annualized log-diff inflation, averaged over the window.
+  - Pros: faster-moving signal; matches common "annualized monthly inflation" discussions.
+  - Note: for MoM measures, we prefer SA CPI because NSA MoM is dominated by seasonal patterns.
+- `pce_inflation_yoy_mean` (alternate): PCE-based YoY inflation.
+- `pce_inflation_mom_ann_logdiff_mean` (alternate): PCE MoM annualized log-diff inflation.
+
+We also include cumulative price-level change metrics:
+- `cpi_price_level_term_pct_change_nsa`: total percent change in the CPI index over the term window (end vs start).
+- `cpi_price_level_term_cagr_pct_nsa`: annualized percent change (CAGR) from start/end levels.
+- `pce_price_level_term_pct_change`: total percent change in PCEPI over the term window.
+- `pce_price_level_term_cagr_pct`: annualized percent change (CAGR) from PCEPI start/end levels.
+These are often more intuitive for “prices went up X% during this term” claims than an average YoY rate.
+
+Seasonal adjustment:
+- The BLS produces **both unadjusted and seasonally adjusted CPI data**; SA data are intended for short-term trend analysis, while unadjusted data are widely used for escalation/indexation and other applications.
+- SA CPI series are revised when seasonal factors are updated (typically revising recent history), so “latest data” pulls can change SA values in the recent window; caching raw downloads keeps our runs reproducible, but we still surface this as a choice.
+- For the PCE price index (`PCEPI`), the monthly series in FRED is **seasonally adjusted**. We compute YoY from that level series; if we later want a non-seasonally-adjusted PCE price index, FRED provides other formats (e.g., annual NSA) but those are not a drop-in replacement for monthly term windows.
+
+## Output (GDP)
+
+`GDPC1` is a **quarterly level in SAAR units** (real GDP at an annual rate). We still compute growth locally from the level series (log-diff annualized). This is standard and keeps the growth formula consistent with other growth metrics.
+
+We include alternates:
+- real GDP per capita growth
+- term total percent change from start/end levels
+- term CAGR computed from start/end levels (useful for start/end comparisons, but more sensitive to window rules)
+- per-capita term total percent change and per-capita term CAGR for symmetry with aggregate GDP
+
+## Stock Market: Returns vs Levels (MoM/QoQ/YoY)
+
+Question: do we need levels, not just returns?
+
+Choice (v1): use **Ken French monthly returns** as the primary stock market source, and **derive level-like metrics** via compounding.
+
+Rationale:
+- Returns are the cleanest unit for comparisons (stationary-ish, not dependent on an arbitrary base year).
+- "Level" comparisons (e.g., S&P 500 start vs end) are common in popular claims, so we should support them, but they are highly sensitive to window endpoints. We treat those as **alternate views**.
+
+Ken French dataset:
+- Monthly observations start in **1926-07**; the latest available month depends on when the file is downloaded.
+- Our pipeline should cache the raw zip and record the observed date range + header metadata in the run manifest so results can be reproduced even if the upstream file changes later.
+
+Metrics included:
+- `ff_mkt_excess_return_ann_compound` (primary): annualized compound excess return (Mkt-RF).
+- `ff_mkt_total_return_ann_compound` (alternate): annualized compound total return (Mkt-RF + RF).
+- `ff_mkt_total_return_term_total` (alternate): compounded total return over the term window (end/start in percent terms).
+- `ff_mkt_excess_return_term_total` (alternate): compounded excess return over the term window.
+
+Price index levels (Dow and S&P):
+- For popular/press-style “the market went up/down under X” claims, we also include **price index levels** from Stooq:
+- We fetch:
+  - S&P 500 (`^spx` from Stooq)
+  - Dow Jones Industrial Average (`^dji` from Stooq)
+- These are **price-only** indices (exclude dividends), so they are not directly comparable to total return measures. We treat them as alternates for public-facing level claims, not the primary return metric.
+- For S&P levels, we keep **two separate definitions**:
+  - `sp500_sp500_index` (modern S&P 500 window, 1957+), used for headline S&P level metrics.
+  - `sp500_spx_backfilled_pre1957` (pre-1957 backfilled segment from the same provider), exposed only as a separate historical-composite alternate.
+- We intentionally do **not** stitch pre-1957 backfilled SPX data into the modern 1957+ S&P 500 headline series, to avoid implying one homogeneous index definition across the full history.
+- Boundary alignment for daily series (inaugurations on weekends/holidays, etc.) is handled by the attribution spec (`spec/attribution_v1.yaml`). v1 default is to use the **close of the last trading day strictly before** the inauguration boundary, to avoid time-of-day ambiguity on inauguration day.
+- Stooq is a third-party data source; we should treat it as a convenience feed for “popular claim” metrics (S&P/Dow levels), record retrieval metadata/hashes, and avoid redistributing raw data unless licensing is confirmed.
+
+Risk context for returns:
+- To reduce “recovery-from-crash” cherry-picking and provide context, we include:
+  - annualized volatility of monthly excess returns (`ff_mkt_excess_return_volatility_ann`)
+  - annualized Sharpe ratio of monthly excess returns (`ff_mkt_excess_return_sharpe_ann`)
+
+Level-style term metrics included:
+- Term total percent change (end vs start): `sp500_term_pct_change`, `djia_term_pct_change`
+- Term percent change per year (CAGR, annualized from start/end using elapsed time): `sp500_term_cagr_pct`, `djia_term_cagr_pct`
+- Historical composite alternates (pre-1957 only): `sp500_backfilled_pre1957_term_pct_change`, `sp500_backfilled_pre1957_term_cagr_pct`
+
+MoM/QoQ/YoY:
+- MoM is the monthly return itself.
+- QoQ/YoY are rolling compounded returns over 3/12 months. We have not made these primary scoreboard metrics yet; they are better suited for plots/diagnostics because they overlap heavily over time.
+
+## Employment: End-minus-start vs Per-year
+
+Question: why include `end_minus_start_per_year`?
+
+Choice (v1): keep **total change** as primary and per-year as an alternate, and apply the same pairing across comparable series to avoid cherry-picking accusations.
+
+Rationale:
+- Total change (`end_minus_start`) is the most direct answer to “how many jobs were added during this window.”
+- Per-year normalization helps when:
+  - we compare windows of different lengths (partial terms, alternate lag rules),
+  - we want a rough rate comparable across terms.
+- Per-year implicitly assumes linearity; it’s not a structural model. We treat it as a convenience view, not the canonical truth.
+
+Anti-cherry-picking policy:
+- If we include a per-year version for a metric family, we also include the total-change version (and vice versa).
+- Reports should display both side-by-side for the same underlying series to prevent “we picked the normalization that looks best” critiques.
+- We now also include percent-change and CAGR variants for payroll and household employment so level and rate-style narratives can be cross-checked.
+
+We include both payroll (CES) and household (CPS) employment series to reflect the measurement split in labor statistics.
+
+For unemployment (`UNRATE`), we use level-preserving transforms:
+- term mean,
+- end-of-term level,
+- percentage-point change, and
+- percentage-point change per year.
+This keeps interpretation in labor-market units and avoids percent-change-on-rate ambiguity.
+
+## Wages / Real Earnings
+
+If the goal is “how did typical workers do,” GDP and stocks are incomplete: they can rise while typical wages stagnate.
+
+Choice (v1): include one real-earnings series with both level and change views:
+- `LES1252881600Q` (CPS; real median weekly earnings for full-time workers; CPI-adjusted).
+
+Metrics include:
+- mean and end-of-term levels (context metrics),
+- term percent change,
+- term CAGR.
+
+Notes:
+- This series is quarterly and can be noisy; it’s still valuable as a reality check against purely macro/market metrics.
+- If/when we add nominal wage series (e.g., average hourly earnings) we should also add explicit deflators (CPI/PCE) rather than relying on upstream “real” adjustments.
+
+## Fiscal: Percent of GDP vs Dollars
+
+Choice (v1): start with percent-of-GDP series when available (`GFDEGDQ188S`, `FYFSGDA188S`) because it reduces inflation/scale issues and matches much of the public discourse.
+
+Notes:
+- Fiscal series are often annual or fiscal-year based; mapping to presidential windows requires extra care (and must be documented in the attribution manifest).
+- For symmetry, we now include mean/end/change/change-per-year transforms for both debt and surplus/deficit percent-of-GDP series.
+
+## What We Still Need To Decide (Likely v2)
+
+- Whether daily stock level endpoints should use close-before-inauguration vs close-on-inauguration, and whether to also provide an end-of-month-based variant as a robustness check.
+- Whether to support point-in-time/vintage data for key series (ALFRED) to avoid revision effects in historical reproducibility.
+
+--- FILE: spec/metrics_coverage_v1.md ---
+# Metrics Coverage Matrix (v1)
+
+This file records judgment calls for which transforms we include per source series.
+It is designed to reduce hidden opinion and make "why not this metric?" auditable.
+
+## Coverage Policy (Unopinionated Default)
+
+Default stance: include a broad transform set unless a transform is clearly non-interpretable for that series type.
+
+Series-type defaults:
+
+- Level/index series (GDP, prices, wages, stock levels):
+  - Prefer: `mean` (where meaningful), `end_minus_start`, `end_minus_start_per_year`, `pct_change_from_levels`, `cagr_from_levels`.
+  - Optional: short-horizon growth transforms (MoM/QoQ/YoY) when they are standard for that domain.
+- Rate series already in percent (e.g., unemployment rate, debt-to-GDP):
+  - Prefer: `mean`, `last`, `end_minus_start`, `end_minus_start_per_year`.
+  - Avoid percent-change-on-percent-rate transforms unless specifically justified.
+- Return series:
+  - Prefer: annualized compound return, term-total compound return, volatility, Sharpe.
+- Binary indicator series:
+  - Prefer: share/time-in-state (`mean`), transition counts (`count_transitions`).
+
+## Current v1 Coverage Review
+
+Legend:
+- `covered`: transform class is represented in `spec/metrics_v1.yaml`.
+- `partial`: some analogous transforms exist, but not a full symmetric set.
+- `intentionally_omitted`: excluded for interpretability or data-definition reasons.
+- `candidate`: reasonable addition for a later spec version.
+
+### Output
+
+- `gdpc1_real_gdp`
+  - `covered`: QoQ annualized growth mean, term total percent change, term CAGR.
+- `a939rx0q048sbea_real_gdp_per_capita`
+  - `covered`: QoQ annualized growth mean, term total percent change, term CAGR.
+
+### Labor
+
+- `payems_payroll_employment`, `ce16ov_household_employment`
+  - `covered`: total change, per-year change, term percent change, term CAGR.
+- `unrate_unemployment_rate`
+  - `covered`: mean, end-of-term value, pp change, pp change per year.
+  - `intentionally_omitted`: percent-change transform on unemployment rate (not policy-intuitive).
+
+### Wages
+
+- `les1252881600q_real_median_weekly_earnings`
+  - `covered`: mean, end-of-term value, term percent change, term CAGR.
+
+### Prices / Inflation
+
+- `cpiaucns_cpi_unadjusted`
+  - `covered`: YoY mean, term percent change, term CAGR.
+- `cpiaucsl_cpi`
+  - `covered`: YoY mean (alternate), MoM annualized log-diff mean.
+  - `partial`: no term total/CAGR level metrics for SA CPI.
+  - `intentionally_omitted`: SA level-term metrics not primary because SA revisions can complicate historical reproducibility.
+- `pcepi_pce_price_index`
+  - `covered`: YoY mean, MoM annualized log-diff mean, term percent change, term CAGR.
+
+### Finance
+
+- `ff_factors_monthly` (`mkt_rf`, `mkt_total`)
+  - `covered`: annualized returns, excess/total term-total returns, volatility, Sharpe.
+- `sp500_sp500_index`, `djia_dow_jones`
+  - `covered`: term percent change and CAGR.
+- `sp500_spx_backfilled_pre1957`
+  - `covered`: separate historical-composite term percent change and CAGR.
+  - `intentionally_omitted`: stitched modern+historical headline series.
+
+### Recessions
+
+- `usrec_recession_indicator`
+  - `covered`: recession month share, recession start count.
+  - `intentionally_omitted`: "severity" metrics from `USREC` alone (not identifiable from a binary indicator).
+
+### Fiscal
+
+- `gfdegdq188s_federal_debt_pct_gdp`
+  - `covered`: mean, end, pp change, pp change per year.
+- `fyfsgda188s_federal_surplus_deficit_pct_gdp`
+  - `covered`: mean, end, pp change, pp change per year.
+
+## Suggested v2 Additions (Priority Order)
+
+1. Decide whether SA CPI level-term percent/CAGR variants should be added as explicit alternates.
+2. Consider a strict "primary metric per family" registry field in spec to lock publication defaults.
+3. Add a lightweight automated coverage check that fails CI if a series loses transform symmetry unintentionally.
+
+## Change-Control Rule
+
+If we reject a candidate transform, record:
+- reason for exclusion,
+- expected bias if excluded,
+- and where the alternate evidence is represented.
+
+This avoids silent opinionated pruning.
+
+--- FILE: notes/analysis_rationale_and_findings.md ---
+# Analysis Rationale and Interim Findings
+
+Last updated: 2026-02-11
+
+## Purpose
+
+This note records:
+
+1. Why we structured the first-pass analysis the way we did.
+2. What we learned so far from party and Congress-control breakouts.
+3. What remains unresolved before stronger claims.
+
+It is a narrative companion to:
+
+- `spec/metrics_v1.yaml`
+- `spec/metrics_rationale.md`
+- `reports/scoreboard.md` (generated; not committed)
+
+## Why This Framing
+
+Core question: how measured U.S. economic performance differs across presidential party, while checking whether congressional control is a material confounder.
+
+Key design choices and rationale:
+
+- Reproducible public sources only.
+  - Every metric should be reproducible from online data via code.
+- Multiple metric families, not one headline number.
+  - Growth, labor, inflation, markets, recessions, and fiscal outcomes each capture different channels.
+- Multiple transforms per family (level, term total, per-year/CAGR).
+  - Reduces cherry-picking risk from choosing only one transform.
+- Binary Congress control checks.
+  - Use unified vs divided and chamber-alignment states to keep cells interpretable.
+- Within-president diagnostic.
+  - Compare unified vs divided periods within the same president-term to reduce confounding from "which president" or broad era mix.
+
+Important interpretation guardrail:
+
+- Congress can be both confounder and mediator. "Controlling for Congress" is a robustness check, not an automatic causal upgrade.
+
+## What We Learned So Far
+
+These are interim patterns from the current `reports/scoreboard.md`, especially the section:
+
+- `## Within-President Unified vs Divided Check`
+
+Summary:
+
+- The added within-president check is useful (not just cosmetic). It asks: for the same president-term, do metrics differ between unified and divided periods?
+- The check is now machine-readable via `reports/within_president_unified_delta_v1.csv` (generated by `rb scoreboard`).
+- The check now supports a robustness filter for short windows via `rb scoreboard --within-president-min-window-days N` (default `0`).
+- `rb scoreboard` now shows significance diagnostics by default (`q`, `p`, CI, `q<0.05`, `q<0.10`, tier) by reading the latest randomization outputs.
+- If randomization outputs are missing/stale, scoreboard significance columns are blank/outdated; regenerate with `rb randomization` before publishing.
+- For several macro metrics, unified-minus-divided deltas are directionally similar across parties.
+  - Real GDP growth (QoQ annualized) shows positive U-D for both D and R in current output.
+  - CPI YoY (NSA) shows negative U-D for both D and R in current output.
+- Some market diagnostics are mixed by party (example: Sharpe ratio), indicating the relationship is not one-directional everywhere.
+- Cell sizes are small for many metrics (`n(pres with both)` often low), so these are diagnostic signals, not final estimates.
+
+Interpretation:
+
+- Congress alignment appears potentially material for some outcomes.
+- The current results do not justify a claim that Congress fully explains party differences.
+- The current results also do not justify ruling Congress out.
+
+## What This Check Is (and Is Not)
+
+This check is:
+
+- A robustness test for confounding by congressional control.
+- A way to reduce composition bias across different presidents.
+
+This check is not:
+
+- A causal identification strategy.
+- A substitute for fully specified uncertainty analysis and robustness reporting.
+
+## Key Decisions From Project History
+
+- Data access stack:
+  - Prefer official APIs/sources (FRED API, Ken French, Congress pages) over one-off manual fetches where possible.
+  - Keep credentials in `.env`; current pipeline already uses `FRED_API_KEY`.
+- Presidential-party source reliability:
+  - Avoid relying on Wikidata as a sole truth source for party labels; prefer congressional/official structured sources where possible.
+- S&P history handling:
+  - Keep modern S&P 500 (1957+) separate from pre-1957 backfilled SPX segment.
+  - Do not stitch into one headline series.
+- Congress-control framing:
+  - Keep binary unified/divided and chamber alignment as primary control views (simplicity and cell-size stability).
+- Shock-years concern:
+  - Do not hard-code subjective shock exclusions into primary results.
+  - If used, treat shock adjustments as explicit sensitivity analyses in a separate section.
+- Validation warning interpretation:
+  - Coverage warnings are expected when president windows extend earlier than a metric's data history.
+  - Treat these as a scope/coverage note unless they reflect broken ingestion or boundary logic.
+
+## Open Risks To Track
+
+- Small-cell instability in within-president checks (`n(pres with both)` can be low).
+- Boundary sensitivity for short windows and CAGR edge cases.
+- Vintage/revision drift in macro series (results can move across download dates).
+
+## Threshold Sensitivity Snapshot (Within-President U-D)
+
+Using the new filter (`--within-president-min-window-days`), a quick `0/30/90` check shows:
+
+- GDP growth (QoQ annualized) is fairly stable:
+  - D mean U-D: `0.471` (unchanged across `0/30/90`)
+  - R mean U-D: `1.149` -> `1.149` -> `1.219`
+- CPI YoY (NSA) is directionally stable (negative U-D for both parties), with moderate magnitude shifts:
+  - D: `-3.269` -> `-3.567` -> `-3.567`
+  - R: `-0.251` -> `-0.277` -> `-0.253`
+- Market Sharpe is stable for D and modestly shifts for R:
+  - D: `-0.231` (unchanged)
+  - R: `0.867` -> `0.867` -> `0.944`
+- S&P CAGR is sensitive for D:
+  - D: `1.197` -> `-9.176` -> `-9.176` (and `n_with_both` drops from `4` to `3`)
+  - R: `7.017` -> `6.221` -> `6.876` (still low `n_with_both=2`)
+
+Takeaway:
+
+- Macro flow metrics look more robust to short-window filtering than some level-return metrics.
+- For market-level CAGR, short-window handling can materially change inferred sign/magnitude, so this should be explicitly labeled as sensitivity-dependent.
+
+## Permutation Robustness Snapshot
+
+New command:
+
+- `rb randomization`
+
+Current outputs:
+
+- `reports/permutation_party_term_v1.csv` (primary metrics)
+- `reports/permutation_unified_within_term_v1.csv` (primary metrics)
+- `reports/permutation_party_term_all_v1.csv` (all metrics)
+- `reports/permutation_unified_within_term_all_v1.csv` (all metrics)
+- `reports/permutation_evidence_summary_v1.csv` (compact evidence-tier summary by analysis and metric family)
+- `reports/permutation_evidence_summary_v1.md` (human-readable confirmatory/supportive summary)
+- `reports/permutation_evidence_compare_v1.csv` (baseline vs stricter-profile tier comparison)
+
+What it does:
+
+- Term-level test: permutes D/R labels across eligible term observations (optionally within year-blocks) and reports two-sided permutation p-values for observed D-R mean differences.
+- Within-president control test: permutes unified/divided assignment within each president-term's regime windows and reports two-sided permutation p-values for mean within-term delta (U-D).
+- Both outputs now include Benjamini-Hochberg FDR-adjusted `q_bh_fdr` columns in addition to raw `p_two_sided`.
+- Both outputs now include bootstrap 95% confidence intervals (`bootstrap_ci95_low`, `bootstrap_ci95_high`) for the observed estimand.
+- Both outputs now include a rule-based evidence classification:
+  - `confirmatory` / `supportive` / `exploratory`
+  - with audit columns (`passes_q_threshold`, `passes_q_lt_005`, `passes_q_lt_010`, `passes_ci_excludes_zero`, `passes_min_n`, thresholds used).
+
+Early read (all-metrics run):
+
+- Several labor/macro term-level differences have relatively small permutation p-values (for example unemployment change and payroll jobs-per-year).
+- Within-president unified/divided results are generally weaker and sample-limited; the smallest p-values often occur in metrics with small `n_presidents_with_both`.
+- After BH adjustment (`q_bh_fdr`):
+  - All-metrics term-level run: `7` metrics are below `q < 0.10`, of which `2` are below `q < 0.05`.
+  - Within-president unified/divided run remains weak after adjustment (no low-q signals; mostly high-q, small-`n` cells).
+
+Interpretation caveats:
+
+- These permutation p-values are exploratory; use `q_bh_fdr` for multiple-testing-aware screening.
+- Small-cell metrics can look extreme by chance; treat low-p small-`n` findings as hypotheses to stress-test, not conclusions.
+- For screening, prefer `q_bh_fdr` over raw p-values when comparing many metrics at once.
+
+## Significance Tension and How To Resolve It
+
+Current tension (all-metrics snapshots):
+
+- Term-level party test (`reports/permutation_party_term_all_v1.csv`):
+  - `p < 0.05`: 8 metrics
+  - `q_bh_fdr < 0.10`: 7 metrics
+  - `q_bh_fdr < 0.05`: 2 metrics
+  - bootstrap CI excludes zero: 11 metrics
+- Within-president unified/divided test (`reports/permutation_unified_within_term_all_v1.csv`):
+  - `p < 0.05`: 1 row
+  - `q_bh_fdr < 0.10`: 0 rows
+  - bootstrap CI excludes zero: 12 rows (mostly small-`n` cells)
+
+Why they disagree:
+
+- Raw p-values do not account for multiplicity across many metrics/transforms.
+- BH-adjusted q-values are stricter and can wash out borderline effects.
+- Bootstrap CIs answer precision around effect size, not multiplicity; with small samples they can be unstable and still exclude zero.
+- Many transforms are correlated variants of the same underlying signal, which complicates naive “count of significant metrics” interpretation.
+
+Current resolution policy (for reporting):
+
+1. **Primary claim threshold** (confirmatory tone):
+   - Require all three:
+     - `q_bh_fdr < 0.05` (default confirmatory threshold)
+     - bootstrap CI excludes zero
+     - minimum sample threshold met (`n_obs >= 12` for term-level; `n_presidents_with_both >= 5` for within-president rows)
+2. **Supportive evidence** (suggestive tone):
+   - Require all three:
+     - `q_bh_fdr < 0.10`
+     - bootstrap CI excludes zero
+     - minimum sample threshold met
+   - and not already confirmatory under the stricter threshold.
+3. **Exploratory only**:
+   - Anything else.
+4. **No metric-family cherry-picking**:
+   - Report results by family + transform grid, not single best metric.
+   - For headline statements, prioritize pre-declared primary metrics.
+5. **Always report continuous stats**:
+   - Include `q_bh_fdr`, `p_two_sided`, and CI bounds directly in tables.
+   - Treat tiers as convenience labels, not the primary evidence object.
+
+Can CI bands be collapsed to one equivalent p/q number?
+
+- Not exactly in this pipeline.
+- Here, `q_bh_fdr` comes from permutation p-values with BH adjustment, while CI comes from bootstrap percentiles. Those are different inferential procedures and are not algebraic inverses of each other.
+- CI and p are directly convertible only when derived from the same underlying test model.
+- So we keep one multiplicity-aware continuous number (`q_bh_fdr`) plus CI for effect-size uncertainty.
+
+Implication for current read:
+
+- Term-level evidence is stronger than within-president unified/divided evidence.
+- Within-president rows are currently mostly exploratory due to small `n_presidents_with_both` and lack of low q-values.
+- We should avoid claiming “Congress effect is significant” globally at this stage; treat it as mixed/diagnostic.
+
+Operational status:
+
+- This policy is now encoded in `rb randomization` outputs.
+- A compact family-level summary table is now generated automatically.
+- A narrative markdown summary is now generated automatically.
+- A comparison table is now generated via `rb randomization-compare` to track baseline-vs-stricter tier shifts metric-by-metric.
+- The main scoreboard now includes significance columns by default, sourced from randomization outputs.
+- Current all-metrics tier counts:
+  - Term-level party differences: `confirmatory=2`, `supportive=5`, `exploratory=30`.
+  - Within-president unified/divided: `confirmatory=0`, `supportive=0`, `exploratory=74`.
+- Sensitivity check (stricter settings: `term_block_years=20`, `within-president-min-window-days=90`):
+  - Term-level party differences shift to `confirmatory=0`, `supportive=0`, `exploratory=37`.
+  - Within-president unified/divided remains weak (`confirmatory=0`, `supportive=0`, `exploratory=74`).
+
+Interpretation of this sensitivity:
+
+- Some baseline “confirmatory” term-level findings are sensitive to stronger temporal-block assumptions.
+- Publication claims should therefore distinguish:
+  - baseline-confirmatory (under default randomization settings), versus
+  - robustness-confirmatory (still confirmatory/supportive under stricter settings).
+- At the moment, evidence is stronger for “supportive macro/labor pattern” than for hard confirmatory claims robust to stricter blocking.
+- In the current baseline-vs-stricter comparison (`reports/permutation_evidence_compare_v1.csv`):
+  - term-level rows: `30 same`, `7 weaker`, `0 stronger`
+  - within-president rows: `74 same`, `0 stronger`, `0 weaker`
+
+## Literature Cross-Check: Is This Significance Practice Standard?
+
+Yes, for this niche (party-regime macro/finance comparisons), our current approach is aligned with better prior work, with one key caveat.
+
+What the stronger local literature does:
+
+- `literature/blinder-watson-2014-presidents-us-economy/notes.md`
+  - Uses term-aware uncertainty (clustered-by-term and Newey-West/HAC).
+  - Uses a random party-label reassignment (permutation-style) p-value as a small-sample check.
+- `literature/aea-why-economy-better-under-democrats/notes.md`
+  - Explains the same random-label logic as a core response to the small-`n` objection.
+- `literature/santa-clara-valkanov-presidential-puzzle/notes.md`
+  - Uses Newey-West plus randomization-bootstrap and quantile-robust checks to guard against outliers and small-sample fragility.
+- `literature/factcheck-2015-economy-better-democrats/notes.md`
+  - Mirrors the same interpretation pattern: some gaps are statistically persuasive, others are not, especially in volatile market series.
+
+What this implies for us:
+
+- Using permutation p-values + BH-adjusted q-values + bootstrap CI bands is methodologically defensible as an inferential robustness stack.
+- This is standard as **associational evidence** in this literature, not a causal identification strategy.
+- We should avoid pure coin-flip rhetoric without explicit assumptions, as highlighted by `literature/belfer-frankel-2024-historical-puzzle/notes.md`.
+
+Bottom line:
+
+- Our significance framework is directionally consistent with the best papers in `./literature`.
+- The right communication standard is: "robust association under declared assumptions," not "policy causation proven by significance."
+
+## Strengths and Weaknesses vs Best Literature
+
+Relative to the strongest references in `./literature` (especially Blinder-Watson and Santa-Clara/Valkanov):
+
+Current strengths:
+
+- Reproducibility discipline is stronger than most published writeups.
+  - Full CLI pipeline, explicit specs, and machine-readable outputs (`scoreboard`, randomization tables, claims table).
+- Multiplicity-aware reporting is stronger than most legacy papers.
+  - We report `q_bh_fdr`, not only raw p-values, and keep CI bands visible.
+- Sensitivity transparency is stronger.
+  - We already compare baseline vs stricter profiles and record tier downgrades/upgrades.
+- Congress-control diagnostics are broader.
+  - We include both cross-regime and within-president unified/divided checks, instead of president-only comparisons.
+
+Current weaknesses / gaps:
+
+- Classical econometric inference layer is thinner than the best literature.
+  - We currently lean on permutation/bootstrap; we do not yet report a parallel HAC / few-cluster-robust table for the same estimands.
+- Explanatory decomposition is less developed.
+  - Blinder-Watson-style decomposition of the growth gap into candidate channels (oil, productivity, global growth, etc.) is not yet implemented.
+- Small-cell/power diagnostics are not explicit enough.
+  - We flag low `n`, but do not yet report minimum detectable effects or power proxies for each estimand.
+- Endpoint/vintage uncertainty is still under-documented.
+  - We note data revision risk, but we do not yet version full vintages or publish a revision sensitivity panel.
+- Congress-control interpretation remains diagnostic.
+  - Within-president results are mostly exploratory at current sample sizes; this is useful but not decisive.
+
+## Potential Next Steps (Methodology)
+
+1. Add a dual-inference output for each primary estimand:
+   - permutation/q + HAC/Newey-West + few-cluster-robust side-by-side in one table.
+2. Pre-register a primary metric set and transform hierarchy in the spec:
+   - one primary metric per family, with secondaries explicitly labeled.
+3. Add power/precision diagnostics:
+   - report `n`, effective clusters, bootstrap SE, and a rough minimum-detectable-effect column.
+4. Implement a decomposition module for growth and labor gaps:
+   - start with oil shock proxies, global growth, productivity, and initial-condition controls.
+5. Add a historical-vintage sensitivity panel:
+   - recompute headline claims using at least two download dates (or vintages where available).
+6. Extend Congress checks with strict binary dominance framing:
+   - president+both-houses vs all other regimes, with explicit cell-size and uncertainty caveats.
+7. Add a publication-mode claims gate:
+   - only allow "confirmatory" labels when both inference stacks agree on direction and significance tier.
+
+## Immediate Next Steps
+
+1. Define which metrics are headline primary claims versus secondary diagnostics before re-running final tables.
+2. Add permutation stability checks across multiple seeds and larger `permutations` to quantify Monte Carlo noise in borderline rows.
+3. Add a short publication-ready narrative template that maps directly from the claims table rows (no manual cherry-picking).
+
+## Claims Table
+
+A machine-readable baseline-vs-strict claims table is now produced via:
+
+```sh
+rb claims-table \
+  --baseline-party-term reports/permutation_party_term_all_v1.csv \
+  --strict-party-term reports/permutation_party_term_block20_all_v1.csv \
+  --baseline-within reports/permutation_unified_within_term_all_v1.csv \
+  --strict-within reports/permutation_unified_within_term_min90_all_v1.csv \
+  --output reports/claims_table_v1.csv
+```
+
+Default invocation uses the same paths:
+
+```sh
+rb claims-table
+```
+
+## Reproduce Current Outputs
+
+```sh
+uv sync
+rb ingest --refresh
+rb presidents --source congress_legislators --granularity tenure --refresh
+rb compute
+rb congress --refresh
+rb regimes --refresh
+rb randomization --all-metrics
+rb scoreboard --all-metrics
+rb validate
+```
+
+## Baseline vs Stricter Profile Commands
+
+Baseline (current defaults used in most summaries):
+
+```sh
+rb randomization --all-metrics \
+  --output-party-term reports/permutation_party_term_all_v1.csv \
+  --output-unified-within-term reports/permutation_unified_within_term_all_v1.csv \
+  --output-evidence-summary reports/permutation_evidence_summary_v1.csv \
+  --output-evidence-md reports/permutation_evidence_summary_v1.md
+```
+
+Stricter sensitivity profile:
+
+```sh
+rb randomization --all-metrics \
+  --term-block-years 20 \
+  --within-president-min-window-days 90 \
+  --output-party-term reports/permutation_party_term_block20_all_v1.csv \
+  --output-unified-within-term reports/permutation_unified_within_term_min90_all_v1.csv \
+  --output-evidence-summary reports/permutation_evidence_summary_block20_min90_v1.csv \
+  --output-evidence-md reports/permutation_evidence_summary_block20_min90_v1.md
+```
+
+Compare profiles:
+
+```sh
+rb randomization-compare \
+  --base-party-term reports/permutation_party_term_all_v1.csv \
+  --alt-party-term reports/permutation_party_term_block20_all_v1.csv \
+  --base-within reports/permutation_unified_within_term_all_v1.csv \
+  --alt-within reports/permutation_unified_within_term_min90_all_v1.csv \
+  --output reports/permutation_evidence_compare_v1.csv
+```
+
+Build claims table:
+
+```sh
+rb claims-table \
+  --baseline-party-term reports/permutation_party_term_all_v1.csv \
+  --strict-party-term reports/permutation_party_term_block20_all_v1.csv \
+  --baseline-within reports/permutation_unified_within_term_all_v1.csv \
+  --strict-within reports/permutation_unified_within_term_min90_all_v1.csv \
+  --output reports/claims_table_v1.csv
+```
