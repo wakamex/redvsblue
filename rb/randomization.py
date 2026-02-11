@@ -11,6 +11,8 @@ from typing import Any
 
 STRICT_Q_DEFAULT = 0.05
 SUPPORTIVE_Q_THRESHOLD = 0.10
+WITHIN_MDE_COL = "observed_mde_abs_alpha005_power080"
+WITHIN_EFFECT_OVER_MDE_COL = "observed_abs_effect_over_mde"
 DIAGNOSTIC_ONLY_METRIC_IDS = frozenset(
     {
         "sp500_backfilled_pre1957_term_pct_change",
@@ -618,8 +620,8 @@ def _compute_unified_within_term_permutation(
         "observed_mean_delta_unified_minus_divided",
         "observed_median_delta_unified_minus_divided",
         "n_presidents_with_both",
-        "observed_mde_abs_alpha005_power080",
-        "observed_abs_effect_over_mde",
+        WITHIN_MDE_COL,
+        WITHIN_EFFECT_OVER_MDE_COL,
         "perm_mean",
         "perm_std",
         "z_score",
@@ -705,8 +707,8 @@ def _compute_unified_within_term_permutation(
                 "observed_mean_delta_unified_minus_divided": _fmt(observed_mean),
                 "observed_median_delta_unified_minus_divided": _fmt(observed_median),
                 "n_presidents_with_both": str(n_both),
-                "observed_mde_abs_alpha005_power080": _fmt(mde_abs),
-                "observed_abs_effect_over_mde": _fmt(effect_over_mde),
+                WITHIN_MDE_COL: _fmt(mde_abs),
+                WITHIN_EFFECT_OVER_MDE_COL: _fmt(effect_over_mde),
                 "perm_mean": _fmt(perm_mean),
                 "perm_std": _fmt(perm_std),
                 "z_score": _fmt(z),
@@ -752,6 +754,167 @@ def _compute_unified_within_term_permutation(
         for r in rows:
             w.writerow(r)
     tmp.replace(out_csv)
+
+
+def ensure_within_mde_columns(
+    *,
+    within_csv: Path,
+    window_metrics_csv: Path,
+    window_labels_csv: Path,
+) -> dict[str, int]:
+    if not within_csv.exists():
+        raise FileNotFoundError(f"Missing within-president CSV: {within_csv}")
+
+    with within_csv.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        rows = [dict(r) for r in rdr]
+        fieldnames = list(rdr.fieldnames or [])
+
+    stats = {
+        "row_count": len(rows),
+        "file_rewritten": 0,
+        "rows_updated": 0,
+        "rows_with_mde": 0,
+        "rows_missing_mde": 0,
+    }
+    if not rows:
+        return stats
+
+    has_cols = WITHIN_MDE_COL in fieldnames and WITHIN_EFFECT_OVER_MDE_COL in fieldnames
+    needs_backfill = not has_cols
+    if not needs_backfill:
+        for r in rows:
+            n = _parse_int(r.get("n_presidents_with_both") or "") or 0
+            mde_txt = (r.get(WITHIN_MDE_COL) or "").strip()
+            ratio_txt = (r.get(WITHIN_EFFECT_OVER_MDE_COL) or "").strip()
+            if n >= 2 and (not mde_txt or not ratio_txt):
+                needs_backfill = True
+                break
+
+    if not needs_backfill:
+        for r in rows:
+            if (r.get(WITHIN_MDE_COL) or "").strip():
+                stats["rows_with_mde"] += 1
+            else:
+                stats["rows_missing_mde"] += 1
+        return stats
+
+    if not window_metrics_csv.exists():
+        raise FileNotFoundError(f"Missing regime-window metrics CSV required for MDE backfill: {window_metrics_csv}")
+    if not window_labels_csv.exists():
+        raise FileNotFoundError(f"Missing regime-window labels CSV required for MDE backfill: {window_labels_csv}")
+
+    labels = _load_window_labels(window_labels_csv)
+
+    key_by_row: list[tuple[str, str, int] | None] = []
+    target_metric_party: set[tuple[str, str]] = set()
+    for r in rows:
+        metric_id = (r.get("metric_id") or "").strip()
+        pres_party = (r.get("pres_party") or "").strip()
+        min_days = _parse_int(r.get("min_window_days_filter") or "") or 0
+        if not metric_id or pres_party not in {"D", "R"}:
+            key_by_row.append(None)
+            continue
+        key = (metric_id, pres_party, max(0, int(min_days)))
+        key_by_row.append(key)
+        target_metric_party.add((metric_id, pres_party))
+
+    by_metric_party_term: dict[tuple[str, str], dict[str, list[_WindowObs]]] = {}
+    with window_metrics_csv.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for row in rdr:
+            metric_id = (row.get("metric_id") or "").strip()
+            if not metric_id:
+                continue
+            wid = (row.get("term_id") or "").strip()
+            lab = labels.get(wid)
+            if not lab:
+                continue
+            pres_party = (lab.get("pres_party") or "").strip()
+            if pres_party not in {"D", "R"}:
+                continue
+            mp = (metric_id, pres_party)
+            if mp not in target_metric_party:
+                continue
+            pres_term_id = (lab.get("president_term_id") or "").strip()
+            if not pres_term_id:
+                continue
+            value = _parse_float(row.get("value") or "")
+            if value is None:
+                continue
+            days = int(lab.get("window_days") or 0)
+            unified = int(lab.get("unified_government") or 0)
+            g = by_metric_party_term.setdefault(mp, {})
+            g.setdefault(pres_term_id, []).append(_WindowObs(value=value, unified=unified, days=days))
+
+    mde_cache: dict[tuple[str, str, int], float | None] = {}
+    for key in sorted({k for k in key_by_row if k is not None}):
+        metric_id, pres_party, min_days = key
+        terms = by_metric_party_term.get((metric_id, pres_party), {})
+        deltas: list[float] = []
+        for entries in terms.values():
+            kept = [e for e in entries if e.days >= min_days]
+            if not kept:
+                continue
+            flags = [e.unified for e in kept]
+            d = _term_delta_from_entries(kept, flags)
+            if d is not None:
+                deltas.append(d)
+        mde_cache[key] = _rough_mde_one_sample_mean(values=deltas)
+
+    if WITHIN_MDE_COL not in fieldnames:
+        if "n_presidents_with_both" in fieldnames:
+            idx = fieldnames.index("n_presidents_with_both") + 1
+            fieldnames.insert(idx, WITHIN_MDE_COL)
+        else:
+            fieldnames.append(WITHIN_MDE_COL)
+    if WITHIN_EFFECT_OVER_MDE_COL not in fieldnames:
+        if WITHIN_MDE_COL in fieldnames:
+            idx = fieldnames.index(WITHIN_MDE_COL) + 1
+            fieldnames.insert(idx, WITHIN_EFFECT_OVER_MDE_COL)
+        else:
+            fieldnames.append(WITHIN_EFFECT_OVER_MDE_COL)
+
+    rows_updated = 0
+    for r, key in zip(rows, key_by_row):
+        old_mde = (r.get(WITHIN_MDE_COL) or "").strip()
+        old_ratio = (r.get(WITHIN_EFFECT_OVER_MDE_COL) or "").strip()
+        mde = mde_cache.get(key) if key is not None else None
+        effect = _parse_float(r.get("observed_mean_delta_unified_minus_divided") or "")
+
+        new_mde = _fmt(mde)
+        new_ratio = ""
+        if effect is not None and mde is not None and mde > 0.0:
+            new_ratio = _fmt(abs(effect) / mde)
+
+        if new_mde and old_mde != new_mde:
+            r[WITHIN_MDE_COL] = new_mde
+            rows_updated += 1
+        elif WITHIN_MDE_COL not in r:
+            r[WITHIN_MDE_COL] = old_mde
+
+        if new_ratio and old_ratio != new_ratio:
+            r[WITHIN_EFFECT_OVER_MDE_COL] = new_ratio
+            rows_updated += 1
+        elif WITHIN_EFFECT_OVER_MDE_COL not in r:
+            r[WITHIN_EFFECT_OVER_MDE_COL] = old_ratio
+
+        if (r.get(WITHIN_MDE_COL) or "").strip():
+            stats["rows_with_mde"] += 1
+        else:
+            stats["rows_missing_mde"] += 1
+
+    tmp = within_csv.with_suffix(within_csv.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8", newline="") as handle:
+        w = csv.DictWriter(handle, fieldnames=fieldnames)
+        w.writeheader()
+        for r in rows:
+            w.writerow(r)
+    tmp.replace(within_csv)
+
+    stats["rows_updated"] = rows_updated
+    stats["file_rewritten"] = 1
+    return stats
 
 
 def _write_evidence_summary(
@@ -1618,10 +1781,10 @@ def write_claims_table(
                     "direction": _direction_label(dir_v),
                     "effect_baseline": _fmt(effect_b),
                     "effect_strict": _fmt(effect_s),
-                    "mde_baseline": (br.get("observed_mde_abs_alpha005_power080") or "").strip(),
-                    "mde_strict": (sr.get("observed_mde_abs_alpha005_power080") or "").strip(),
-                    "effect_over_mde_baseline": (br.get("observed_abs_effect_over_mde") or "").strip(),
-                    "effect_over_mde_strict": (sr.get("observed_abs_effect_over_mde") or "").strip(),
+                    "mde_baseline": (br.get(WITHIN_MDE_COL) or "").strip(),
+                    "mde_strict": (sr.get(WITHIN_MDE_COL) or "").strip(),
+                    "effect_over_mde_baseline": (br.get(WITHIN_EFFECT_OVER_MDE_COL) or "").strip(),
+                    "effect_over_mde_strict": (sr.get(WITHIN_EFFECT_OVER_MDE_COL) or "").strip(),
                     "q_baseline": _fmt(q_b),
                     "q_strict": _fmt(q_s),
                     "q_delta_strict_minus_baseline": _fmt(q_delta),

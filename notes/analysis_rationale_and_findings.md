@@ -346,13 +346,20 @@ Operational status:
   - `rb publication-bundle`
   - This runs inference table -> publication-gated claims table -> narrative template -> scoreboard with claims-aware tier columns.
   - Supports `--profile strict_vs_baseline` (default) and `--profile baseline_only`.
+  - By default, it now auto-backfills stale within-president rough-MDE columns in within-randomization CSV inputs using regime-window source data.
+  - Disable this repair step with `--no-backfill-within-mde`.
   - Emits a JSON run manifest by default (`reports/publication_bundle_manifest_v1.json`) with input/output paths, hashes, thresholds, runtime/dependency metadata (Python/platform, git head, `pyproject.toml`, `uv.lock`), and upstream raw/vintage summaries (latest raw artifact timestamps by source plus FRED realtime window summary).
+  - The manifest includes `mutations.within_mde_backfill` when a stale within CSV was rewritten during bundle generation.
 - `rb scoreboard` can now display strict/publication tier context from claims tables:
   - default claims path: `reports/claims_table_v1.csv`
   - disable via `--no-publication-tier-columns`
   - strict/publication tier columns are wired for both party and within-president sections.
   - publication-tier cells are populated when claims were generated with `rb claims-table --publication-mode`.
   - Within-president scoreboard rows now also surface rough MDE diagnostics when present in within-randomization inputs.
+- A dedicated wild-cluster seed-stability diagnostic is now available:
+  - `rb inference-stability --seeds 42,137,271`
+  - output: `reports/inference_wild_cluster_stability_v1.csv`
+  - reports min/median/max wild-cluster p-values across seeds and whether 0.05/0.10 significance calls are seed-stable.
 - Historical all-metrics tier counts (pre-hardening defaults; retained for comparison context):
   - Term-level party differences: `confirmatory=2`, `supportive=5`, `exploratory=30`.
   - Within-president unified/divided: `confirmatory=0`, `supportive=0`, `exploratory=74`.
@@ -446,7 +453,7 @@ Current weaknesses / gaps:
 ## Immediate Next Steps
 
 1. Add a small-cluster exact/randomization inference variant for very low cluster counts (beyond current wild-cluster bootstrap).
-2. Add baseline-vs-strict stability diagnostics for wild-cluster p-values (seed and draw-count sensitivity) in the inference artifacts.
+2. Add draw-count sensitivity (`draws` grid) to `rb inference-stability` so seed and Monte Carlo error stability are reported together.
 3. Add deeper vintage reporting beyond summary windows (for example per-series FRED realtime tags for publication-facing primary metrics).
 
 ## Claims Table
