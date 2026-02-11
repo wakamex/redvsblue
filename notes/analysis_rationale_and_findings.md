@@ -333,10 +333,14 @@ Operational status:
 - `rb claims-table` now supports publication-mode gating for term-level claims:
   - `--publication-mode --inference-table reports/inference_table_primary_v1.csv`
   - Confirmatory labels are downgraded when HAC significance/direction checks do not agree.
+  - Optional stability gate:
+    - `--publication-stability-gate` (or publication-bundle default behavior, disable with `--no-publication-stability-gate`)
+    - downgrades unstable rows (`robust_significant/supportive` -> one tier lower) when inference-stability status is `unstable`.
   - New output columns include:
     - `tier_baseline_publication`
     - `tier_strict_publication`
     - `publication_gate_reason_*`
+    - `stability_status_005`, `stability_status_010`, `stability_unstable_any`
 - A publication-ready narrative scaffold is now available via:
   - `rb narrative-template`
   - default output: `reports/publication_narrative_template_v1.md`
@@ -464,7 +468,7 @@ Current weaknesses / gaps:
 ## Immediate Next Steps
 
 1. Add a small-cluster exact/randomization inference variant for very low cluster counts (beyond current wild-cluster bootstrap).
-2. Add optional publication gating that downgrades claims when inference-stability status is `unstable`.
+2. Decide whether stability-gate should be default-on for standalone `rb claims-table --publication-mode` (it is already default-on in `rb publication-bundle`).
 3. Add deeper vintage reporting beyond summary windows (for example per-series FRED realtime tags for publication-facing primary metrics).
 
 ## Claims Table

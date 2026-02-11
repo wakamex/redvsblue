@@ -1621,6 +1621,49 @@ def _load_inference_rows(path: Path | None) -> dict[str, dict[str, str]]:
     return out
 
 
+def _load_inference_stability_rows(path: Path | None) -> dict[str, dict[str, str]]:
+    out: dict[str, dict[str, str]] = {}
+    if path is None or not path.exists():
+        return out
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for row in rdr:
+            mid = (row.get("metric_id") or "").strip()
+            if not mid:
+                continue
+            out[mid] = row
+    return out
+
+
+def _append_gate_reason(base: str, extra: str) -> str:
+    b = (base or "").strip()
+    e = (extra or "").strip()
+    if not e:
+        return b
+    if not b:
+        return e
+    if e in {x.strip() for x in b.split(";") if x.strip()}:
+        return b
+    return f"{b};{e}"
+
+
+def _publication_tier_with_stability_gate(
+    *,
+    tier: str,
+    gate_reason: str,
+    unstable_any: bool,
+) -> tuple[str, str]:
+    txt = (tier or "").strip() or "missing"
+    reason = (gate_reason or "").strip()
+    if not unstable_any:
+        return txt, reason
+    if txt == "confirmatory":
+        return "supportive", _append_gate_reason(reason, "stability_unstable")
+    if txt == "supportive":
+        return "exploratory", _append_gate_reason(reason, "stability_unstable")
+    return txt, reason
+
+
 def _publication_tier_with_hac_gate(
     *,
     tier: str,
@@ -1654,8 +1697,10 @@ def write_claims_table(
     strict_within_csv: Path | None,
     out_csv: Path,
     inference_table_csv: Path | None = None,
+    inference_stability_summary_csv: Path | None = None,
     publication_mode: bool = False,
     publication_hac_p_threshold: float = 0.05,
+    publication_downgrade_unstable: bool = False,
 ) -> None:
     header = [
         "analysis",
@@ -1685,6 +1730,9 @@ def write_claims_table(
         "hac_p_two_sided_norm",
         "hac_p_lt_threshold",
         "hac_direction_agree_with_claim_effect",
+        "stability_status_005",
+        "stability_status_010",
+        "stability_unstable_any",
         "tier_baseline_publication",
         "tier_strict_publication",
         "publication_gate_reason_baseline",
@@ -1692,6 +1740,7 @@ def write_claims_table(
     ]
     rows: list[dict[str, str]] = []
     inference_rows = _load_inference_rows(inference_table_csv)
+    inference_stability_rows = _load_inference_stability_rows(inference_stability_summary_csv)
     p_thr = max(0.0, min(1.0, float(publication_hac_p_threshold)))
 
     def _append_analysis(
@@ -1738,6 +1787,10 @@ def write_claims_table(
             q_delta = (q_s - q_b) if (q_b is not None and q_s is not None) else None
 
             inf = inference_rows.get(k[0], {}) if analysis == "term_party" else {}
+            stab = inference_stability_rows.get(k[0], {}) if analysis == "term_party" else {}
+            stab_005 = (stab.get("status_005") or "").strip()
+            stab_010 = (stab.get("status_010") or "").strip()
+            unstable_any = (stab.get("unstable_any") or "").strip() == "1" or stab_005 == "unstable" or stab_010 == "unstable"
             hac_p = _parse_float(inf.get("hac_nw_p_two_sided_norm") or "")
             hac_effect = _parse_float(inf.get("effect_d_minus_r") or "")
             claim_effect_for_sign = effect_s if effect_s is not None else effect_b
@@ -1768,6 +1821,17 @@ def write_claims_table(
                     direction_agree=direction_agree,
                     hac_p_threshold=p_thr,
                 )
+                if publication_downgrade_unstable:
+                    b_pub_tier, b_gate_reason = _publication_tier_with_stability_gate(
+                        tier=b_pub_tier,
+                        gate_reason=b_gate_reason,
+                        unstable_any=unstable_any,
+                    )
+                    s_pub_tier, s_gate_reason = _publication_tier_with_stability_gate(
+                        tier=s_pub_tier,
+                        gate_reason=s_gate_reason,
+                        unstable_any=unstable_any,
+                    )
 
             rows.append(
                 {
@@ -1800,6 +1864,9 @@ def write_claims_table(
                     "hac_direction_agree_with_claim_effect": (
                         "1" if direction_agree is True else ("0" if direction_agree is False else "")
                     ),
+                    "stability_status_005": stab_005,
+                    "stability_status_010": stab_010,
+                    "stability_unstable_any": "1" if unstable_any else ("0" if analysis == "term_party" else ""),
                     "tier_baseline_publication": b_pub_tier,
                     "tier_strict_publication": s_pub_tier,
                     "publication_gate_reason_baseline": b_gate_reason,

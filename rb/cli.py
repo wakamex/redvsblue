@@ -709,9 +709,20 @@ def _parse_args() -> argparse.Namespace:
         help="Primary-metric inference table CSV (optional; used by publication gating).",
     )
     claims.add_argument(
+        "--inference-stability-summary",
+        type=Path,
+        default=Path("reports/inference_wild_cluster_stability_summary_v1.csv"),
+        help="Inference stability summary CSV (optional; used by publication stability gate).",
+    )
+    claims.add_argument(
         "--publication-mode",
         action="store_true",
         help="Apply publication gating: confirmatory tiers require HAC/sign agreement (term-party rows only).",
+    )
+    claims.add_argument(
+        "--publication-stability-gate",
+        action="store_true",
+        help="When --publication-mode is set, downgrade unstable rows using inference-stability summary.",
     )
     claims.add_argument(
         "--publication-hac-p-threshold",
@@ -848,6 +859,11 @@ def _parse_args() -> argparse.Namespace:
         "--skip-inference-stability",
         action="store_true",
         help="Skip generating inference stability + summary artifacts inside publication-bundle.",
+    )
+    pub.add_argument(
+        "--no-publication-stability-gate",
+        action="store_true",
+        help="Disable publication-tier downgrade for rows flagged unstable in inference-stability summary.",
     )
     pub.add_argument(
         "--output-inference-csv",
@@ -1167,8 +1183,12 @@ def main() -> int:
             strict_within_csv=strict_within,
             out_csv=args.output,
             inference_table_csv=args.inference_table if args.inference_table.exists() else None,
+            inference_stability_summary_csv=(
+                args.inference_stability_summary if args.inference_stability_summary.exists() else None
+            ),
             publication_mode=bool(args.publication_mode),
             publication_hac_p_threshold=float(args.publication_hac_p_threshold),
+            publication_downgrade_unstable=bool(args.publication_stability_gate),
         )
         return 0
 
@@ -1262,8 +1282,12 @@ def main() -> int:
             strict_within_csv=strict_within,
             out_csv=args.output_claims,
             inference_table_csv=args.output_inference_csv if args.output_inference_csv.exists() else None,
+            inference_stability_summary_csv=(
+                args.output_inference_stability_summary_csv if not bool(args.skip_inference_stability) else None
+            ),
             publication_mode=True,
             publication_hac_p_threshold=float(args.publication_hac_p_threshold),
+            publication_downgrade_unstable=not bool(args.no_publication_stability_gate),
         )
         write_publication_narrative_template(
             claims_table_csv=args.output_claims,
@@ -1307,6 +1331,7 @@ def main() -> int:
                     "skip_inference_stability": bool(args.skip_inference_stability),
                     "inference_stability_seeds": str(args.inference_stability_seeds),
                     "inference_stability_draws_grid": str(args.inference_stability_draws_grid),
+                    "publication_stability_gate": not bool(args.no_publication_stability_gate),
                 },
                 "environment": {
                     "python_version": sys.version.split()[0],
