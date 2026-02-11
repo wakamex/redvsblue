@@ -298,7 +298,8 @@ Implication for current read:
 Operational status:
 
 - This policy is now encoded in `rb randomization` outputs.
-- A compact family-level summary table is now generated automatically.
+- `rb scoreboard` now starts with a compact `Family Headline Summary (Primary Metrics)` table (one pre-declared primary metric per family).
+- In `--all-metrics` mode, families without a declared primary are explicitly listed as excluded from that headline table.
 - A narrative markdown summary is now generated automatically.
 - A comparison table is now generated via `rb randomization-compare` to track baseline-vs-stricter tier shifts metric-by-metric.
 - The main scoreboard now includes significance columns by default, sourced from randomization outputs.
