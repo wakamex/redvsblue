@@ -1397,6 +1397,55 @@ def _direction_label(v: float | None) -> str:
     return "flat"
 
 
+def _sign_float(v: float | None) -> int:
+    if v is None:
+        return 0
+    if v > 0:
+        return 1
+    if v < 0:
+        return -1
+    return 0
+
+
+def _load_inference_rows(path: Path | None) -> dict[str, dict[str, str]]:
+    out: dict[str, dict[str, str]] = {}
+    if path is None or not path.exists():
+        return out
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for row in rdr:
+            mid = (row.get("metric_id") or "").strip()
+            if not mid:
+                continue
+            out[mid] = row
+    return out
+
+
+def _publication_tier_with_hac_gate(
+    *,
+    tier: str,
+    has_hac_row: bool,
+    hac_p: float | None,
+    direction_agree: bool | None,
+    hac_p_threshold: float,
+) -> tuple[str, str]:
+    # publication_gate_reason: pass | no_hac_row | missing_hac_effect | missing_hac_p | direction_disagree | hac_not_significant
+    txt = (tier or "").strip() or "missing"
+    if txt != "confirmatory":
+        return txt, ""
+    if direction_agree is False:
+        return "exploratory", "direction_disagree"
+    if not has_hac_row:
+        return "supportive", "no_hac_row"
+    if direction_agree is None:
+        return "supportive", "missing_hac_effect"
+    if hac_p is None:
+        return "supportive", "missing_hac_p"
+    if hac_p >= hac_p_threshold:
+        return "supportive", "hac_not_significant"
+    return txt, "pass"
+
+
 def write_claims_table(
     *,
     baseline_party_term_csv: Path,
@@ -1404,6 +1453,9 @@ def write_claims_table(
     baseline_within_csv: Path | None,
     strict_within_csv: Path | None,
     out_csv: Path,
+    inference_table_csv: Path | None = None,
+    publication_mode: bool = False,
+    publication_hac_p_threshold: float = 0.05,
 ) -> None:
     header = [
         "analysis",
@@ -1426,8 +1478,17 @@ def write_claims_table(
         "tier_change",
         "n_baseline",
         "n_strict",
+        "hac_p_two_sided_norm",
+        "hac_p_lt_threshold",
+        "hac_direction_agree_with_claim_effect",
+        "tier_baseline_publication",
+        "tier_strict_publication",
+        "publication_gate_reason_baseline",
+        "publication_gate_reason_strict",
     ]
     rows: list[dict[str, str]] = []
+    inference_rows = _load_inference_rows(inference_table_csv)
+    p_thr = max(0.0, min(1.0, float(publication_hac_p_threshold)))
 
     def _append_analysis(
         *,
@@ -1472,6 +1533,38 @@ def write_claims_table(
             q_s = _parse_float(sr.get("q_bh_fdr") or "")
             q_delta = (q_s - q_b) if (q_b is not None and q_s is not None) else None
 
+            inf = inference_rows.get(k[0], {}) if analysis == "term_party" else {}
+            hac_p = _parse_float(inf.get("hac_nw_p_two_sided_norm") or "")
+            hac_effect = _parse_float(inf.get("effect_d_minus_r") or "")
+            claim_effect_for_sign = effect_s if effect_s is not None else effect_b
+            direction_agree: bool | None = None
+            s_hac = _sign_float(hac_effect)
+            s_claim = _sign_float(claim_effect_for_sign)
+            if inf:
+                if s_hac != 0 and s_claim != 0:
+                    direction_agree = s_hac == s_claim
+                else:
+                    direction_agree = None
+            b_pub_tier = tier_b or "missing"
+            s_pub_tier = tier_s or "missing"
+            b_gate_reason = ""
+            s_gate_reason = ""
+            if publication_mode and analysis == "term_party":
+                b_pub_tier, b_gate_reason = _publication_tier_with_hac_gate(
+                    tier=tier_b,
+                    has_hac_row=bool(inf),
+                    hac_p=hac_p,
+                    direction_agree=direction_agree,
+                    hac_p_threshold=p_thr,
+                )
+                s_pub_tier, s_gate_reason = _publication_tier_with_hac_gate(
+                    tier=tier_s,
+                    has_hac_row=bool(inf),
+                    hac_p=hac_p,
+                    direction_agree=direction_agree,
+                    hac_p_threshold=p_thr,
+                )
+
             rows.append(
                 {
                     "analysis": analysis,
@@ -1494,6 +1587,15 @@ def write_claims_table(
                     "tier_change": change,
                     "n_baseline": (br.get("n_obs") or br.get("n_presidents_with_both") or "").strip(),
                     "n_strict": (sr.get("n_obs") or sr.get("n_presidents_with_both") or "").strip(),
+                    "hac_p_two_sided_norm": _fmt(hac_p),
+                    "hac_p_lt_threshold": "1" if (hac_p is not None and hac_p < p_thr) else ("0" if hac_p is not None else ""),
+                    "hac_direction_agree_with_claim_effect": (
+                        "1" if direction_agree is True else ("0" if direction_agree is False else "")
+                    ),
+                    "tier_baseline_publication": b_pub_tier,
+                    "tier_strict_publication": s_pub_tier,
+                    "publication_gate_reason_baseline": b_gate_reason,
+                    "publication_gate_reason_strict": s_gate_reason,
                 }
             )
 

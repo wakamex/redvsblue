@@ -319,6 +319,13 @@ Operational status:
     - `reports/inference_table_primary_v1.csv`
     - `reports/inference_table_primary_v1.md`
   - Table includes side-by-side permutation (`p`, `q`, tier) and HAC/Newey-West diagnostics (SE, z, p), plus disagreement flags.
+- `rb claims-table` now supports publication-mode gating for term-level claims:
+  - `--publication-mode --inference-table reports/inference_table_primary_v1.csv`
+  - Confirmatory labels are downgraded when HAC significance/direction checks do not agree.
+  - New output columns include:
+    - `tier_baseline_publication`
+    - `tier_strict_publication`
+    - `publication_gate_reason_*`
 - Historical all-metrics tier counts (pre-hardening defaults; retained for comparison context):
   - Term-level party differences: `confirmatory=2`, `supportive=5`, `exploratory=30`.
   - Within-president unified/divided: `confirmatory=0`, `supportive=0`, `exploratory=74`.
@@ -406,16 +413,15 @@ Current weaknesses / gaps:
    - recompute headline claims using at least two download dates (or vintages where available).
 6. Extend Congress checks with strict binary dominance framing:
    - president+both-houses vs all other regimes, with explicit cell-size and uncertainty caveats.
-7. Add a publication-mode claims gate:
-   - only allow "confirmatory" labels when both inference stacks agree on direction and significance tier.
+7. Apply publication-mode gating consistently across all publication-facing artifacts:
+   - ensure all narrative/scoreboard export paths use publication-tier columns rather than raw randomization tiers.
 
 ## Immediate Next Steps
 
-1. Add a publication-mode claims gate to `rb claims-table`:
-   - require agreement between permutation tier and HAC/Newey-West signal before allowing confirmatory labeling in publication outputs.
-2. Add power diagnostics to the dual-inference outputs:
+1. Add power diagnostics to the dual-inference outputs:
    - include effective sample/cluster counts and a rough minimum-detectable-effect column for primary metrics.
-3. Add a short publication-ready narrative template that maps directly from claims-table and inference-table rows (no manual cherry-picking).
+2. Add a short publication-ready narrative template that maps directly from claims-table and inference-table rows (no manual cherry-picking).
+3. Add a few-cluster-robust inference variant alongside HAC in `rb inference-table`.
 
 ## Claims Table
 
@@ -434,6 +440,13 @@ Default invocation uses the same paths:
 
 ```sh
 rb claims-table
+```
+
+Publication-gated variant:
+
+```sh
+rb claims-table --publication-mode \
+  --inference-table reports/inference_table_primary_v1.csv
 ```
 
 ## Reproduce Current Outputs

@@ -477,6 +477,23 @@ def _parse_args() -> argparse.Namespace:
         default=Path("reports/claims_table_v1.csv"),
         help="Output machine-readable claims table CSV.",
     )
+    claims.add_argument(
+        "--inference-table",
+        type=Path,
+        default=Path("reports/inference_table_primary_v1.csv"),
+        help="Primary-metric inference table CSV (optional; used by publication gating).",
+    )
+    claims.add_argument(
+        "--publication-mode",
+        action="store_true",
+        help="Apply publication gating: confirmatory tiers require HAC/sign agreement (term-party rows only).",
+    )
+    claims.add_argument(
+        "--publication-hac-p-threshold",
+        type=float,
+        default=0.05,
+        help="HAC p-value threshold used by --publication-mode gate.",
+    )
     claims.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
     inversion = sub.add_parser("inversion-robustness", help="Build daily-vs-monthly T10Y2Y inversion definition comparison report.")
@@ -714,6 +731,9 @@ def main() -> int:
             baseline_within_csv=base_within,
             strict_within_csv=strict_within,
             out_csv=args.output,
+            inference_table_csv=args.inference_table if args.inference_table.exists() else None,
+            publication_mode=bool(args.publication_mode),
+            publication_hac_p_threshold=float(args.publication_hac_p_threshold),
         )
         return 0
 
