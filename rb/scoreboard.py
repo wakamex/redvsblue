@@ -779,6 +779,8 @@ def write_scoreboard_md(
             "n(pres with both)",
             "n(with unified)",
             "n(with divided)",
+            "Rough MDE",
+            "|Effect|/MDE",
             "q",
             "p",
             "CI95(U-D)",
@@ -788,6 +790,8 @@ def write_scoreboard_md(
         ]
         within_sep = [
             "---",
+            "---:",
+            "---:",
             "---:",
             "---:",
             "---:",
@@ -826,6 +830,8 @@ def write_scoreboard_md(
                     str(int(g.get("n_with_both") or 0)),
                     str(int(g.get("n_with_unified") or 0)),
                     str(int(g.get("n_with_divided") or 0)),
+                    _fmt(_parse_float(wr.get("observed_mde_abs_alpha005_power080") or "")),
+                    _fmt(_parse_float(wr.get("observed_abs_effect_over_mde") or "")),
                     _fmt(_parse_float(wr.get("q_bh_fdr") or "")),
                     _fmt(_parse_float(wr.get("p_two_sided") or "")),
                     _fmt_ci(
