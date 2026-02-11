@@ -108,7 +108,7 @@ Legend:
 
 1. Add a `--no-robustness-links` scoreboard option for cleaner exports when consumers want only core tables.
 2. Add a fixed report artifact comparing inversion definitions (daily, monthly-EOP, monthly-AVG) each run.
-3. Split CI smoke into separate jobs (basic vs non-FRED daily) for clearer failure localization and potentially faster feedback.
+3. Consolidate repeated CI setup in `validate.yml` (for example via a reusable workflow/composite action) to reduce duplication.
 
 ## Change-Control Rule
 
