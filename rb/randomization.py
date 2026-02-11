@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import math
 import random
+import tempfile
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -1115,6 +1116,146 @@ def run_randomization(
             summary_csv=output_evidence_summary_csv,
             out_md=output_evidence_md,
         )
+
+
+def run_randomization_seed_stability(
+    *,
+    term_metrics_csv: Path,
+    out_csv: Path,
+    seeds: list[int],
+    permutations: int,
+    bootstrap_samples: int,
+    term_block_years: int,
+    q_threshold: float,
+    min_term_n_obs: int,
+    primary_only: bool,
+    include_diagnostic_metrics: bool,
+) -> None:
+    if not term_metrics_csv.exists():
+        raise FileNotFoundError(f"Missing term metrics CSV: {term_metrics_csv}")
+    if not seeds:
+        raise ValueError("seeds must contain at least one integer seed")
+
+    by_metric: dict[str, list[dict[str, str]]] = {}
+    for seed in seeds:
+        with tempfile.NamedTemporaryFile(prefix="rb_seed_", suffix=".csv", delete=False) as tmp:
+            tmp_path = Path(tmp.name)
+        try:
+            _compute_term_party_permutation(
+                term_metrics_csv=term_metrics_csv,
+                out_csv=tmp_path,
+                permutations=max(0, int(permutations)),
+                bootstrap_samples=max(0, int(bootstrap_samples)),
+                seed=int(seed),
+                block_years=max(0, int(term_block_years)),
+                q_threshold=float(q_threshold),
+                min_n_obs=max(0, int(min_term_n_obs)),
+                primary_only=bool(primary_only),
+                include_diagnostic_metrics=bool(include_diagnostic_metrics),
+            )
+            with tmp_path.open("r", encoding="utf-8", newline="") as handle:
+                rdr = csv.DictReader(handle)
+                for r in rdr:
+                    mid = (r.get("metric_id") or "").strip()
+                    if not mid:
+                        continue
+                    rr = dict(r)
+                    rr["run_seed"] = str(seed)
+                    by_metric.setdefault(mid, []).append(rr)
+        finally:
+            try:
+                tmp_path.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+    def _sign(v: float | None) -> str:
+        if v is None:
+            return "unknown"
+        if v > 0:
+            return "positive"
+        if v < 0:
+            return "negative"
+        return "flat"
+
+    header = [
+        "metric_id",
+        "metric_label",
+        "metric_family",
+        "metric_primary",
+        "agg_kind",
+        "units",
+        "n_runs",
+        "seeds",
+        "q_min",
+        "q_max",
+        "q_range",
+        "p_min",
+        "p_max",
+        "tier_values",
+        "n_distinct_tiers",
+        "tier_unstable",
+        "effect_min",
+        "effect_max",
+        "effect_sign_values",
+        "effect_sign_consistent",
+    ]
+    rows: list[dict[str, str]] = []
+    for mid in sorted(by_metric.keys()):
+        rs = by_metric[mid]
+        q_vals = [_parse_float(r.get("q_bh_fdr") or "") for r in rs]
+        p_vals = [_parse_float(r.get("p_two_sided") or "") for r in rs]
+        eff_vals = [_parse_float(r.get("observed_diff_d_minus_r") or "") for r in rs]
+        q_num = [x for x in q_vals if x is not None]
+        p_num = [x for x in p_vals if x is not None]
+        e_num = [x for x in eff_vals if x is not None]
+
+        tier_values = sorted({(r.get("evidence_tier") or "").strip() or "missing" for r in rs}, key=_tier_rank, reverse=True)
+        sign_values = sorted({_sign(v) for v in e_num})
+        sign_non_unknown = [s for s in sign_values if s != "unknown"]
+        sign_consistent = len(set(sign_non_unknown)) <= 1 if sign_non_unknown else False
+
+        first = rs[0]
+        q_min = min(q_num) if q_num else None
+        q_max = max(q_num) if q_num else None
+        p_min = min(p_num) if p_num else None
+        p_max = max(p_num) if p_num else None
+        e_min = min(e_num) if e_num else None
+        e_max = max(e_num) if e_num else None
+        q_range = (q_max - q_min) if (q_min is not None and q_max is not None) else None
+
+        rows.append(
+            {
+                "metric_id": mid,
+                "metric_label": (first.get("metric_label") or "").strip(),
+                "metric_family": (first.get("metric_family") or "").strip(),
+                "metric_primary": (first.get("metric_primary") or "").strip(),
+                "agg_kind": (first.get("agg_kind") or "").strip(),
+                "units": (first.get("units") or "").strip(),
+                "n_runs": str(len(rs)),
+                "seeds": ",".join(str(int(s)) for s in sorted({_parse_int(r.get("run_seed") or "") or 0 for r in rs})),
+                "q_min": _fmt(q_min),
+                "q_max": _fmt(q_max),
+                "q_range": _fmt(q_range),
+                "p_min": _fmt(p_min),
+                "p_max": _fmt(p_max),
+                "tier_values": "|".join(tier_values),
+                "n_distinct_tiers": str(len(tier_values)),
+                "tier_unstable": "1" if len(tier_values) > 1 else "0",
+                "effect_min": _fmt(e_min),
+                "effect_max": _fmt(e_max),
+                "effect_sign_values": "|".join(sign_values),
+                "effect_sign_consistent": "1" if sign_consistent else "0",
+            }
+        )
+
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out_csv.with_suffix(out_csv.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8", newline="") as handle:
+        w = csv.DictWriter(handle, fieldnames=header)
+        w.writeheader()
+        for r in rows:
+            w.writerow(r)
+    tmp.replace(out_csv)
 
 
 def _load_evidence_rows(path: Path) -> list[dict[str, str]]:

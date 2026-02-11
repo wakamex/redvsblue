@@ -231,6 +231,9 @@ Operational status:
   - `sp500_backfilled_pre1957_term_cagr_pct`
   - `ff_mkt_excess_return_ann_arith`
   - Use `--include-diagnostic-metrics` to opt these back in.
+- A multi-seed stability report is now available via:
+  - `rb randomization-stability --seeds 42,137,271`
+  - Output: `reports/permutation_seed_stability_v1.csv`
 - Historical all-metrics tier counts (pre-hardening defaults; retained for comparison context):
   - Term-level party differences: `confirmatory=2`, `supportive=5`, `exploratory=30`.
   - Within-president unified/divided: `confirmatory=0`, `supportive=0`, `exploratory=74`.

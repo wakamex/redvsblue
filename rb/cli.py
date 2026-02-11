@@ -8,7 +8,7 @@ from rb.congress_control import ensure_congress_control
 from rb.ingest import ingest_from_spec
 from rb.metrics import compute_term_metrics
 from rb.presidents import ensure_presidents
-from rb.randomization import compare_randomization_outputs, run_randomization, write_claims_table
+from rb.randomization import compare_randomization_outputs, run_randomization, run_randomization_seed_stability, write_claims_table
 from rb.regimes import ensure_regime_pipeline
 from rb.scoreboard import write_scoreboard_md
 from rb.validate import validate_all
@@ -291,6 +291,52 @@ def _parse_args() -> argparse.Namespace:
     )
     randomization.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
+    stability = sub.add_parser("randomization-stability", help="Run multi-seed stability checks for term-party randomization outputs.")
+    stability.add_argument("--term-metrics", type=Path, default=Path("reports/term_metrics_v1.csv"), help="Term metrics CSV.")
+    stability.add_argument(
+        "--output",
+        type=Path,
+        default=Path("reports/permutation_seed_stability_v1.csv"),
+        help="Output CSV with q/tier stability ranges across seeds.",
+    )
+    stability.add_argument(
+        "--seeds",
+        type=str,
+        default="42,137,271",
+        help="Comma-separated RNG seeds (e.g., 42,137,271).",
+    )
+    stability.add_argument("--permutations", type=int, default=10000, help="Number of random permutations per seed.")
+    stability.add_argument("--bootstrap-samples", type=int, default=2000, help="Number of bootstrap samples per seed.")
+    stability.add_argument(
+        "--q-threshold",
+        type=float,
+        default=0.05,
+        help="Confirmatory FDR q-value threshold for tiering.",
+    )
+    stability.add_argument(
+        "--min-term-n-obs",
+        type=int,
+        default=12,
+        help="Minimum n_obs for term-level rows to pass minimum sample-size check.",
+    )
+    stability.add_argument(
+        "--term-block-years",
+        type=int,
+        default=20,
+        help="If >0, term-party permutation shuffles labels within term-start-year blocks of this size.",
+    )
+    stability.add_argument(
+        "--all-metrics",
+        action="store_true",
+        help="Include non-primary metrics (default behavior is primary-only).",
+    )
+    stability.add_argument(
+        "--include-diagnostic-metrics",
+        action="store_true",
+        help="Include diagnostic-only metrics in stability runs (default excludes selected non-headline diagnostics).",
+    )
+    stability.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
     compare_rand = sub.add_parser("randomization-compare", help="Compare evidence tiers between two randomization runs.")
     compare_rand.add_argument(
         "--base-party-term",
@@ -468,6 +514,32 @@ def main() -> int:
             output_evidence_summary_csv=args.output_evidence_summary,
             output_evidence_md=args.output_evidence_md,
             within_president_min_window_days=max(0, int(args.within_president_min_window_days)),
+            include_diagnostic_metrics=bool(args.include_diagnostic_metrics),
+        )
+        return 0
+
+    if args.cmd == "randomization-stability":
+        seeds_raw = [s.strip() for s in str(args.seeds).split(",")]
+        seeds: list[int] = []
+        for s in seeds_raw:
+            if not s:
+                continue
+            try:
+                seeds.append(int(s))
+            except ValueError as exc:
+                raise ValueError(f"Invalid seed {s!r} in --seeds={args.seeds!r}") from exc
+        if not seeds:
+            raise ValueError("No valid seeds parsed from --seeds")
+        run_randomization_seed_stability(
+            term_metrics_csv=args.term_metrics,
+            out_csv=args.output,
+            seeds=seeds,
+            permutations=max(0, int(args.permutations)),
+            bootstrap_samples=max(0, int(args.bootstrap_samples)),
+            term_block_years=max(0, int(args.term_block_years)),
+            q_threshold=float(args.q_threshold),
+            min_term_n_obs=max(0, int(args.min_term_n_obs)),
+            primary_only=not bool(args.all_metrics),
             include_diagnostic_metrics=bool(args.include_diagnostic_metrics),
         )
         return 0
