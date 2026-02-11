@@ -530,6 +530,15 @@ def _parse_args() -> argparse.Namespace:
     narrative.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
     pub = sub.add_parser("publication-bundle", help="Generate publication-facing claims/inference/narrative/scoreboard artifacts in one run.")
+    pub.add_argument(
+        "--profile",
+        choices=("strict_vs_baseline", "baseline_only"),
+        default="strict_vs_baseline",
+        help=(
+            "Preset path policy: strict_vs_baseline uses explicit strict inputs; "
+            "baseline_only reuses baseline randomization CSVs for strict slots."
+        ),
+    )
     pub.add_argument("--spec", type=Path, default=Path("spec/metrics_v1.yaml"), help="Metric registry spec YAML.")
     pub.add_argument("--party-summary", type=Path, default=Path("reports/party_summary_v1.csv"), help="Party summary CSV.")
     pub.add_argument("--term-metrics", type=Path, default=Path("reports/term_metrics_v1.csv"), help="Term metrics CSV.")
@@ -881,10 +890,19 @@ def main() -> int:
             raise FileNotFoundError(f"Missing term metrics CSV: {args.term_metrics}")
         if not args.baseline_party_term.exists():
             raise FileNotFoundError(f"Missing baseline term CSV: {args.baseline_party_term}")
-        if not args.strict_party_term.exists():
-            raise FileNotFoundError(f"Missing strict term CSV: {args.strict_party_term}")
-        base_within = args.baseline_within if args.baseline_within.exists() else None
-        strict_within = args.strict_within if args.strict_within.exists() else None
+        bundle_profile = str(args.profile)
+
+        if bundle_profile == "baseline_only":
+            strict_party_term = args.baseline_party_term
+            base_within = args.baseline_within if args.baseline_within.exists() else None
+            strict_within = base_within
+        else:
+            strict_party_term = args.strict_party_term
+            if not strict_party_term.exists():
+                raise FileNotFoundError(f"Missing strict term CSV: {strict_party_term}")
+            base_within = args.baseline_within if args.baseline_within.exists() else None
+            strict_within = args.strict_within if args.strict_within.exists() else None
+
         if (base_within is None) != (strict_within is None):
             raise FileNotFoundError(
                 "Publication bundle requires both baseline/strict within CSVs or neither."
@@ -899,7 +917,7 @@ def main() -> int:
         )
         write_claims_table(
             baseline_party_term_csv=args.baseline_party_term,
-            strict_party_term_csv=args.strict_party_term,
+            strict_party_term_csv=strict_party_term,
             baseline_within_csv=base_within,
             strict_within_csv=strict_within,
             out_csv=args.output_claims,
