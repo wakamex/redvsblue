@@ -337,6 +337,7 @@ Operational status:
 - `rb scoreboard` can now display strict/publication tier context from claims tables:
   - default claims path: `reports/claims_table_v1.csv`
   - disable via `--no-publication-tier-columns`
+  - strict/publication tier columns are wired for both party and within-president sections.
   - publication-tier cells are populated when claims were generated with `rb claims-table --publication-mode`.
 - Historical all-metrics tier counts (pre-hardening defaults; retained for comparison context):
   - Term-level party differences: `confirmatory=2`, `supportive=5`, `exploratory=30`.
@@ -433,7 +434,7 @@ Current weaknesses / gaps:
 1. Add power diagnostics to the dual-inference outputs:
    - extend beyond primary term-level metrics and add equivalent diagnostics for within-president rows.
 2. Add a few-cluster-robust inference variant alongside HAC in `rb inference-table`.
-3. Extend publication-tier reporting to within-president sections where strict/publication claims rows are available.
+3. Add a one-command publication bundle that runs claims (publication mode) + inference + narrative + scoreboard in a consistent profile.
 
 ## Claims Table
 

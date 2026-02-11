@@ -144,6 +144,21 @@ def _load_claims_term_rows(path: Path) -> dict[str, dict[str, str]]:
     return out
 
 
+def _load_claims_within_rows(path: Path) -> dict[tuple[str, str], dict[str, str]]:
+    out: dict[tuple[str, str], dict[str, str]] = {}
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for r in rdr:
+            if (r.get("analysis") or "").strip() != "within_unified":
+                continue
+            mid = (r.get("metric_id") or "").strip()
+            pres_party = (r.get("pres_party") or "").strip()
+            if not mid or not pres_party:
+                continue
+            out[(mid, pres_party)] = r
+    return out
+
+
 def _load_window_labels(path: Path) -> dict[str, dict[str, Any]]:
     labels: dict[str, dict[str, Any]] = {}
     with path.open("r", encoding="utf-8", newline="") as handle:
@@ -560,11 +575,15 @@ def write_scoreboard_md(
 
     term_claims_path: Path | None = None
     term_claims: dict[str, dict[str, str]] = {}
+    within_claims: dict[tuple[str, str], dict[str, str]] = {}
     if claims_table_csv is not None and claims_table_csv.exists():
         term_claims_path = claims_table_csv
         term_claims = _load_claims_term_rows(claims_table_csv)
+        within_claims = _load_claims_within_rows(claims_table_csv)
     show_pub_cols = bool(show_publication_tiers and term_claims)
+    show_within_pub_cols = bool(show_publication_tiers and within_claims)
     has_publication_tiers = any((r.get("tier_strict_publication") or "").strip() for r in term_claims.values())
+    has_within_publication_tiers = any((r.get("tier_strict_publication") or "").strip() for r in within_claims.values())
 
     lines: list[str] = []
     lines.append("# Scoreboard (v1)")
@@ -751,8 +770,44 @@ def write_scoreboard_md(
         lines.append("Each president-term acts as its own control: compute (unified mean - divided mean) within the same term, then average those deltas.")
         lines.append(f"Applied filter: include only regime windows with `window_days >= {int(within_president_min_window_days)}`.")
         lines.append("")
-        lines.append("| Metric | Units | P party | Mean delta (U-D) | Median delta (U-D) | n(pres with both) | n(with unified) | n(with divided) | q | p | CI95(U-D) | q<0.05 | q<0.10 | Tier |")
-        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
+        within_header = [
+            "Metric",
+            "Units",
+            "P party",
+            "Mean delta (U-D)",
+            "Median delta (U-D)",
+            "n(pres with both)",
+            "n(with unified)",
+            "n(with divided)",
+            "q",
+            "p",
+            "CI95(U-D)",
+            "q<0.05",
+            "q<0.10",
+            "Tier",
+        ]
+        within_sep = [
+            "---",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+            "---:",
+        ]
+        if show_within_pub_cols:
+            within_header.extend(["Strict q", "Strict tier", "Publication tier"])
+            within_sep.extend(["---:", "---:", "---:"])
+
+        lines.append("| " + " | ".join(within_header) + " |")
+        lines.append("| " + " | ".join(within_sep) + " |")
 
         for mid in metric_ids:
             for pres_party in ("D", "R"):
@@ -762,36 +817,49 @@ def write_scoreboard_md(
                 label = (g.get("metric_label") or mid).replace("|", "\\|")
                 units = (g.get("units") or "").replace("|", "\\|")
                 wr = within_rand.get((mid, pres_party), {})
-                lines.append(
-                    "| "
-                    + " | ".join(
+                row_values = [
+                    label,
+                    units,
+                    pres_party,
+                    _fmt(g.get("mean_delta")),
+                    _fmt(g.get("median_delta")),
+                    str(int(g.get("n_with_both") or 0)),
+                    str(int(g.get("n_with_unified") or 0)),
+                    str(int(g.get("n_with_divided") or 0)),
+                    _fmt(_parse_float(wr.get("q_bh_fdr") or "")),
+                    _fmt(_parse_float(wr.get("p_two_sided") or "")),
+                    _fmt_ci(
+                        _parse_float(wr.get("bootstrap_ci95_low") or ""),
+                        _parse_float(wr.get("bootstrap_ci95_high") or ""),
+                    ),
+                    _derive_q_flag(wr, key="passes_q_lt_005", threshold=0.05),
+                    _derive_q_flag(wr, key="passes_q_lt_010", threshold=0.10),
+                    (wr.get("evidence_tier") or "").strip(),
+                ]
+                if show_within_pub_cols:
+                    cr = within_claims.get((mid, pres_party), {})
+                    row_values.extend(
                         [
-                            label,
-                            units,
-                            pres_party,
-                            _fmt(g.get("mean_delta")),
-                            _fmt(g.get("median_delta")),
-                            str(int(g.get("n_with_both") or 0)),
-                            str(int(g.get("n_with_unified") or 0)),
-                            str(int(g.get("n_with_divided") or 0)),
-                            _fmt(_parse_float(wr.get("q_bh_fdr") or "")),
-                            _fmt(_parse_float(wr.get("p_two_sided") or "")),
-                            _fmt_ci(
-                                _parse_float(wr.get("bootstrap_ci95_low") or ""),
-                                _parse_float(wr.get("bootstrap_ci95_high") or ""),
-                            ),
-                            _derive_q_flag(wr, key="passes_q_lt_005", threshold=0.05),
-                            _derive_q_flag(wr, key="passes_q_lt_010", threshold=0.10),
-                            (wr.get("evidence_tier") or "").strip(),
+                            _fmt(_parse_float(cr.get("q_strict") or "")),
+                            (cr.get("tier_strict") or "").strip(),
+                            (cr.get("tier_strict_publication") or "").strip(),
                         ]
                     )
-                    + " |"
-                )
+                lines.append("| " + " | ".join(row_values) + " |")
 
         lines.append("")
         lines.append("Caution: small `n(pres with both)` means unstable estimates; interpret as a diagnostic, not a causal estimate.")
         if within_rand_path is not None:
             lines.append(f"Significance columns in this section are sourced from `{within_rand_path}`.")
+        if show_within_pub_cols and term_claims_path is not None and has_within_publication_tiers:
+            lines.append(f"Within-section publication-tier columns sourced from `{term_claims_path}`.")
+        elif show_within_pub_cols and term_claims_path is not None:
+            lines.append(
+                f"Within-section strict columns sourced from `{term_claims_path}`; publication-tier values are blank "
+                "until `rb claims-table --publication-mode` is used."
+            )
+        elif show_publication_tiers:
+            lines.append("Within-section publication-tier columns are blank until `rb claims-table --publication-mode` has been run.")
 
         lines.append("")
         lines.append("## President Alignment With Congress (House vs Senate)")
