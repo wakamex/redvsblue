@@ -706,6 +706,12 @@ def write_scoreboard_md(
         lines.append("Caution: small `n(pres with both)` means unstable estimates; interpret as a diagnostic, not a causal estimate.")
         if within_rand_path is not None:
             lines.append(f"Significance columns in this section are sourced from `{within_rand_path}`.")
+            cpi_robust_path = Path("reports/cpi_sa_nsa_robustness_v1.md")
+            if cpi_robust_path.exists():
+                lines.append(f"CPI SA-vs-NSA sensitivity details: `{cpi_robust_path}`.")
+            inversion_robust_path = Path("reports/inversion_definition_robustness_v1.md")
+            if inversion_robust_path.exists():
+                lines.append(f"Yield-curve inversion-definition sensitivity details: `{inversion_robust_path}`.")
 
         lines.append("")
         lines.append("## President Alignment With Congress (House vs Senate)")
