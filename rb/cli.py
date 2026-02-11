@@ -104,7 +104,36 @@ def _csv_metric_primary_scope(path: Path) -> tuple[int, int]:
     return (n_primary, n_non_primary)
 
 
+def _csv_inference_scope(path: Path) -> str:
+    scopes: set[str] = set()
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        if "inference_scope" not in (rdr.fieldnames or []):
+            return ""
+        for row in rdr:
+            s = (row.get("inference_scope") or "").strip()
+            if s:
+                scopes.add(s)
+    if not scopes:
+        return ""
+    if scopes == {"primary"}:
+        return "primary"
+    if scopes == {"all"}:
+        return "all"
+    raise ValueError(f"Inconsistent inference_scope values in {path}: {sorted(scopes)}")
+
+
 def _assert_randomization_scope_matches_mode(*, path: Path, all_metrics_mode: bool, label: str) -> None:
+    scope = _csv_inference_scope(path)
+    if scope:
+        if all_metrics_mode and scope != "all":
+            raise ValueError(f"{label} has inference_scope={scope!r} but `--all-metrics` was set: {path}")
+        if (not all_metrics_mode) and scope != "primary":
+            raise ValueError(
+                f"{label} has inference_scope={scope!r} but publication-bundle is in primary mode: {path}"
+            )
+        return
+
     n_primary, n_non_primary = _csv_metric_primary_scope(path)
     if all_metrics_mode:
         if n_primary > 0 and n_non_primary == 0:
@@ -116,6 +145,18 @@ def _assert_randomization_scope_matches_mode(*, path: Path, all_metrics_mode: bo
             raise ValueError(
                 f"{label} includes non-primary rows (`metric_primary=0`) but publication-bundle is in primary mode: {path}"
             )
+
+
+def _describe_randomization_scope(path: Path) -> str:
+    scope = _csv_inference_scope(path)
+    if scope:
+        return scope
+    n_primary, n_non_primary = _csv_metric_primary_scope(path)
+    if n_non_primary > 0:
+        return "all_legacy_inferred"
+    if n_primary > 0:
+        return "primary_legacy_inferred"
+    return "unknown"
 
 
 def _git_head(cwd: Path) -> str:
@@ -1461,6 +1502,7 @@ def main() -> int:
                 "profile": bundle_profile,
                 "parameters": {
                     "all_metrics": bool(args.all_metrics),
+                    "randomization_scope_mode": "all" if all_metrics_mode else "primary",
                     "within_president_min_window_days": max(0, int(args.within_president_min_window_days)),
                     "backfill_within_mde": not bool(args.no_backfill_within_mde),
                     "nw_lags": max(0, int(args.nw_lags)),
@@ -1485,9 +1527,17 @@ def main() -> int:
                     "party_summary": _file_meta(args.party_summary),
                     "term_metrics": _file_meta(args.term_metrics),
                     "baseline_party_term": _file_meta(baseline_party_term),
+                    "baseline_party_term_scope": _describe_randomization_scope(baseline_party_term),
                     "strict_party_term_used": _file_meta(strict_party_term),
+                    "strict_party_term_scope_used": _describe_randomization_scope(strict_party_term),
                     "baseline_within": _file_meta(base_within),
+                    "baseline_within_scope": (
+                        _describe_randomization_scope(base_within) if base_within is not None else ""
+                    ),
                     "strict_within_used": _file_meta(strict_within),
+                    "strict_within_scope_used": (
+                        _describe_randomization_scope(strict_within) if strict_within is not None else ""
+                    ),
                     "window_metrics": _file_meta(args.window_metrics if args.window_metrics.exists() else None),
                     "window_labels": _file_meta(args.window_labels if args.window_labels.exists() else None),
                     "pyproject_toml": _file_meta(Path("pyproject.toml") if Path("pyproject.toml").exists() else None),
