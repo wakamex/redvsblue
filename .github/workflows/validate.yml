@@ -36,7 +36,7 @@ jobs:
             done
             return 1
           }
-          retry .venv/bin/rb ingest --spec spec/metrics_ci_smoke.yaml --refresh
+          retry .venv/bin/rb ingest --spec spec/metrics_ci_smoke.yaml
           .venv/bin/rb compute \
             --spec spec/metrics_ci_smoke.yaml \
             --presidents tests/fixtures/presidents_min.csv \
@@ -57,7 +57,7 @@ jobs:
             done
             return 1
           }
-          retry .venv/bin/rb ingest --spec spec/metrics_ci_smoke_nonfred.yaml --refresh
+          retry .venv/bin/rb ingest --spec spec/metrics_ci_smoke_nonfred.yaml
           .venv/bin/rb compute \
             --spec spec/metrics_ci_smoke_nonfred.yaml \
             --presidents tests/fixtures/presidents_min.csv \
