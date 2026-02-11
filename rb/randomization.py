@@ -82,6 +82,35 @@ def _std_population(xs: list[float]) -> float | None:
     return var**0.5
 
 
+def _std_sample(xs: list[float]) -> float | None:
+    if len(xs) < 2:
+        return None
+    mu = _mean(xs)
+    if mu is None:
+        return None
+    var = sum((x - mu) ** 2 for x in xs) / (len(xs) - 1)
+    return var**0.5
+
+
+def _rough_mde_one_sample_mean(
+    *,
+    values: list[float],
+    alpha_two_sided: float = 0.05,
+    power: float = 0.80,
+) -> float | None:
+    n = len(values)
+    if n < 2:
+        return None
+    s = _std_sample(values)
+    if s is None:
+        return None
+    if s <= 0.0:
+        return 0.0
+    z_alpha = 1.959963984540054 if abs(alpha_two_sided - 0.05) <= 1e-12 else 1.959963984540054
+    z_power = 0.8416212335729143 if abs(power - 0.80) <= 1e-12 else 0.8416212335729143
+    return (z_alpha + z_power) * s / (n**0.5)
+
+
 def _percentile(xs: list[float], q: float) -> float | None:
     if not xs:
         return None
@@ -589,6 +618,8 @@ def _compute_unified_within_term_permutation(
         "observed_mean_delta_unified_minus_divided",
         "observed_median_delta_unified_minus_divided",
         "n_presidents_with_both",
+        "observed_mde_abs_alpha005_power080",
+        "observed_abs_effect_over_mde",
         "perm_mean",
         "perm_std",
         "z_score",
@@ -627,6 +658,10 @@ def _compute_unified_within_term_permutation(
         observed_mean = _mean(observed_term_deltas)
         observed_median = _median(observed_term_deltas)
         n_both = len(observed_term_deltas)
+        mde_abs = _rough_mde_one_sample_mean(values=observed_term_deltas)
+        effect_over_mde = None
+        if observed_mean is not None and mde_abs is not None and mde_abs > 0.0:
+            effect_over_mde = abs(observed_mean) / mde_abs
 
         perm_stats: list[float] = []
         if observed_mean is not None and permutations > 0 and n_both > 0:
@@ -670,6 +705,8 @@ def _compute_unified_within_term_permutation(
                 "observed_mean_delta_unified_minus_divided": _fmt(observed_mean),
                 "observed_median_delta_unified_minus_divided": _fmt(observed_median),
                 "n_presidents_with_both": str(n_both),
+                "observed_mde_abs_alpha005_power080": _fmt(mde_abs),
+                "observed_abs_effect_over_mde": _fmt(effect_over_mde),
                 "perm_mean": _fmt(perm_mean),
                 "perm_std": _fmt(perm_std),
                 "z_score": _fmt(z),
