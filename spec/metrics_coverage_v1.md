@@ -106,7 +106,7 @@ Legend:
 
 ## Suggested v2 Additions (Priority Order)
 
-1. Add a one-line scoreboard pointer to the CPI SA-vs-NSA robustness artifact so readers can find it without opening notes.
+1. Add a one-line scoreboard pointer for the inversion and CPI robustness artifacts in the within-president section too (not only party-summary section).
 2. Add a fixed report artifact comparing inversion definitions (daily, monthly-EOP, monthly-AVG) each run.
 3. Add a second CI smoke profile that includes at least one daily market series and one non-FRED source.
 

@@ -600,6 +600,12 @@ def write_scoreboard_md(
     if term_rand_path is not None:
         lines.append("")
         lines.append(f"Significance columns sourced from `{term_rand_path}`.")
+        cpi_robust_path = Path("reports/cpi_sa_nsa_robustness_v1.md")
+        if cpi_robust_path.exists():
+            lines.append(f"CPI SA-vs-NSA sensitivity details: `{cpi_robust_path}`.")
+        inversion_robust_path = Path("reports/inversion_definition_robustness_v1.md")
+        if inversion_robust_path.exists():
+            lines.append(f"Yield-curve inversion-definition sensitivity details: `{inversion_robust_path}`.")
     else:
         lines.append("")
         lines.append("Significance columns are blank until `rb randomization` has been run.")
