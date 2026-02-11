@@ -13,7 +13,7 @@ from pathlib import Path
 from rb.env import load_dotenv
 from rb.congress_control import ensure_congress_control
 from rb.ingest import ingest_from_spec
-from rb.inference import write_inference_table, write_wild_cluster_stability_table
+from rb.inference import write_inference_table, write_wild_cluster_stability_summary, write_wild_cluster_stability_table
 from rb.metrics import compute_term_metrics
 from rb.narrative import write_publication_narrative_template
 from rb.presidents import ensure_presidents
@@ -64,6 +64,19 @@ def _write_json_atomic(path: Path, obj: object) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(obj, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     tmp.replace(path)
+
+
+def _parse_int_list_csv(spec: str, *, arg_name: str) -> list[int]:
+    parts = [s.strip() for s in str(spec).split(",")] if str(spec).strip() else []
+    out: list[int] = []
+    for p in parts:
+        if not p:
+            continue
+        try:
+            out.append(int(p))
+        except ValueError as exc:
+            raise ValueError(f"Invalid integer {p!r} in {arg_name}={spec!r}") from exc
+    return out
 
 
 def _git_head(cwd: Path) -> str:
@@ -604,6 +617,21 @@ def _parse_args() -> argparse.Namespace:
     )
     inference_stability.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
+    inference_stability_summary = sub.add_parser("inference-stability-summary", help="Build compact instability flags from `rb inference-stability` output.")
+    inference_stability_summary.add_argument(
+        "--stability-csv",
+        type=Path,
+        default=Path("reports/inference_wild_cluster_stability_v1.csv"),
+        help="Input CSV from `rb inference-stability`.",
+    )
+    inference_stability_summary.add_argument(
+        "--output",
+        type=Path,
+        default=Path("reports/inference_wild_cluster_stability_summary_v1.csv"),
+        help="Output CSV with per-metric robust/non-robust significance status.",
+    )
+    inference_stability_summary.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
     compare_rand = sub.add_parser("randomization-compare", help="Compare evidence tiers between two randomization runs.")
     compare_rand.add_argument(
         "--base-party-term",
@@ -793,6 +821,23 @@ def _parse_args() -> argparse.Namespace:
         help="HAC p-value threshold used by claims publication gating.",
     )
     pub.add_argument(
+        "--inference-stability-seeds",
+        type=str,
+        default="42,137,271",
+        help="Comma-separated seeds for publication-bundle wild-cluster stability artifacts.",
+    )
+    pub.add_argument(
+        "--inference-stability-draws-grid",
+        type=str,
+        default="499,999,1999",
+        help="Comma-separated draw counts for publication-bundle wild-cluster stability artifacts.",
+    )
+    pub.add_argument(
+        "--skip-inference-stability",
+        action="store_true",
+        help="Skip generating inference stability + summary artifacts inside publication-bundle.",
+    )
+    pub.add_argument(
         "--output-inference-csv",
         type=Path,
         default=Path("reports/inference_table_primary_v1.csv"),
@@ -803,6 +848,18 @@ def _parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("reports/inference_table_primary_v1.md"),
         help="Output markdown for dual-inference primary table.",
+    )
+    pub.add_argument(
+        "--output-inference-stability-csv",
+        type=Path,
+        default=Path("reports/inference_wild_cluster_stability_v1.csv"),
+        help="Output CSV for wild-cluster seed/draw stability diagnostics.",
+    )
+    pub.add_argument(
+        "--output-inference-stability-summary-csv",
+        type=Path,
+        default=Path("reports/inference_wild_cluster_stability_summary_v1.csv"),
+        help="Output CSV for compact wild-cluster stability status summary.",
     )
     pub.add_argument(
         "--output-claims",
@@ -1040,31 +1097,22 @@ def main() -> int:
         return 0
 
     if args.cmd == "inference-stability":
-        seeds_raw = [s.strip() for s in str(args.seeds).split(",")]
-        seeds: list[int] = []
-        for s in seeds_raw:
-            if not s:
-                continue
-            try:
-                seeds.append(int(s))
-            except ValueError as exc:
-                raise ValueError(f"Invalid seed {s!r} in --seeds={args.seeds!r}") from exc
+        seeds = _parse_int_list_csv(str(args.seeds), arg_name="--seeds")
         if not seeds:
             raise ValueError("No valid seeds parsed from --seeds")
-        draws_spec = [s.strip() for s in str(args.draws_grid).split(",")] if str(args.draws_grid).strip() else []
-        draws_grid: list[int] = []
-        for d in draws_spec:
-            if not d:
-                continue
-            try:
-                draws_grid.append(int(d))
-            except ValueError as exc:
-                raise ValueError(f"Invalid draw count {d!r} in --draws-grid={args.draws_grid!r}") from exc
+        draws_grid = _parse_int_list_csv(str(args.draws_grid), arg_name="--draws-grid")
         write_wild_cluster_stability_table(
             term_metrics_csv=args.term_metrics,
             out_csv=args.output,
             seeds=seeds,
             draws=draws_grid if draws_grid else max(0, int(args.wild_cluster_draws)),
+        )
+        return 0
+
+    if args.cmd == "inference-stability-summary":
+        write_wild_cluster_stability_summary(
+            stability_csv=args.stability_csv,
+            out_csv=args.output,
         )
         return 0
 
@@ -1168,6 +1216,27 @@ def main() -> int:
             wild_cluster_draws=max(0, int(args.wild_cluster_draws)),
             wild_cluster_seed=int(args.wild_cluster_seed),
         )
+        if not bool(args.skip_inference_stability):
+            stab_seeds = _parse_int_list_csv(
+                str(args.inference_stability_seeds),
+                arg_name="--inference-stability-seeds",
+            )
+            if not stab_seeds:
+                raise ValueError("No valid seeds parsed from --inference-stability-seeds")
+            stab_draws = _parse_int_list_csv(
+                str(args.inference_stability_draws_grid),
+                arg_name="--inference-stability-draws-grid",
+            )
+            write_wild_cluster_stability_table(
+                term_metrics_csv=args.term_metrics,
+                out_csv=args.output_inference_stability_csv,
+                seeds=stab_seeds,
+                draws=stab_draws if stab_draws else max(0, int(args.wild_cluster_draws)),
+            )
+            write_wild_cluster_stability_summary(
+                stability_csv=args.output_inference_stability_csv,
+                out_csv=args.output_inference_stability_summary_csv,
+            )
         write_claims_table(
             baseline_party_term_csv=args.baseline_party_term,
             strict_party_term_csv=strict_party_term,
@@ -1211,6 +1280,9 @@ def main() -> int:
                     "wild_cluster_draws": max(0, int(args.wild_cluster_draws)),
                     "wild_cluster_seed": int(args.wild_cluster_seed),
                     "publication_hac_p_threshold": float(args.publication_hac_p_threshold),
+                    "skip_inference_stability": bool(args.skip_inference_stability),
+                    "inference_stability_seeds": str(args.inference_stability_seeds),
+                    "inference_stability_draws_grid": str(args.inference_stability_draws_grid),
                 },
                 "environment": {
                     "python_version": sys.version.split()[0],
@@ -1238,6 +1310,12 @@ def main() -> int:
                 "outputs": {
                     "inference_csv": _file_meta(args.output_inference_csv),
                     "inference_md": _file_meta(args.output_inference_md),
+                    "inference_stability_csv": _file_meta(
+                        args.output_inference_stability_csv if not bool(args.skip_inference_stability) else None
+                    ),
+                    "inference_stability_summary_csv": _file_meta(
+                        args.output_inference_stability_summary_csv if not bool(args.skip_inference_stability) else None
+                    ),
                     "claims_csv": _file_meta(args.output_claims),
                     "narrative_md": _file_meta(args.output_narrative),
                     "scoreboard_md": _file_meta(args.output_scoreboard),
