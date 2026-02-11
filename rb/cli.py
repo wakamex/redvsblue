@@ -735,6 +735,12 @@ def _parse_args() -> argparse.Namespace:
         help="Primary inference table CSV.",
     )
     narrative.add_argument(
+        "--inference-stability-summary",
+        type=Path,
+        default=Path("reports/inference_wild_cluster_stability_summary_v1.csv"),
+        help="Inference stability summary CSV (optional).",
+    )
+    narrative.add_argument(
         "--output",
         type=Path,
         default=Path("reports/publication_narrative_template_v1.md"),
@@ -1174,6 +1180,9 @@ def main() -> int:
         write_publication_narrative_template(
             claims_table_csv=args.claims_table,
             inference_table_csv=args.inference_table,
+            inference_stability_summary_csv=(
+                args.inference_stability_summary if args.inference_stability_summary.exists() else None
+            ),
             out_md=args.output,
         )
         return 0
@@ -1259,6 +1268,9 @@ def main() -> int:
         write_publication_narrative_template(
             claims_table_csv=args.output_claims,
             inference_table_csv=args.output_inference_csv,
+            inference_stability_summary_csv=(
+                args.output_inference_stability_summary_csv if not bool(args.skip_inference_stability) else None
+            ),
             out_md=args.output_narrative,
         )
         write_scoreboard_md(

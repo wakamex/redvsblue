@@ -36,16 +36,46 @@ def _best_claim_tier(row: dict[str, str]) -> str:
     )
 
 
+def _load_inference_stability(path: Path) -> dict[str, dict[str, str]]:
+    out: dict[str, dict[str, str]] = {}
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        rdr = csv.DictReader(handle)
+        for row in rdr:
+            mid = (row.get("metric_id") or "").strip()
+            if not mid:
+                continue
+            out[mid] = row
+    return out
+
+
+def _stability_short(status: str) -> str:
+    txt = (status or "").strip()
+    if txt == "robust_significant":
+        return "sig"
+    if txt == "robust_not_significant":
+        return "ns"
+    if txt == "unstable":
+        return "unstable"
+    if txt == "missing":
+        return "missing"
+    return ""
+
+
 def write_publication_narrative_template(
     *,
     claims_table_csv: Path,
     inference_table_csv: Path,
+    inference_stability_summary_csv: Path | None = None,
     out_md: Path,
 ) -> None:
     if not claims_table_csv.exists():
         raise FileNotFoundError(f"Missing claims table CSV: {claims_table_csv}")
     if not inference_table_csv.exists():
         raise FileNotFoundError(f"Missing inference table CSV: {inference_table_csv}")
+
+    stability_by_metric: dict[str, dict[str, str]] = {}
+    if inference_stability_summary_csv is not None and inference_stability_summary_csv.exists():
+        stability_by_metric = _load_inference_stability(inference_stability_summary_csv)
 
     claims_by_metric: dict[str, dict[str, str]] = {}
     within_claim_rows: list[dict[str, str]] = []
@@ -84,6 +114,8 @@ def write_publication_narrative_template(
                     "direction": (claim.get("direction") or "").strip(),
                     "rough_mde": (inf.get("rough_mde_abs_alpha005_power080") or "").strip(),
                     "effect_over_mde": (inf.get("rough_effect_over_mde_abs") or "").strip(),
+                    "stability_005": _stability_short((stability_by_metric.get(mid, {}).get("status_005") or "").strip()),
+                    "stability_010": _stability_short((stability_by_metric.get(mid, {}).get("status_010") or "").strip()),
                 }
             )
 
@@ -106,6 +138,7 @@ def write_publication_narrative_template(
     n_support = len(by_tier["supportive"])
     n_expl = len(by_tier["exploratory"])
     n_missing = len(by_tier["missing"])
+    n_unstable = sum(1 for r in merged_rows if (r.get("stability_005") or "") == "unstable" or (r.get("stability_010") or "") == "unstable")
 
     within_rows: list[dict[str, str]] = []
     for row in within_claim_rows:
@@ -144,6 +177,8 @@ def write_publication_narrative_template(
     lines.append("Inputs:")
     lines.append(f"- Claims table: `{claims_table_csv}`")
     lines.append(f"- Inference table: `{inference_table_csv}`")
+    if inference_stability_summary_csv is not None and inference_stability_summary_csv.exists():
+        lines.append(f"- Inference stability summary: `{inference_stability_summary_csv}`")
     lines.append("")
     lines.append("Use this as a fill-in template; keep numeric values copied directly from generated tables.")
     lines.append("")
@@ -153,6 +188,8 @@ def write_publication_narrative_template(
     lines.append(f"- Confirmatory metrics (publication tier): `{n_confirm}`")
     lines.append(f"- Supportive metrics (publication tier): `{n_support}`")
     lines.append(f"- Exploratory metrics (publication tier): `{n_expl}`")
+    if stability_by_metric:
+        lines.append(f"- Metrics flagged unstable under seed/draw sensitivity: `{n_unstable}`")
     if n_missing:
         lines.append(f"- Primary metrics with missing tier assignment: `{n_missing}`")
     lines.append("- Main claim sentence: `[INSERT ONE SENTENCE BASED ONLY ON CONFIRMATORY/SUPPORTIVE ROWS]`")
@@ -163,7 +200,8 @@ def write_publication_narrative_template(
         for r in by_tier["confirmatory"]:
             lines.append(
                 "- `{metric_id}` ({metric_family}): effect={effect}, direction={direction}, "
-                "q_strict={q_strict}, HAC p={hac_p}, |effect|/MDE={effect_over_mde}".format(**r)
+                "q_strict={q_strict}, HAC p={hac_p}, |effect|/MDE={effect_over_mde}, "
+                "stability(0.05/0.10)={stability_005}/{stability_010}".format(**r)
             )
     else:
         lines.append("- None under current strict/publication settings.")
@@ -174,7 +212,8 @@ def write_publication_narrative_template(
         for r in by_tier["supportive"]:
             lines.append(
                 "- `{metric_id}` ({metric_family}): effect={effect}, direction={direction}, "
-                "q_strict={q_strict}, HAC p={hac_p}, |effect|/MDE={effect_over_mde}".format(**r)
+                "q_strict={q_strict}, HAC p={hac_p}, |effect|/MDE={effect_over_mde}, "
+                "stability(0.05/0.10)={stability_005}/{stability_010}".format(**r)
             )
     else:
         lines.append("- None under current strict/publication settings.")
@@ -184,9 +223,8 @@ def write_publication_narrative_template(
     if by_tier["exploratory"]:
         for r in by_tier["exploratory"]:
             lines.append(
-                "- `{metric_id}` ({metric_family}): effect={effect}, q_strict={q_strict}, HAC p={hac_p}, rough MDE={rough_mde}".format(
-                    **r
-                )
+                "- `{metric_id}` ({metric_family}): effect={effect}, q_strict={q_strict}, HAC p={hac_p}, "
+                "rough MDE={rough_mde}, stability(0.05/0.10)={stability_005}/{stability_010}".format(**r)
             )
     else:
         lines.append("- None.")
