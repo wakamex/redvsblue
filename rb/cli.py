@@ -13,6 +13,7 @@ from pathlib import Path
 
 from rb.env import load_dotenv
 from rb.congress_control import ensure_congress_control
+from rb.final_report import write_final_product_report
 from rb.ingest import ingest_from_spec
 from rb.inference import write_inference_table, write_wild_cluster_stability_summary, write_wild_cluster_stability_table
 from rb.metrics import compute_term_metrics
@@ -924,6 +925,42 @@ def _parse_args() -> argparse.Namespace:
     )
     narrative.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
+    final_report = sub.add_parser(
+        "final-report",
+        help="Build a concise publication-facing final summary from claims/inference outputs.",
+    )
+    final_report.add_argument(
+        "--claims-table",
+        type=Path,
+        default=Path("reports/claims_table_v1.csv"),
+        help="Claims table CSV (publication-gated preferred).",
+    )
+    final_report.add_argument(
+        "--inference-table",
+        type=Path,
+        default=Path("reports/inference_table_primary_v1.csv"),
+        help="Primary inference table CSV.",
+    )
+    final_report.add_argument(
+        "--congress-binary",
+        type=Path,
+        default=Path("reports/permutation_unified_binary_v1.csv"),
+        help="Congress unified-vs-divided randomization CSV (optional).",
+    )
+    final_report.add_argument(
+        "--fred-vintage-csv",
+        type=Path,
+        default=Path("reports/fred_vintage_primary_metrics_v1.csv"),
+        help="FRED vintage metadata CSV (optional).",
+    )
+    final_report.add_argument(
+        "--output",
+        type=Path,
+        default=Path("reports/final_product_summary_v1.md"),
+        help="Output markdown path.",
+    )
+    final_report.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
     vintage = sub.add_parser("vintage-report", help="Build a per-primary-metric FRED vintage metadata report from cached raw artifacts.")
     vintage.add_argument("--spec", type=Path, default=Path("spec/metrics_v1.yaml"), help="Metric registry spec YAML.")
     vintage.add_argument(
@@ -1147,6 +1184,12 @@ def _parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("reports/fred_vintage_primary_metrics_v1.md"),
         help="Output markdown path for primary-metric FRED vintage metadata.",
+    )
+    pub.add_argument(
+        "--output-final-report",
+        type=Path,
+        default=Path("reports/final_product_summary_v1.md"),
+        help="Output markdown path for final product summary.",
     )
     pub.add_argument(
         "--output-manifest",
@@ -1489,6 +1532,20 @@ def main() -> int:
         )
         return 0
 
+    if args.cmd == "final-report":
+        if not args.claims_table.exists():
+            raise FileNotFoundError(f"Missing claims table CSV: {args.claims_table}")
+        if not args.inference_table.exists():
+            raise FileNotFoundError(f"Missing inference table CSV: {args.inference_table}")
+        write_final_product_report(
+            claims_table_csv=args.claims_table,
+            inference_table_csv=args.inference_table,
+            congress_binary_csv=(args.congress_binary if args.congress_binary.exists() else None),
+            vintage_csv=(args.fred_vintage_csv if args.fred_vintage_csv.exists() else None),
+            out_md=args.output,
+        )
+        return 0
+
     if args.cmd == "vintage-report":
         write_fred_primary_metric_vintage_report(
             spec_path=args.spec,
@@ -1722,6 +1779,13 @@ def main() -> int:
             out_csv=args.output_fred_vintage_csv,
             out_md=args.output_fred_vintage_md,
         )
+        write_final_product_report(
+            claims_table_csv=args.output_claims,
+            inference_table_csv=args.output_inference_csv,
+            congress_binary_csv=base_unified_binary,
+            vintage_csv=args.output_fred_vintage_csv if args.output_fred_vintage_csv.exists() else None,
+            out_md=args.output_final_report,
+        )
 
         if not bool(args.no_manifest):
             manifest = {
@@ -1801,6 +1865,7 @@ def main() -> int:
                     "scoreboard_md": _file_meta(args.output_scoreboard),
                     "fred_vintage_csv": _file_meta(args.output_fred_vintage_csv),
                     "fred_vintage_md": _file_meta(args.output_fred_vintage_md),
+                    "final_report_md": _file_meta(args.output_final_report),
                 },
                 "mutations": {
                     "within_mde_backfill": within_backfill,
