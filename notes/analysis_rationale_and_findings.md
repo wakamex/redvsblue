@@ -309,6 +309,10 @@ Operational status:
 - `rb randomization-compare` now also requires scope-compatible base/alt inputs to avoid cross-battery comparisons.
 - `rb vintage-report` now emits `reports/fred_vintage_primary_metrics_v1.csv` + `.md` with per-primary-metric FRED vintage metadata from cached raw artifacts.
 - `rb publication-bundle` now regenerates and records the FRED vintage report artifacts in the output manifest.
+- `rb final-report` now generates a single publication-facing decision brief:
+  - `reports/final_product_summary_v1.md`
+  - concise bottom-line counts (publication tiers), primary metric grid, congress binary diagnostic summary, and data recency context.
+- `rb publication-bundle` now generates this final summary artifact by default and records it in the manifest outputs.
 - A narrative markdown summary is now generated automatically.
 - A comparison table is now generated via `rb randomization-compare` to track baseline-vs-stricter tier shifts metric-by-metric.
 - The main scoreboard now includes significance columns by default, sourced from randomization outputs.

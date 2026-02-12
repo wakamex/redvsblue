@@ -52,6 +52,15 @@ Current Execution Plan (v5, impact focus: Congress-control inferential layer)
     - Either (a) add a small-cluster exact/randomization inference variant for near-threshold rows, or
     - (b) build the first decomposition pass (growth/labor channels) for substantive explanatory value.
 
+Current Execution Plan (v6, impact focus: final product packaging)
+
+1. Ship a single publication-facing final summary artifact:
+    - Auto-generate a concise decision brief from claims + inference + congress-control diagnostics + vintage metadata.
+2. Make final summary first-class in the main build:
+    - `rb publication-bundle` should regenerate the final summary every run and record it in the manifest.
+3. Keep future work outcome-oriented:
+    - Prioritize decomposition/explanation and presentation clarity over adding additional significance machinery.
+
 Implementation Order (v1)
 
 1. Lock the v1 “spec stack” for the initial scoreboard set:
