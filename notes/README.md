@@ -10,3 +10,4 @@ This directory stores durable project notes that are not generated artifacts.
 Current files:
 
 - `notes/analysis_rationale_and_findings.md`: Rationale for the current analysis framing and interim findings from the Congress-control checks.
+- `notes/publication_runbook.md`: Practical rebuild + publication checklist and interpretation rules.
