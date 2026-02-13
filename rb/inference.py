@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import csv
 import math
-import random
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -94,9 +93,6 @@ def _rough_mde_abs_two_sample(
     alpha_two_sided: float = 0.05,
     power: float = 0.80,
 ) -> float | None:
-    # Normal-approximation MDE for two-sample mean-difference:
-    # (z_{1-alpha/2} + z_{power}) * s_pooled * sqrt(1/n_d + 1/n_r)
-    # We use fixed z-values for common settings to keep dependencies minimal.
     nd = len(d_vals)
     nr = len(r_vals)
     if nd < 2 or nr < 2:
@@ -113,7 +109,6 @@ def _rough_mde_abs_two_sample(
     if pooled_sd <= 0.0:
         return 0.0
 
-    # Defaults used in output labels/notes.
     z_alpha = 1.959963984540054 if abs(alpha_two_sided - 0.05) <= 1e-12 else 1.959963984540054
     z_power = 0.8416212335729143 if abs(power - 0.80) <= 1e-12 else 0.8416212335729143
     return (z_alpha + z_power) * pooled_sd * math.sqrt((1.0 / float(nd)) + (1.0 / float(nr)))
@@ -149,7 +144,6 @@ def _ols_nw(
     d: list[int],
     nw_lags: int,
 ) -> tuple[float | None, float | None, float | None, float | None]:
-    # y_t = alpha + beta*D_t + eps_t, where D_t = 1 for Democrat, 0 for Republican.
     n = len(y)
     if n < 3 or n != len(d):
         return None, None, None, None
@@ -167,7 +161,6 @@ def _ols_nw(
     if xtx_inv is None:
         return None, None, None, None
 
-    # beta = (X'X)^-1 X'y
     alpha = xtx_inv[0][0] * s_y + xtx_inv[0][1] * s_dy
     beta = xtx_inv[1][0] * s_y + xtx_inv[1][1] * s_dy
 
@@ -192,7 +185,6 @@ def _ols_nw(
             xt = x_rows[t]
             xl = x_rows[t - lag]
             scale = w * ut * ul
-            # Add Gamma_l + Gamma_l'
             s[0][0] += scale * (xt[0] * xl[0] + xl[0] * xt[0])
             s[0][1] += scale * (xt[0] * xl[1] + xl[0] * xt[1])
             s[1][0] += scale * (xt[1] * xl[0] + xl[1] * xt[0])
@@ -201,7 +193,6 @@ def _ols_nw(
     v = _mat2_mul(_mat2_mul(xtx_inv, s), xtx_inv)
     var_beta = v[1][1]
     if var_beta < 0:
-        # Numeric noise on tiny negatives can occur.
         if var_beta > -1e-12:
             var_beta = 0.0
         else:
@@ -212,124 +203,6 @@ def _ols_nw(
     z = beta / se_beta
     p_two = _two_sided_normal_p(z)
     return beta, se_beta, z, p_two
-
-
-def _wild_cluster_bootstrap_p(
-    *,
-    y: list[float],
-    d: list[int],
-    clusters: list[str],
-    draws: int,
-    seed: int,
-) -> float | None:
-    # Null-imposed Rademacher wild cluster bootstrap for H0: beta = 0.
-    n = len(y)
-    if draws <= 0 or n < 3 or n != len(d) or n != len(clusters):
-        return None
-
-    beta_obs, se_obs, z_obs, _, g = _ols_cluster(y=y, d=d, clusters=clusters)
-    if beta_obs is None or se_obs is None or z_obs is None or g < 2:
-        return None
-
-    # Null model y = alpha + u.
-    alpha_null = sum(y) / float(n)
-    u_null = [yi - alpha_null for yi in y]
-    unique_clusters = sorted(set(clusters))
-    if len(unique_clusters) < 2:
-        return None
-
-    rng = random.Random(int(seed))
-    hits = 0
-    valid = 0
-    for _ in range(int(draws)):
-        w_by_cluster: dict[str, float] = {}
-        for cid in unique_clusters:
-            w_by_cluster[cid] = 1.0 if rng.getrandbits(1) else -1.0
-        y_star = [alpha_null + w_by_cluster[cid] * u for cid, u in zip(clusters, u_null)]
-        _, se_b, z_b, _, _ = _ols_cluster(y=y_star, d=d, clusters=clusters)
-        if se_b is None or z_b is None:
-            continue
-        valid += 1
-        if abs(z_b) >= abs(z_obs):
-            hits += 1
-
-    if valid <= 0:
-        return None
-    # Phipson-Smyth style finite-sample correction.
-    return (1.0 + float(hits)) / (1.0 + float(valid))
-
-
-def _ols_cluster(
-    *,
-    y: list[float],
-    d: list[int],
-    clusters: list[str],
-) -> tuple[float | None, float | None, float | None, float | None, int]:
-    # y_t = alpha + beta*D_t + eps_t; cluster-robust variance by cluster_id.
-    n = len(y)
-    if n < 3 or n != len(d) or n != len(clusters):
-        return None, None, None, None, 0
-    s_d = float(sum(d))
-    if s_d <= 0.0 or s_d >= float(n):
-        return None, None, None, None, 0
-    s_y = float(sum(y))
-    s_dy = float(sum(float(di) * yi for di, yi in zip(d, y)))
-
-    xtx = [
-        [float(n), s_d],
-        [s_d, s_d],
-    ]
-    xtx_inv = _mat2_inv(xtx)
-    if xtx_inv is None:
-        return None, None, None, None, 0
-
-    alpha = xtx_inv[0][0] * s_y + xtx_inv[0][1] * s_dy
-    beta = xtx_inv[1][0] * s_y + xtx_inv[1][1] * s_dy
-
-    # Cluster score sums: S_g = sum_{i in g} x_i * u_i, then meat = sum_g S_g S_g'
-    scores_by_cluster: dict[str, list[float]] = {}
-    for yi, di, cid in zip(y, d, clusters):
-        u = yi - (alpha + beta * float(di))
-        x0 = 1.0
-        x1 = float(di)
-        s = scores_by_cluster.get(cid)
-        if s is None:
-            s = [0.0, 0.0]
-            scores_by_cluster[cid] = s
-        s[0] += x0 * u
-        s[1] += x1 * u
-
-    g = len(scores_by_cluster)
-    if g < 2:
-        return beta, None, None, None, g
-
-    meat = [[0.0, 0.0], [0.0, 0.0]]
-    for s in scores_by_cluster.values():
-        meat[0][0] += s[0] * s[0]
-        meat[0][1] += s[0] * s[1]
-        meat[1][0] += s[1] * s[0]
-        meat[1][1] += s[1] * s[1]
-
-    # Finite-sample correction (common CR0-style scaling with cluster adjustment).
-    k = 2.0  # intercept + party dummy
-    corr = 1.0
-    if g > 1 and n > int(k):
-        corr = (float(g) / float(g - 1)) * ((float(n - 1)) / float(n - int(k)))
-    meat = [[corr * meat[0][0], corr * meat[0][1]], [corr * meat[1][0], corr * meat[1][1]]]
-
-    v = _mat2_mul(_mat2_mul(xtx_inv, meat), xtx_inv)
-    var_beta = v[1][1]
-    if var_beta < 0:
-        if var_beta > -1e-12:
-            var_beta = 0.0
-        else:
-            return beta, None, None, None, g
-    se_beta = math.sqrt(var_beta)
-    if se_beta <= 0.0:
-        return beta, se_beta, None, None, g
-    z = beta / se_beta
-    p_two = _two_sided_normal_p(z)
-    return beta, se_beta, z, p_two, g
 
 
 def _load_term_groups(term_metrics_csv: Path) -> dict[str, dict]:
@@ -411,8 +284,6 @@ def write_inference_table(
     out_csv: Path,
     out_md: Path | None,
     nw_lags: int,
-    wild_cluster_draws: int = 1999,
-    wild_cluster_seed: int = 42,
 ) -> None:
     groups = _load_term_groups(term_metrics_csv)
     perm_rows = _load_permutation_rows(permutation_party_term_csv)
@@ -429,7 +300,6 @@ def write_inference_table(
         "n_clusters_total",
         "n_clusters_d",
         "n_clusters_r",
-        "n_clusters_president",
         "effect_d_minus_r",
         "rough_mde_abs_alpha005_power080",
         "rough_effect_over_mde_abs",
@@ -439,16 +309,6 @@ def write_inference_table(
         "hac_nw_p_two_sided_norm",
         "hac_nw_p_lt_005",
         "hac_nw_p_lt_010",
-        "cluster_president_se",
-        "cluster_president_z",
-        "cluster_president_p_two_sided_norm",
-        "cluster_president_p_lt_005",
-        "cluster_president_p_lt_010",
-        "cluster_president_wild_draws",
-        "cluster_president_wild_seed",
-        "cluster_president_wild_p_two_sided",
-        "cluster_president_wild_p_lt_005",
-        "cluster_president_wild_p_lt_010",
         "perm_effect_d_minus_r",
         "perm_p_two_sided",
         "perm_q_bh_fdr",
@@ -475,21 +335,12 @@ def write_inference_table(
         n_obs = len(obs)
         n_d = sum(1 for x in d if x == 1)
         n_r = n_obs - n_d
-        clusters = [o.cluster_id for o in obs]
         d_vals = [o.value for o in obs if o.party == "D"]
         r_vals = [o.value for o in obs if o.party == "R"]
         d_term_ids = {o.term_id for o in obs if o.party == "D"}
         r_term_ids = {o.term_id for o in obs if o.party == "R"}
         mde_abs = _rough_mde_abs_two_sample(d_vals=d_vals, r_vals=r_vals)
         beta, se, z, p_hac = _ols_nw(y=y, d=d, nw_lags=max(0, int(nw_lags)))
-        _, c_se, c_z, c_p, c_g = _ols_cluster(y=y, d=d, clusters=clusters)
-        c_wild_p = _wild_cluster_bootstrap_p(
-            y=y,
-            d=d,
-            clusters=clusters,
-            draws=max(0, int(wild_cluster_draws)),
-            seed=int(wild_cluster_seed),
-        )
         effect_over_mde = None
         if beta is not None and mde_abs is not None and mde_abs > 0.0:
             effect_over_mde = abs(beta) / mde_abs
@@ -521,7 +372,6 @@ def write_inference_table(
                 "n_clusters_total": str(len({o.term_id for o in obs if o.term_id})),
                 "n_clusters_d": str(len({tid for tid in d_term_ids if tid})),
                 "n_clusters_r": str(len({tid for tid in r_term_ids if tid})),
-                "n_clusters_president": str(int(c_g)),
                 "effect_d_minus_r": _fmt(beta),
                 "rough_mde_abs_alpha005_power080": _fmt(mde_abs),
                 "rough_effect_over_mde_abs": _fmt(effect_over_mde),
@@ -531,16 +381,6 @@ def write_inference_table(
                 "hac_nw_p_two_sided_norm": _fmt(p_hac),
                 "hac_nw_p_lt_005": _bool_to_flag(hac_005),
                 "hac_nw_p_lt_010": _bool_to_flag(hac_010),
-                "cluster_president_se": _fmt(c_se),
-                "cluster_president_z": _fmt(c_z),
-                "cluster_president_p_two_sided_norm": _fmt(c_p),
-                "cluster_president_p_lt_005": _bool_to_flag(_p_flag(c_p, 0.05)),
-                "cluster_president_p_lt_010": _bool_to_flag(_p_flag(c_p, 0.10)),
-                "cluster_president_wild_draws": str(max(0, int(wild_cluster_draws))),
-                "cluster_president_wild_seed": str(int(wild_cluster_seed)),
-                "cluster_president_wild_p_two_sided": _fmt(c_wild_p),
-                "cluster_president_wild_p_lt_005": _bool_to_flag(_p_flag(c_wild_p, 0.05)),
-                "cluster_president_wild_p_lt_010": _bool_to_flag(_p_flag(c_wild_p, 0.10)),
                 "perm_effect_d_minus_r": _fmt(perm_eff),
                 "perm_p_two_sided": _fmt(p_perm),
                 "perm_q_bh_fdr": _fmt(q_perm),
@@ -576,16 +416,11 @@ def write_inference_table(
         lines.append(f"- Permutation table: `{permutation_party_term_csv}`")
     lines.append(f"- HAC/Newey-West lags: `{max(0, int(nw_lags))}`")
     lines.append("- HAC p-values use a normal approximation for two-sided p-values.")
-    lines.append("- Cluster p-values are president-cluster sandwich estimates with finite-sample correction and normal-approximation p-values.")
-    lines.append(
-        f"- Wild-cluster p-values use null-imposed Rademacher bootstrap "
-        f"(draws={max(0, int(wild_cluster_draws))}, seed={int(wild_cluster_seed)})."
-    )
     lines.append("- Rough MDE uses a two-sample normal approximation (alpha=0.05, power=0.80) and is a scale diagnostic, not a hard decision rule.")
     lines.append("")
 
-    lines.append("| Metric | Family | Effect (D-R) | Rough MDE | |Effect|/MDE | HAC p | Cluster p | Wild-cluster p | Perm q | Perm tier | Disagree@0.05 |")
-    lines.append("|---|---|---:|---:|---:|---:|---:|---:|---:|---|---:|")
+    lines.append("| Metric | Family | Effect (D-R) | Rough MDE | |Effect|/MDE | HAC p | Perm q | Perm tier | Disagree@0.05 |")
+    lines.append("|---|---|---:|---:|---:|---:|---:|---|---:|")
     for r in sorted(
         rows,
         key=lambda rr: (
@@ -604,8 +439,6 @@ def write_inference_table(
                     _fmt(_parse_float(r.get("rough_mde_abs_alpha005_power080") or "")),
                     _fmt(_parse_float(r.get("rough_effect_over_mde_abs") or "")),
                     _fmt(_parse_float(r.get("hac_nw_p_two_sided_norm") or "")),
-                    _fmt(_parse_float(r.get("cluster_president_p_two_sided_norm") or "")),
-                    _fmt(_parse_float(r.get("cluster_president_wild_p_two_sided") or "")),
                     _fmt(_parse_float(r.get("perm_q_bh_fdr") or "")),
                     (r.get("perm_tier") or "").replace("|", "\\|"),
                     (r.get("sig_disagree_005") or ""),
@@ -618,201 +451,3 @@ def write_inference_table(
     tmp_md = out_md.with_suffix(out_md.suffix + ".tmp")
     tmp_md.write_text(text, encoding="utf-8")
     tmp_md.replace(out_md)
-
-
-def write_wild_cluster_stability_table(
-    *,
-    term_metrics_csv: Path,
-    out_csv: Path,
-    seeds: list[int],
-    draws: int | list[int],
-) -> None:
-    groups = _load_term_groups(term_metrics_csv)
-    if isinstance(draws, int):
-        draws_grid = [max(0, int(draws))]
-    else:
-        draws_grid = sorted({max(0, int(x)) for x in draws})
-    if not draws_grid:
-        draws_grid = [0]
-
-    draws_txt = ",".join(str(x) for x in draws_grid)
-    header = [
-        "metric_id",
-        "metric_label",
-        "metric_family",
-        "n_obs",
-        "n_clusters_president",
-        "draws_grid",
-        "n_draws_grid",
-        "wild_cluster_draws",
-        "seeds",
-        "n_seeds",
-        "wild_p_min",
-        "wild_p_median",
-        "wild_p_max",
-        "wild_p_spread",
-        "p_lt_005_any",
-        "p_lt_005_all",
-        "p_lt_010_any",
-        "p_lt_010_all",
-    ]
-    rows: list[dict[str, str]] = []
-
-    seeds_clean = [int(s) for s in seeds]
-    seeds_txt = ",".join(str(s) for s in seeds_clean)
-
-    for metric_id in sorted(groups.keys()):
-        g = groups[metric_id]
-        obs: list[_Obs] = sorted(
-            g["obs"],
-            key=lambda x: (
-                x.term_start or date.min,
-                x.term_id,
-            ),
-        )
-        y = [o.value for o in obs]
-        d = [1 if o.party == "D" else 0 for o in obs]
-        clusters = [o.cluster_id for o in obs]
-        cluster_n = len(set(clusters))
-
-        for draws_n in draws_grid:
-            ps: list[float] = []
-            for s in seeds_clean:
-                p = _wild_cluster_bootstrap_p(
-                    y=y,
-                    d=d,
-                    clusters=clusters,
-                    draws=draws_n,
-                    seed=int(s),
-                )
-                if p is not None:
-                    ps.append(p)
-
-            p_min = min(ps) if ps else None
-            p_max = max(ps) if ps else None
-            p_med = _median(ps)
-            p_spread = (p_max - p_min) if (p_min is not None and p_max is not None) else None
-            p005_any = bool(ps) and any(p < 0.05 for p in ps)
-            p005_all = bool(ps) and all(p < 0.05 for p in ps)
-            p010_any = bool(ps) and any(p < 0.10 for p in ps)
-            p010_all = bool(ps) and all(p < 0.10 for p in ps)
-
-            rows.append(
-                {
-                    "metric_id": metric_id,
-                    "metric_label": g["metric_label"],
-                    "metric_family": g["metric_family"],
-                    "n_obs": str(len(obs)),
-                    "n_clusters_president": str(cluster_n),
-                    "draws_grid": draws_txt,
-                    "n_draws_grid": str(len(draws_grid)),
-                    "wild_cluster_draws": str(draws_n),
-                    "seeds": seeds_txt,
-                    "n_seeds": str(len(seeds_clean)),
-                    "wild_p_min": _fmt(p_min),
-                    "wild_p_median": _fmt(p_med),
-                    "wild_p_max": _fmt(p_max),
-                    "wild_p_spread": _fmt(p_spread),
-                    "p_lt_005_any": _bool_to_flag(p005_any if ps else None),
-                    "p_lt_005_all": _bool_to_flag(p005_all if ps else None),
-                    "p_lt_010_any": _bool_to_flag(p010_any if ps else None),
-                    "p_lt_010_all": _bool_to_flag(p010_all if ps else None),
-                }
-            )
-
-    out_csv.parent.mkdir(parents=True, exist_ok=True)
-    tmp = out_csv.with_suffix(out_csv.suffix + ".tmp")
-    with tmp.open("w", encoding="utf-8", newline="") as handle:
-        w = csv.DictWriter(handle, fieldnames=header)
-        w.writeheader()
-        for r in rows:
-            w.writerow(r)
-    tmp.replace(out_csv)
-
-
-def write_wild_cluster_stability_summary(
-    *,
-    stability_csv: Path,
-    out_csv: Path,
-) -> None:
-    if not stability_csv.exists():
-        raise FileNotFoundError(f"Missing wild-cluster stability CSV: {stability_csv}")
-
-    groups: dict[str, list[dict[str, str]]] = {}
-    with stability_csv.open("r", encoding="utf-8", newline="") as handle:
-        rdr = csv.DictReader(handle)
-        for row in rdr:
-            mid = (row.get("metric_id") or "").strip()
-            if not mid:
-                continue
-            groups.setdefault(mid, []).append(dict(row))
-
-    def _status(p_min: float | None, p_max: float | None, thr: float) -> str:
-        if p_min is None or p_max is None:
-            return "missing"
-        if p_max < thr:
-            return "robust_significant"
-        if p_min >= thr:
-            return "robust_not_significant"
-        return "unstable"
-
-    header = [
-        "metric_id",
-        "metric_label",
-        "metric_family",
-        "n_rows",
-        "n_draws",
-        "draws",
-        "seeds",
-        "wild_p_min_overall",
-        "wild_p_max_overall",
-        "wild_p_spread_overall",
-        "status_005",
-        "status_010",
-        "unstable_any",
-    ]
-    rows: list[dict[str, str]] = []
-
-    for mid in sorted(groups.keys()):
-        rs = groups[mid]
-        first = rs[0]
-        pmins = [_parse_float(r.get("wild_p_min") or "") for r in rs]
-        pmaxs = [_parse_float(r.get("wild_p_max") or "") for r in rs]
-        pmins_num = [x for x in pmins if x is not None]
-        pmaxs_num = [x for x in pmaxs if x is not None]
-        overall_min = min(pmins_num) if pmins_num else None
-        overall_max = max(pmaxs_num) if pmaxs_num else None
-        spread = (overall_max - overall_min) if (overall_min is not None and overall_max is not None) else None
-
-        draws = sorted({(r.get("wild_cluster_draws") or "").strip() for r in rs if (r.get("wild_cluster_draws") or "").strip()})
-        seeds = sorted({(r.get("seeds") or "").strip() for r in rs if (r.get("seeds") or "").strip()})
-        status_005 = _status(overall_min, overall_max, 0.05)
-        status_010 = _status(overall_min, overall_max, 0.10)
-        unstable_any = status_005 == "unstable" or status_010 == "unstable"
-
-        rows.append(
-            {
-                "metric_id": mid,
-                "metric_label": (first.get("metric_label") or "").strip(),
-                "metric_family": (first.get("metric_family") or "").strip(),
-                "n_rows": str(len(rs)),
-                "n_draws": str(len(draws)),
-                "draws": ",".join(draws),
-                "seeds": "|".join(seeds),
-                "wild_p_min_overall": _fmt(overall_min),
-                "wild_p_max_overall": _fmt(overall_max),
-                "wild_p_spread_overall": _fmt(spread),
-                "status_005": status_005,
-                "status_010": status_010,
-                "unstable_any": "1" if unstable_any else "0",
-            }
-        )
-
-    out_csv.parent.mkdir(parents=True, exist_ok=True)
-    tmp = out_csv.with_suffix(out_csv.suffix + ".tmp")
-    with tmp.open("w", encoding="utf-8", newline="") as handle:
-        w = csv.DictWriter(handle, fieldnames=header)
-        w.writeheader()
-        for r in rows:
-            w.writerow(r)
-    tmp.replace(out_csv)
