@@ -6,7 +6,6 @@ from datetime import date
 from pathlib import Path
 from typing import Iterable
 
-from rb.congress_control import _congress_end_date, _congress_start_date
 from rb.spec import load_spec
 
 
@@ -88,64 +87,6 @@ def validate_presidents_csv(path: Path) -> list[ValidationIssue]:
             issues.append(ValidationIssue("ERROR", f"presidents.csv: overlapping terms: {id0} ({s0}..{e0}) overlaps {id1} ({s1}..{e1})"))
         if s1 > e0:
             issues.append(ValidationIssue("WARN", f"presidents.csv: gap between terms: {id0} ends {e0} then {id1} starts {s1}"))
-
-    return issues
-
-
-def validate_congress_control_csv(path: Path) -> list[ValidationIssue]:
-    issues: list[ValidationIssue] = []
-    if not path.exists():
-        return [ValidationIssue("ERROR", f"missing congress control CSV: {path}")]
-
-    rows: list[dict[str, str]] = []
-    with path.open("r", encoding="utf-8", newline="") as handle:
-        rdr = csv.DictReader(handle)
-        for r in rdr:
-            rows.append({k: (v or "") for k, v in r.items()})
-
-    if not rows:
-        return [ValidationIssue("ERROR", f"empty congress control CSV: {path}")]
-
-    by_cong: dict[int, list[tuple[date, date, dict[str, str]]]] = {}
-    for r in rows:
-        c = _parse_int(r.get("congress") or "")
-        if c is None:
-            issues.append(ValidationIssue("ERROR", f"congress_control.csv: invalid congress={r.get('congress')!r}"))
-            continue
-        try:
-            s = _parse_date(r.get("start_date") or "")
-            e = _parse_date(r.get("end_date") or "")
-        except Exception:
-            issues.append(ValidationIssue("ERROR", f"congress_control.csv: invalid date for congress={c}"))
-            continue
-        if e <= s:
-            issues.append(ValidationIssue("ERROR", f"congress_control.csv: non-positive window for congress={c}: {s}..{e}"))
-        if not (r.get("house_majority") or "").strip():
-            issues.append(ValidationIssue("ERROR", f"congress_control.csv: blank house_majority for congress={c} {s}..{e}"))
-        if not (r.get("senate_majority") or "").strip():
-            issues.append(ValidationIssue("ERROR", f"congress_control.csv: blank senate_majority for congress={c} {s}..{e}"))
-        by_cong.setdefault(c, []).append((s, e, r))
-
-    for cong, spans in sorted(by_cong.items()):
-        spans_sorted = sorted(spans, key=lambda t: (t[0], t[1]))
-        s_min = spans_sorted[0][0]
-        e_max = max(e for _, e, _ in spans_sorted)
-
-        # Congresses are two-year windows.
-        start_year = s_min.year
-        exp_s = _congress_start_date(cong, start_year)
-        exp_e = _congress_end_date(cong, start_year + 2)
-        if s_min != exp_s:
-            issues.append(ValidationIssue("WARN", f"congress_control.csv: congress={cong} start_date={s_min} != expected {exp_s}"))
-        if e_max != exp_e:
-            issues.append(ValidationIssue("WARN", f"congress_control.csv: congress={cong} end_date={e_max} != expected {exp_e}"))
-
-        # Validate no overlaps/gaps within a Congress (Senate periods).
-        for (s0, e0, _), (s1, e1, _) in zip(spans_sorted, spans_sorted[1:], strict=False):
-            if s1 < e0:
-                issues.append(ValidationIssue("ERROR", f"congress_control.csv: congress={cong} overlapping periods: {s0}..{e0} overlaps {s1}..{e1}"))
-            if s1 > e0:
-                issues.append(ValidationIssue("WARN", f"congress_control.csv: congress={cong} gap between periods: {e0}..{s1}"))
 
     return issues
 
@@ -357,7 +298,6 @@ def validate_all(
     *,
     spec_path: Path,
     presidents_csv: Path,
-    congress_control_csv: Path | None,
     term_metrics_csv: Path | None,
     party_summary_csv: Path | None,
 ) -> tuple[int, str]:
@@ -365,9 +305,6 @@ def validate_all(
 
     issues.extend(validate_metric_spec_symmetry(spec_path))
     issues.extend(validate_presidents_csv(presidents_csv))
-
-    if congress_control_csv is not None:
-        issues.extend(validate_congress_control_csv(congress_control_csv))
 
     # If we have presidents.csv, we can derive expected term count for report sanity checks.
     n_terms: int | None = None
