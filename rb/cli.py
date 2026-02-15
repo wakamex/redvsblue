@@ -1,18 +1,13 @@
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 
 from rb.env import load_dotenv
 from rb.ingest import ingest_from_spec
-from rb.inference import write_inference_table
 from rb.metrics import compute_term_metrics
 from rb.presidents import ensure_presidents
-from rb.randomization import (
-    run_randomization,
-    write_claims_table,
-)
+from rb.randomization import run_randomization
 from rb.scoreboard import write_scoreboard_md
 from rb.validate import validate_all
 
@@ -95,25 +90,13 @@ def _parse_args() -> argparse.Namespace:
     validate.add_argument("--spec", type=Path, default=Path("spec/metrics_v1.yaml"), help="Metric registry spec YAML for symmetry checks.")
     validate.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
-    randomization = sub.add_parser("randomization", help="Run permutation/randomization robustness checks.")
+    randomization = sub.add_parser("randomization", help="Run permutation/randomization tests with FDR correction.")
     randomization.add_argument("--term-metrics", type=Path, default=Path("reports/term_metrics_v1.csv"), help="Term metrics CSV.")
     randomization.add_argument(
-        "--output-party-term",
+        "--output",
         type=Path,
         default=Path("reports/permutation_party_term_v1.csv"),
         help="Output CSV for term-level D-vs-R permutation test.",
-    )
-    randomization.add_argument(
-        "--output-evidence-summary",
-        type=Path,
-        default=Path("reports/permutation_evidence_summary_v1.csv"),
-        help="Output CSV summary of evidence tiers by analysis and metric family.",
-    )
-    randomization.add_argument(
-        "--output-evidence-md",
-        type=Path,
-        default=Path("reports/permutation_evidence_summary_v1.md"),
-        help="Output markdown summary of confirmatory/supportive evidence rows.",
     )
     randomization.add_argument("--permutations", type=int, default=10000, help="Number of random permutations.")
     randomization.add_argument("--bootstrap-samples", type=int, default=2000, help="Number of bootstrap samples for CI estimates.")
@@ -122,7 +105,7 @@ def _parse_args() -> argparse.Namespace:
         "--q-threshold",
         type=float,
         default=0.05,
-        help="Confirmatory FDR q-value threshold (default 0.05); supportive tier uses q<0.10.",
+        help="Confirmatory FDR q-value threshold (default 0.05).",
     )
     randomization.add_argument(
         "--min-term-n-obs",
@@ -133,100 +116,18 @@ def _parse_args() -> argparse.Namespace:
     randomization.add_argument(
         "--term-block-years",
         type=int,
-        default=20,
-        help="If >0, term-party permutation shuffles labels within term-start-year blocks of this size.",
-    )
-    randomization.add_argument(
-        "--all-metrics",
-        action="store_true",
-        help="Include non-primary metrics (default behavior is primary-only).",
-    )
-    randomization.add_argument(
-        "--include-diagnostic-metrics",
-        action="store_true",
-        help="Include diagnostic-only metrics in randomization outputs.",
+        default=0,
+        help="If >0, shuffle D/R labels within N-year blocks instead of unrestricted. Default 0 (unrestricted, most conservative).",
     )
     randomization.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
-    inference = sub.add_parser("inference-table", help="Build primary-metric side-by-side inference table (Permutation + HAC/Newey-West).")
-    inference.add_argument("--term-metrics", type=Path, default=Path("reports/term_metrics_v1.csv"), help="Term metrics CSV.")
-    inference.add_argument(
-        "--permutation-party-term",
-        type=Path,
-        default=Path("reports/permutation_party_term_v1.csv"),
-        help="Term-party permutation CSV (provides permutation p/q/tier columns).",
-    )
-    inference.add_argument(
-        "--output-csv",
-        type=Path,
-        default=Path("reports/inference_table_primary_v1.csv"),
-        help="Output CSV path.",
-    )
-    inference.add_argument(
-        "--output-md",
-        type=Path,
-        default=Path("reports/inference_table_primary_v1.md"),
-        help="Output markdown summary path.",
-    )
-    inference.add_argument(
-        "--nw-lags",
-        type=int,
-        default=1,
-        help="Newey-West lag length for HAC standard errors.",
-    )
-    inference.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
-
-    claims = sub.add_parser("claims-table", help="Build machine-readable baseline-vs-strict claims table.")
-    claims.add_argument(
-        "--baseline-party-term",
-        type=Path,
-        default=Path("reports/permutation_party_term_all_v1.csv"),
-        help="Baseline term-level randomization CSV.",
-    )
-    claims.add_argument(
-        "--strict-party-term",
-        type=Path,
-        default=Path("reports/permutation_party_term_block20_all_v1.csv"),
-        help="Strict-profile term-level randomization CSV.",
-    )
-    claims.add_argument(
-        "--output",
-        type=Path,
-        default=Path("reports/claims_table_v1.csv"),
-        help="Output machine-readable claims table CSV.",
-    )
-    claims.add_argument(
-        "--inference-table",
-        type=Path,
-        default=Path("reports/inference_table_primary_v1.csv"),
-        help="Primary-metric inference table CSV (optional; used by publication gating).",
-    )
-    claims.add_argument(
-        "--publication-mode",
-        action="store_true",
-        help="Apply publication gating: confirmatory tiers require HAC/sign agreement.",
-    )
-    claims.add_argument(
-        "--publication-hac-p-threshold",
-        type=float,
-        default=0.05,
-        help="HAC p-value threshold used by --publication-mode gate.",
-    )
-    claims.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
-
     scoreboard = sub.add_parser("scoreboard", help="Render a simple markdown scoreboard from computed CSVs.")
-    scoreboard.add_argument("--spec", type=Path, default=Path("spec/metrics_v1.yaml"), help="Metric registry spec YAML.")
     scoreboard.add_argument("--party-summary", type=Path, default=Path("reports/party_summary_v1.csv"), help="Party summary CSV.")
     scoreboard.add_argument(
         "--output",
         type=Path,
         default=Path("reports/scoreboard.md"),
         help="Output markdown path.",
-    )
-    scoreboard.add_argument(
-        "--all-metrics",
-        action="store_true",
-        help="Include non-primary metrics in addition to primary metrics.",
     )
     scoreboard.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
@@ -285,43 +186,13 @@ def main() -> int:
     if args.cmd == "randomization":
         run_randomization(
             term_metrics_csv=args.term_metrics,
-            output_party_term_csv=args.output_party_term,
+            output_csv=args.output,
             permutations=max(0, int(args.permutations)),
             bootstrap_samples=max(0, int(args.bootstrap_samples)),
             seed=int(args.seed),
             term_block_years=max(0, int(args.term_block_years)),
             q_threshold=float(args.q_threshold),
             min_term_n_obs=max(0, int(args.min_term_n_obs)),
-            primary_only=not bool(args.all_metrics),
-            output_evidence_summary_csv=args.output_evidence_summary,
-            output_evidence_md=args.output_evidence_md,
-            include_diagnostic_metrics=bool(args.include_diagnostic_metrics),
-        )
-        return 0
-
-    if args.cmd == "inference-table":
-        perm_path = args.permutation_party_term if args.permutation_party_term.exists() else None
-        write_inference_table(
-            term_metrics_csv=args.term_metrics,
-            permutation_party_term_csv=perm_path,
-            out_csv=args.output_csv,
-            out_md=args.output_md,
-            nw_lags=max(0, int(args.nw_lags)),
-        )
-        return 0
-
-    if args.cmd == "claims-table":
-        if not args.baseline_party_term.exists():
-            raise FileNotFoundError(f"Missing baseline term CSV: {args.baseline_party_term}")
-        if not args.strict_party_term.exists():
-            raise FileNotFoundError(f"Missing strict term CSV: {args.strict_party_term}")
-        write_claims_table(
-            baseline_party_term_csv=args.baseline_party_term,
-            strict_party_term_csv=args.strict_party_term,
-            out_csv=args.output,
-            inference_table_csv=args.inference_table if args.inference_table.exists() else None,
-            publication_mode=bool(args.publication_mode),
-            publication_hac_p_threshold=float(args.publication_hac_p_threshold),
         )
         return 0
 
@@ -329,10 +200,8 @@ def main() -> int:
         if not args.party_summary.exists():
             raise FileNotFoundError(f"Missing {args.party_summary}; run `rb compute` first.")
         write_scoreboard_md(
-            spec_path=args.spec,
             party_summary_csv=args.party_summary,
             out_path=args.output,
-            primary_only=not bool(args.all_metrics),
         )
         return 0
 

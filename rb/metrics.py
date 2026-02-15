@@ -468,8 +468,6 @@ def compute_term_metrics(
             raise ValueError("Metric missing id")
         family = str(m.get("family") or "")
         label = str(m.get("label") or "")
-        primary = bool(m.get("primary"))
-
         inputs = m.get("inputs") or {}
         if "series" in inputs:
             series_key = str(inputs["series"])
@@ -714,7 +712,6 @@ def compute_term_metrics(
                 {
                     "metric_id": metric_id,
                     "metric_family": family,
-                    "metric_primary": "1" if primary else "0",
                     "metric_label": label,
                     "term_id": t.term_id,
                     "president": t.president,
@@ -741,7 +738,6 @@ def compute_term_metrics(
     term_header = [
         "metric_id",
         "metric_family",
-        "metric_primary",
         "metric_label",
         "term_id",
         "president",
@@ -776,7 +772,6 @@ def compute_term_metrics(
         by_party_metric.setdefault((party, metric_id), []).append(v)
         meta[(party, metric_id)] = {
             "metric_family": str(r.get("metric_family") or ""),
-            "metric_primary": str(r.get("metric_primary") or ""),
             "metric_label": str(r.get("metric_label") or ""),
             "units": str(r.get("units") or ""),
             "agg_kind": str(r.get("agg_kind") or ""),
@@ -794,7 +789,6 @@ def compute_term_metrics(
                 "party_abbrev": party,
                 "metric_id": metric_id,
                 "metric_family": m.get("metric_family", ""),
-                "metric_primary": m.get("metric_primary", ""),
                 "metric_label": m.get("metric_label", ""),
                 "agg_kind": m.get("agg_kind", ""),
                 "units": m.get("units", ""),
@@ -808,7 +802,6 @@ def compute_term_metrics(
         "party_abbrev",
         "metric_id",
         "metric_family",
-        "metric_primary",
         "metric_label",
         "agg_kind",
         "units",

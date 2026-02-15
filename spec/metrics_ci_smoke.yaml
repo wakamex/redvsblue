@@ -24,7 +24,6 @@ series:
 metrics:
   - id: unemployment_rate_mean
     family: unemployment
-    primary: true
     label: "Unemployment rate (mean during term)"
     inputs:
       series: unrate_unemployment_rate
@@ -36,7 +35,6 @@ metrics:
 
   - id: unemployment_rate_change_pp
     family: unemployment
-    primary: false
     label: "Unemployment rate change (percentage points, end minus start)"
     inputs:
       series: unrate_unemployment_rate
@@ -48,7 +46,6 @@ metrics:
 
   - id: unemployment_rate_change_pp_per_year
     family: unemployment
-    primary: false
     label: "Unemployment rate change (percentage points per year, end minus start divided by term years)"
     inputs:
       series: unrate_unemployment_rate
