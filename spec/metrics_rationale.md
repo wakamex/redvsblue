@@ -30,18 +30,18 @@ Rationale:
 - Many "precomputed inflation" series are either not available as plain downloads without special API parameters, or embed transformation assumptions we still need to document.
 
 We include multiple inflation definitions because people argue about them:
-- `cpi_inflation_yoy_mean_nsa` (primary): YoY inflation from the **unadjusted** CPI index, averaged over the attributed window.
+- `cpi_inflation_yoy_mean_nsa`: YoY inflation from the **unadjusted** CPI index, averaged over the attributed window.
   - Pros: YoY does not require seasonal adjustment; avoids annual revision of seasonally adjusted CPI levels due to seasonal factor updates.
   - Caveat: if the attribution/join rules produce windows that start/end on different calendar months (e.g., partial-month attribution), NSA YoY can retain residual seasonal bias. We treat SA vs NSA as a measurable sensitivity rather than a hidden choice.
-- `cpi_inflation_yoy_mean` (alternate): YoY inflation from the **seasonally adjusted** CPI index, averaged over the attributed window.
+- `cpi_inflation_yoy_mean`: YoY inflation from the **seasonally adjusted** CPI index, averaged over the attributed window.
   - Pros: included for completeness; should be very close to the NSA YoY in most periods.
-- `cpi_inflation_mom_ann_logdiff_mean` (alternate): MoM annualized log-diff inflation, averaged over the window.
+- `cpi_inflation_mom_ann_logdiff_mean`: MoM annualized log-diff inflation, averaged over the window.
   - Pros: faster-moving signal; matches common "annualized monthly inflation" discussions.
   - Note: for MoM measures, we prefer SA CPI because NSA MoM is dominated by seasonal patterns.
-- `pce_inflation_yoy_mean` (alternate): PCE-based YoY inflation.
-- `pce_inflation_mom_ann_logdiff_mean` (alternate): PCE MoM annualized log-diff inflation.
-- `core_cpi_inflation_yoy_mean` and `core_cpi_inflation_mom_ann_logdiff_mean` (alternates): core CPI variants that remove food/energy noise.
-- `core_pce_inflation_yoy_mean` and `core_pce_inflation_mom_ann_logdiff_mean` (alternates): core PCE variants often used in policy discussions.
+- `pce_inflation_yoy_mean`: PCE-based YoY inflation.
+- `pce_inflation_mom_ann_logdiff_mean`: PCE MoM annualized log-diff inflation.
+- `core_cpi_inflation_yoy_mean` and `core_cpi_inflation_mom_ann_logdiff_mean`: core CPI variants that remove food/energy noise.
+- `core_pce_inflation_yoy_mean` and `core_pce_inflation_mom_ann_logdiff_mean`: core PCE variants often used in policy discussions.
 
 We also include cumulative price-level change metrics:
 - `cpi_price_level_term_pct_change_nsa`: total percent change in the CPI index over the term window (end vs start).
@@ -72,7 +72,7 @@ We include alternates:
 
 Question: do we need levels, not just returns?
 
-Choice (v1): use **Ken French monthly returns** as the primary stock market source, and **derive level-like metrics** via compounding.
+Choice (v1): use **Ken French monthly returns** as the main stock market source, and **derive level-like metrics** via compounding.
 
 Rationale:
 - Returns are the cleanest unit for comparisons (stationary-ish, not dependent on an arbitrary base year).
@@ -83,17 +83,17 @@ Ken French dataset:
 - Our pipeline should cache the raw zip and record the observed date range + header metadata in the run manifest so results can be reproduced even if the upstream file changes later.
 
 Metrics included:
-- `ff_mkt_excess_return_ann_compound` (primary): annualized compound excess return (Mkt-RF).
-- `ff_mkt_total_return_ann_compound` (alternate): annualized compound total return (Mkt-RF + RF).
-- `ff_mkt_total_return_term_total` (alternate): compounded total return over the term window (end/start in percent terms).
-- `ff_mkt_excess_return_term_total` (alternate): compounded excess return over the term window.
+- `ff_mkt_excess_return_ann_compound`: annualized compound excess return (Mkt-RF).
+- `ff_mkt_total_return_ann_compound`: annualized compound total return (Mkt-RF + RF).
+- `ff_mkt_total_return_term_total`: compounded total return over the term window (end/start in percent terms).
+- `ff_mkt_excess_return_term_total`: compounded excess return over the term window.
 
 Price index levels (Dow and S&P):
 - For popular/press-style “the market went up/down under X” claims, we also include **price index levels** from Stooq:
 - We fetch:
   - S&P 500 (`^spx` from Stooq)
   - Dow Jones Industrial Average (`^dji` from Stooq)
-- These are **price-only** indices (exclude dividends), so they are not directly comparable to total return measures. We treat them as alternates for public-facing level claims, not the primary return metric.
+- These are **price-only** indices (exclude dividends), so they are not directly comparable to total return measures. We treat them as supplementary level-based metrics for public-facing claims.
 - For S&P levels, we keep **two separate definitions**:
   - `sp500_sp500_index` (modern S&P 500 window, 1957+), used for headline S&P level metrics.
   - `sp500_spx_backfilled_pre1957` (pre-1957 backfilled segment from the same provider), exposed only as a separate historical-composite alternate.
@@ -113,7 +113,7 @@ Level-style term metrics included:
 
 MoM/QoQ/YoY:
 - MoM is the monthly return itself.
-- QoQ/YoY are rolling compounded returns over 3/12 months. We have not made these primary scoreboard metrics yet; they are better suited for plots/diagnostics because they overlap heavily over time.
+- QoQ/YoY are rolling compounded returns over 3/12 months. We have not included these as scoreboard metrics; they are better suited for plots/diagnostics because they overlap heavily over time.
 
 ## Interest Rates / Yield Curve
 
@@ -152,7 +152,7 @@ Guardrail:
 
 Question: why include `end_minus_start_per_year`?
 
-Choice (v1): keep **total change** as primary and per-year as an alternate, and apply the same pairing across comparable series to avoid cherry-picking accusations.
+Choice (v1): include **both total change and per-year** variants, and apply the same pairing across comparable series to avoid cherry-picking accusations.
 
 Rationale:
 - Total change (`end_minus_start`) is the most direct answer to “how many jobs were added during this window.”

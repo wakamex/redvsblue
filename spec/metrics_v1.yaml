@@ -252,7 +252,6 @@ metrics:
   # GDP growth
   - id: gdp_growth_real_qoq_ann_logdiff
     family: gdp_growth
-    primary: true
     label: "Real GDP growth (QoQ annualized, log diff)"
     inputs:
       series: gdpc1_real_gdp
@@ -270,7 +269,6 @@ metrics:
 
   - id: gdp_growth_real_percap_qoq_ann_logdiff
     family: gdp_growth
-    primary: false
     label: "Real GDP per capita growth (QoQ annualized, log diff)"
     inputs:
       series: a939rx0q048sbea_real_gdp_per_capita
@@ -288,7 +286,6 @@ metrics:
 
   - id: gdp_growth_real_term_cagr
     family: gdp_growth
-    primary: false
     label: "Real GDP growth (term CAGR from start/end)"
     inputs:
       series: gdpc1_real_gdp
@@ -304,7 +301,6 @@ metrics:
 
   - id: gdp_growth_real_term_pct_change
     family: gdp_growth
-    primary: false
     label: "Real GDP growth (term total percent change from start/end)"
     inputs:
       series: gdpc1_real_gdp
@@ -319,7 +315,6 @@ metrics:
 
   - id: gdp_growth_real_percap_term_pct_change
     family: gdp_growth
-    primary: false
     label: "Real GDP per capita growth (term total percent change from start/end)"
     inputs:
       series: a939rx0q048sbea_real_gdp_per_capita
@@ -334,7 +329,6 @@ metrics:
 
   - id: gdp_growth_real_percap_term_cagr
     family: gdp_growth
-    primary: false
     label: "Real GDP per capita growth (term CAGR from start/end)"
     inputs:
       series: a939rx0q048sbea_real_gdp_per_capita
@@ -351,7 +345,6 @@ metrics:
   # Employment
   - id: payroll_jobs_change_total
     family: jobs
-    primary: false
     label: "Payroll employment change (total, end minus start)"
     inputs:
       series: payems_payroll_employment
@@ -363,7 +356,6 @@ metrics:
 
   - id: payroll_jobs_change_per_year
     family: jobs
-    primary: true
     label: "Payroll employment change (per year, end minus start divided by term years)"
     inputs:
       series: payems_payroll_employment
@@ -375,7 +367,6 @@ metrics:
 
   - id: household_employment_change_total
     family: jobs
-    primary: false
     label: "Household employment change (CPS, total, end minus start)"
     inputs:
       series: ce16ov_household_employment
@@ -387,7 +378,6 @@ metrics:
 
   - id: household_employment_change_per_year
     family: jobs
-    primary: false
     label: "Household employment change (CPS, per year, end minus start divided by term years)"
     inputs:
       series: ce16ov_household_employment
@@ -399,7 +389,6 @@ metrics:
 
   - id: payroll_jobs_term_pct_change
     family: jobs
-    primary: false
     label: "Payroll employment percent change (term total, end vs start)"
     inputs:
       series: payems_payroll_employment
@@ -412,7 +401,6 @@ metrics:
 
   - id: payroll_jobs_term_cagr_pct
     family: jobs
-    primary: false
     label: "Payroll employment CAGR (term annualized from start/end)"
     inputs:
       series: payems_payroll_employment
@@ -426,7 +414,6 @@ metrics:
 
   - id: household_employment_term_pct_change
     family: jobs
-    primary: false
     label: "Household employment percent change (CPS, term total, end vs start)"
     inputs:
       series: ce16ov_household_employment
@@ -439,7 +426,6 @@ metrics:
 
   - id: household_employment_term_cagr_pct
     family: jobs
-    primary: false
     label: "Household employment CAGR (CPS, term annualized from start/end)"
     inputs:
       series: ce16ov_household_employment
@@ -454,7 +440,6 @@ metrics:
   # Unemployment
   - id: unemployment_rate_mean
     family: unemployment
-    primary: true
     label: "Unemployment rate (mean during term)"
     inputs:
       series: unrate_unemployment_rate
@@ -466,7 +451,6 @@ metrics:
 
   - id: unemployment_rate_end
     family: unemployment
-    primary: false
     label: "Unemployment rate (end-of-term value)"
     inputs:
       series: unrate_unemployment_rate
@@ -478,7 +462,6 @@ metrics:
 
   - id: unemployment_rate_change_pp
     family: unemployment
-    primary: false
     label: "Unemployment rate change (percentage points, end minus start)"
     inputs:
       series: unrate_unemployment_rate
@@ -490,7 +473,6 @@ metrics:
 
   - id: unemployment_rate_change_pp_per_year
     family: unemployment
-    primary: false
     label: "Unemployment rate change (percentage points per year, end minus start divided by term years)"
     inputs:
       series: unrate_unemployment_rate
@@ -503,7 +485,6 @@ metrics:
   # Labor force participation
   - id: labor_force_participation_rate_mean
     family: labor_force_participation
-    primary: true
     label: "Labor force participation rate (mean during term)"
     inputs:
       series: civpart_labor_force_participation
@@ -515,7 +496,6 @@ metrics:
 
   - id: labor_force_participation_rate_end
     family: labor_force_participation
-    primary: false
     label: "Labor force participation rate (end-of-term value)"
     inputs:
       series: civpart_labor_force_participation
@@ -527,7 +507,6 @@ metrics:
 
   - id: labor_force_participation_rate_change_pp
     family: labor_force_participation
-    primary: false
     label: "Labor force participation rate change (percentage points, end minus start)"
     inputs:
       series: civpart_labor_force_participation
@@ -539,7 +518,6 @@ metrics:
 
   - id: labor_force_participation_rate_change_pp_per_year
     family: labor_force_participation
-    primary: false
     label: "Labor force participation rate change (percentage points per year, end minus start divided by term years)"
     inputs:
       series: civpart_labor_force_participation
@@ -552,7 +530,6 @@ metrics:
   # Wages
   - id: real_median_weekly_earnings_term_pct_change
     family: wages
-    primary: false
     label: "Real median weekly earnings percent change (term total, end vs start; LES1252881600Q)"
     inputs:
       series: les1252881600q_real_median_weekly_earnings
@@ -565,7 +542,6 @@ metrics:
 
   - id: real_median_weekly_earnings_mean
     family: wages
-    primary: false
     label: "Real median weekly earnings (mean during term; LES1252881600Q)"
     inputs:
       series: les1252881600q_real_median_weekly_earnings
@@ -577,7 +553,6 @@ metrics:
 
   - id: real_median_weekly_earnings_end
     family: wages
-    primary: false
     label: "Real median weekly earnings (end-of-term value; LES1252881600Q)"
     inputs:
       series: les1252881600q_real_median_weekly_earnings
@@ -589,7 +564,6 @@ metrics:
 
   - id: real_median_weekly_earnings_term_cagr_pct
     family: wages
-    primary: true
     label: "Real median weekly earnings CAGR (term annualized from start/end; LES1252881600Q)"
     inputs:
       series: les1252881600q_real_median_weekly_earnings
@@ -606,7 +580,6 @@ metrics:
   # Inflation
   - id: cpi_inflation_yoy_mean
     family: inflation
-    primary: false
     label: "CPI inflation (YoY, mean during term; based on SA CPI index)"
     inputs:
       series: cpiaucsl_cpi
@@ -622,7 +595,6 @@ metrics:
 
   - id: cpi_inflation_yoy_mean_nsa
     family: inflation
-    primary: true
     label: "CPI inflation (YoY, mean during term; based on unadjusted CPI index)"
     inputs:
       series: cpiaucns_cpi_unadjusted
@@ -638,7 +610,6 @@ metrics:
 
   - id: pce_inflation_yoy_mean
     family: inflation
-    primary: false
     label: "PCE inflation (YoY, mean during term)"
     inputs:
       series: pcepi_pce_price_index
@@ -652,7 +623,6 @@ metrics:
 
   - id: pce_inflation_mom_ann_logdiff_mean
     family: inflation
-    primary: false
     label: "PCE inflation (MoM annualized, log diff, mean during term)"
     inputs:
       series: pcepi_pce_price_index
@@ -670,7 +640,6 @@ metrics:
 
   - id: cpi_inflation_mom_ann_logdiff_mean
     family: inflation
-    primary: false
     label: "CPI inflation (MoM annualized, log diff, mean during term)"
     inputs:
       series: cpiaucsl_cpi
@@ -688,7 +657,6 @@ metrics:
 
   - id: cpi_price_level_term_pct_change_nsa
     family: inflation
-    primary: false
     label: "CPI price level percent change (term total, end vs start; CPIAUCNS)"
     inputs:
       series: cpiaucns_cpi_unadjusted
@@ -701,7 +669,6 @@ metrics:
 
   - id: cpi_price_level_term_cagr_pct_nsa
     family: inflation
-    primary: false
     label: "CPI price level CAGR (term annualized from start/end; CPIAUCNS)"
     inputs:
       series: cpiaucns_cpi_unadjusted
@@ -715,7 +682,6 @@ metrics:
 
   - id: cpi_price_level_term_pct_change_sa
     family: inflation
-    primary: false
     label: "CPI price level percent change (term total, end vs start; CPIAUCSL)"
     inputs:
       series: cpiaucsl_cpi
@@ -728,7 +694,6 @@ metrics:
 
   - id: cpi_price_level_term_cagr_pct_sa
     family: inflation
-    primary: false
     label: "CPI price level CAGR (term annualized from start/end; CPIAUCSL)"
     inputs:
       series: cpiaucsl_cpi
@@ -742,7 +707,6 @@ metrics:
 
   - id: pce_price_level_term_pct_change
     family: inflation
-    primary: false
     label: "PCE price level percent change (term total, end vs start; PCEPI)"
     inputs:
       series: pcepi_pce_price_index
@@ -755,7 +719,6 @@ metrics:
 
   - id: pce_price_level_term_cagr_pct
     family: inflation
-    primary: false
     label: "PCE price level CAGR (term annualized from start/end; PCEPI)"
     inputs:
       series: pcepi_pce_price_index
@@ -769,7 +732,6 @@ metrics:
 
   - id: core_cpi_inflation_yoy_mean
     family: inflation
-    primary: false
     label: "Core CPI inflation (YoY, mean during term; CPILFESL)"
     inputs:
       series: cpilfesl_core_cpi
@@ -785,7 +747,6 @@ metrics:
 
   - id: core_cpi_inflation_mom_ann_logdiff_mean
     family: inflation
-    primary: false
     label: "Core CPI inflation (MoM annualized, log diff, mean during term; CPILFESL)"
     inputs:
       series: cpilfesl_core_cpi
@@ -803,7 +764,6 @@ metrics:
 
   - id: core_cpi_price_level_term_pct_change
     family: inflation
-    primary: false
     label: "Core CPI price level percent change (term total, end vs start; CPILFESL)"
     inputs:
       series: cpilfesl_core_cpi
@@ -816,7 +776,6 @@ metrics:
 
   - id: core_cpi_price_level_term_cagr_pct
     family: inflation
-    primary: false
     label: "Core CPI price level CAGR (term annualized from start/end; CPILFESL)"
     inputs:
       series: cpilfesl_core_cpi
@@ -830,7 +789,6 @@ metrics:
 
   - id: core_pce_inflation_yoy_mean
     family: inflation
-    primary: false
     label: "Core PCE inflation (YoY, mean during term; PCEPILFE)"
     inputs:
       series: pcepilfe_core_pce_price_index
@@ -846,7 +804,6 @@ metrics:
 
   - id: core_pce_inflation_mom_ann_logdiff_mean
     family: inflation
-    primary: false
     label: "Core PCE inflation (MoM annualized, log diff, mean during term; PCEPILFE)"
     inputs:
       series: pcepilfe_core_pce_price_index
@@ -864,7 +821,6 @@ metrics:
 
   - id: core_pce_price_level_term_pct_change
     family: inflation
-    primary: false
     label: "Core PCE price level percent change (term total, end vs start; PCEPILFE)"
     inputs:
       series: pcepilfe_core_pce_price_index
@@ -877,7 +833,6 @@ metrics:
 
   - id: core_pce_price_level_term_cagr_pct
     family: inflation
-    primary: false
     label: "Core PCE price level CAGR (term annualized from start/end; PCEPILFE)"
     inputs:
       series: pcepilfe_core_pce_price_index
@@ -892,7 +847,6 @@ metrics:
   # Interest rates / yield curve
   - id: fedfunds_policy_rate_mean
     family: interest_rates
-    primary: true
     label: "Effective federal funds rate (mean during term; FEDFUNDS)"
     inputs:
       series: fedfunds_policy_rate
@@ -904,7 +858,6 @@ metrics:
 
   - id: fedfunds_policy_rate_end
     family: interest_rates
-    primary: false
     label: "Effective federal funds rate (end-of-term value; FEDFUNDS)"
     inputs:
       series: fedfunds_policy_rate
@@ -916,7 +869,6 @@ metrics:
 
   - id: fedfunds_policy_rate_change_pp
     family: interest_rates
-    primary: false
     label: "Effective federal funds rate change (percentage points, end minus start; FEDFUNDS)"
     inputs:
       series: fedfunds_policy_rate
@@ -928,7 +880,6 @@ metrics:
 
   - id: fedfunds_policy_rate_change_pp_per_year
     family: interest_rates
-    primary: false
     label: "Effective federal funds rate change (percentage points per year, end minus start divided by term years; FEDFUNDS)"
     inputs:
       series: fedfunds_policy_rate
@@ -940,7 +891,6 @@ metrics:
 
   - id: treasury_10y_rate_mean
     family: interest_rates
-    primary: false
     label: "10-year Treasury yield (mean during term; DGS10)"
     inputs:
       series: dgs10_treasury_10y_rate
@@ -952,7 +902,6 @@ metrics:
 
   - id: treasury_10y_rate_end
     family: interest_rates
-    primary: false
     label: "10-year Treasury yield (end-of-term value; DGS10)"
     inputs:
       series: dgs10_treasury_10y_rate
@@ -964,7 +913,6 @@ metrics:
 
   - id: treasury_10y_rate_change_pp
     family: interest_rates
-    primary: false
     label: "10-year Treasury yield change (percentage points, end minus start; DGS10)"
     inputs:
       series: dgs10_treasury_10y_rate
@@ -976,7 +924,6 @@ metrics:
 
   - id: treasury_10y_rate_change_pp_per_year
     family: interest_rates
-    primary: false
     label: "10-year Treasury yield change (percentage points per year, end minus start divided by term years; DGS10)"
     inputs:
       series: dgs10_treasury_10y_rate
@@ -988,7 +935,6 @@ metrics:
 
   - id: yield_curve_t10y2y_spread_mean
     family: interest_rates
-    primary: false
     label: "10y-2y Treasury spread (mean during term; T10Y2Y)"
     inputs:
       series: t10y2y_yield_spread
@@ -1000,7 +946,6 @@ metrics:
 
   - id: yield_curve_t10y2y_spread_end
     family: interest_rates
-    primary: false
     label: "10y-2y Treasury spread (end-of-term value; T10Y2Y)"
     inputs:
       series: t10y2y_yield_spread
@@ -1012,7 +957,6 @@ metrics:
 
   - id: yield_curve_t10y2y_spread_change_pp
     family: interest_rates
-    primary: false
     label: "10y-2y Treasury spread change (percentage points, end minus start; T10Y2Y)"
     inputs:
       series: t10y2y_yield_spread
@@ -1024,7 +968,6 @@ metrics:
 
   - id: yield_curve_t10y2y_spread_change_pp_per_year
     family: interest_rates
-    primary: false
     label: "10y-2y Treasury spread change (percentage points per year, end minus start divided by term years; T10Y2Y)"
     inputs:
       series: t10y2y_yield_spread
@@ -1036,7 +979,6 @@ metrics:
 
   - id: yield_curve_t10y2y_inversion_share
     family: interest_rates
-    primary: false
     label: "10y-2y inversion share (trading-day share during term; T10Y2Y < 0)"
     inputs:
       series: t10y2y_yield_spread
@@ -1052,7 +994,6 @@ metrics:
 
   - id: yield_curve_t10y2y_inversion_start_count
     family: interest_rates
-    primary: false
     label: "10y-2y inversion starts (count of 0->1 transitions; T10Y2Y < 0)"
     inputs:
       series: t10y2y_yield_spread
@@ -1069,7 +1010,6 @@ metrics:
 
   - id: yield_curve_t10y2y_inversion_share_monthly_eop
     family: interest_rates
-    primary: false
     label: "10y-2y inversion share (monthly EOP share during term; T10Y2Y < 0)"
     inputs:
       series: t10y2y_yield_spread_monthly_eop
@@ -1085,7 +1025,6 @@ metrics:
 
   - id: yield_curve_t10y2y_inversion_start_count_monthly_eop
     family: interest_rates
-    primary: false
     label: "10y-2y inversion starts (count of 0->1 transitions; monthly EOP T10Y2Y < 0)"
     inputs:
       series: t10y2y_yield_spread_monthly_eop
@@ -1102,7 +1041,6 @@ metrics:
 
   - id: yield_curve_t10y2y_inversion_share_monthly_avg
     family: interest_rates
-    primary: false
     label: "10y-2y inversion share (monthly AVG share during term; T10Y2Y < 0)"
     inputs:
       series: t10y2y_yield_spread_monthly_avg
@@ -1118,7 +1056,6 @@ metrics:
 
   - id: yield_curve_t10y2y_inversion_start_count_monthly_avg
     family: interest_rates
-    primary: false
     label: "10y-2y inversion starts (count of 0->1 transitions; monthly AVG T10Y2Y < 0)"
     inputs:
       series: t10y2y_yield_spread_monthly_avg
@@ -1136,7 +1073,6 @@ metrics:
   # Stock returns (excess)
   - id: ff_mkt_excess_return_ann_compound
     family: stock_returns
-    primary: true
     label: "Stock market excess return (annualized, compounded; Ken French Mkt-RF)"
     inputs:
       table: ff_factors_monthly
@@ -1153,7 +1089,6 @@ metrics:
 
   - id: ff_mkt_excess_return_ann_arith
     family: stock_returns
-    primary: false
     label: "Stock market excess return (annualized, arithmetic; Ken French Mkt-RF)"
     inputs:
       table: ff_factors_monthly
@@ -1167,7 +1102,6 @@ metrics:
 
   - id: ff_mkt_total_return_ann_compound
     family: stock_returns
-    primary: false
     label: "Stock market total return (annualized, compounded; Ken French Mkt-RF + RF)"
     inputs:
       table: ff_factors_monthly
@@ -1184,7 +1118,6 @@ metrics:
 
   - id: ff_mkt_total_return_term_total
     family: stock_returns
-    primary: false
     label: "Stock market total return (term total, compounded; Ken French Mkt-RF + RF)"
     inputs:
       table: ff_factors_monthly
@@ -1200,7 +1133,6 @@ metrics:
 
   - id: ff_mkt_excess_return_term_total
     family: stock_returns
-    primary: false
     label: "Stock market excess return (term total, compounded; Ken French Mkt-RF)"
     inputs:
       table: ff_factors_monthly
@@ -1216,7 +1148,6 @@ metrics:
 
   - id: ff_mkt_excess_return_volatility_ann
     family: stock_returns
-    primary: false
     label: "Stock market excess return volatility (annualized std dev; Ken French Mkt-RF)"
     inputs:
       table: ff_factors_monthly
@@ -1231,7 +1162,6 @@ metrics:
 
   - id: ff_mkt_excess_return_sharpe_ann
     family: stock_returns
-    primary: false
     label: "Stock market Sharpe ratio (annualized; Ken French Mkt-RF)"
     inputs:
       table: ff_factors_monthly
@@ -1248,7 +1178,6 @@ metrics:
   # Stock index levels (price-only)
   - id: sp500_term_pct_change
     family: stock_levels
-    primary: false
     label: "S&P 500 percent change (term total, end vs start)"
     inputs:
       series: sp500_sp500_index
@@ -1261,7 +1190,6 @@ metrics:
 
   - id: sp500_term_cagr_pct
     family: stock_levels
-    primary: false
     label: "S&P 500 CAGR (term annualized from start/end)"
     inputs:
       series: sp500_sp500_index
@@ -1277,7 +1205,6 @@ metrics:
 
   - id: sp500_backfilled_pre1957_term_pct_change
     family: stock_levels_historical
-    primary: false
     label: "SPX backfilled historical percent change (pre-1957 windows only)"
     inputs:
       series: sp500_spx_backfilled_pre1957
@@ -1292,7 +1219,6 @@ metrics:
 
   - id: sp500_backfilled_pre1957_term_cagr_pct
     family: stock_levels_historical
-    primary: false
     label: "SPX backfilled historical CAGR (pre-1957 windows only)"
     inputs:
       series: sp500_spx_backfilled_pre1957
@@ -1308,7 +1234,6 @@ metrics:
 
   - id: djia_term_pct_change
     family: stock_levels
-    primary: false
     label: "Dow Jones Industrial Average percent change (term total, end vs start)"
     inputs:
       series: djia_dow_jones
@@ -1321,7 +1246,6 @@ metrics:
 
   - id: djia_term_cagr_pct
     family: stock_levels
-    primary: false
     label: "Dow Jones Industrial Average CAGR (term annualized from start/end)"
     inputs:
       series: djia_dow_jones
@@ -1338,7 +1262,6 @@ metrics:
   # Recessions
   - id: recession_month_share
     family: recessions
-    primary: true
     label: "Recession share of months (USREC mean)"
     inputs:
       series: usrec_recession_indicator
@@ -1351,7 +1274,6 @@ metrics:
 
   - id: recession_start_count
     family: recessions
-    primary: false
     label: "Recession starts (count of 0->1 transitions in USREC)"
     inputs:
       series: usrec_recession_indicator
@@ -1366,7 +1288,6 @@ metrics:
   # Fiscal
   - id: federal_debt_pct_gdp_mean
     family: fiscal
-    primary: true
     label: "Federal debt (%GDP, mean; GFDEGDQ188S)"
     inputs:
       series: gfdegdq188s_federal_debt_pct_gdp
@@ -1378,7 +1299,6 @@ metrics:
 
   - id: federal_debt_pct_gdp_end
     family: fiscal
-    primary: false
     label: "Federal debt (%GDP, end-of-term value; GFDEGDQ188S)"
     inputs:
       series: gfdegdq188s_federal_debt_pct_gdp
@@ -1390,7 +1310,6 @@ metrics:
 
   - id: federal_debt_pct_gdp_change_pp
     family: fiscal
-    primary: false
     label: "Federal debt (%GDP, change in percentage points, end minus start; GFDEGDQ188S)"
     inputs:
       series: gfdegdq188s_federal_debt_pct_gdp
@@ -1402,7 +1321,6 @@ metrics:
 
   - id: federal_debt_pct_gdp_change_pp_per_year
     family: fiscal
-    primary: false
     label: "Federal debt (%GDP, change in percentage points per year; GFDEGDQ188S)"
     inputs:
       series: gfdegdq188s_federal_debt_pct_gdp
@@ -1414,7 +1332,6 @@ metrics:
 
   - id: federal_surplus_deficit_pct_gdp_mean
     family: fiscal
-    primary: false
     label: "Federal surplus/deficit (%GDP, mean; FYFSGDA188S)"
     inputs:
       series: fyfsgda188s_federal_surplus_deficit_pct_gdp
@@ -1426,7 +1343,6 @@ metrics:
 
   - id: federal_surplus_deficit_pct_gdp_end
     family: fiscal
-    primary: false
     label: "Federal surplus/deficit (%GDP, end-of-term value; FYFSGDA188S)"
     inputs:
       series: fyfsgda188s_federal_surplus_deficit_pct_gdp
@@ -1438,7 +1354,6 @@ metrics:
 
   - id: federal_surplus_deficit_pct_gdp_change_pp
     family: fiscal
-    primary: false
     label: "Federal surplus/deficit (%GDP, change in percentage points, end minus start; FYFSGDA188S)"
     inputs:
       series: fyfsgda188s_federal_surplus_deficit_pct_gdp
@@ -1450,7 +1365,6 @@ metrics:
 
   - id: federal_surplus_deficit_pct_gdp_change_pp_per_year
     family: fiscal
-    primary: false
     label: "Federal surplus/deficit (%GDP, change in percentage points per year; FYFSGDA188S)"
     inputs:
       series: fyfsgda188s_federal_surplus_deficit_pct_gdp
