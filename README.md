@@ -3,8 +3,10 @@
 Reproducible pipeline comparing U.S. economic metrics under Democratic vs. Republican presidents.
 10 primary metrics, permutation-based inference with FDR correction.
 
-**Bottom line:** All 10 primary metrics are exploratory (q > 0.10). With ~15 presidential terms
-there is not enough statistical power to detect plausible effect sizes.
+**Bottom line:** GDP growth is significantly higher under Democratic presidents (q=0.021,
+surviving FDR correction across all 10 metrics). The other 9 primary metrics are exploratory
+(q > 0.10) — the sample of 23-51 four-year presidential terms has limited power for most
+effect sizes.
 
 ## Quick Start
 
