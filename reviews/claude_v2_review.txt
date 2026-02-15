@@ -1,0 +1,96 @@
+Excellent. I now have a thorough understanding of all four spec files and the implementation code. Here is the review.
+
+---
+
+## 1) Must Fix Before Publish
+
+**A. Default `block_years=0` makes baseline "confirmatory" findings potentially anticonservative.** The default permutation test shuffles D/R labels across the entire 1926–present timeline with no temporal blocking. If there are secular trends in GDP growth, inflation, or employment (there obviously are), unrestricted shuffling conflates era effects with party effects. The 2 "confirmatory" metrics at baseline lose that tier under `block_years=20`—this is already documented in `analysis_rationale_and_findings.md:230-232` but the *default* profile still uses the anticonservative setting. **Fix:** Change the default `block_years` to a non-zero value (e.g., 20) or, at minimum, never label any metric "confirmatory" in publication outputs unless it passes the strict profile. The current architecture supports this; it just needs the claims gate enforced.
+
+**B. Percentile bootstrap CIs are unreliable at actual sample sizes.** The code uses the basic percentile bootstrap (`randomization.py:92-112`). With n~10 D-terms and n~10 R-terms, and especially with n_with_both as low as 3–5 for within-president tests, percentile bootstrap coverage can be well below 95%. The evidence-tier classifier uses "CI excludes zero" as a hard gate for confirmatory/supportive status. An overconfident CI inflates the number of "confirmatory" findings. **Fix:** Either switch to BCa bootstrap (bias-corrected and accelerated) or, simpler and sufficient, drop the "CI excludes zero" gate from the tier classifier and rely on `q_bh_fdr` alone for tier assignment. Document the CI as an effect-size illustration, not a decision criterion.
+
+**C. Dual code paths for within-president deltas risk silent inconsistency.** The scoreboard computes within-president U-D deltas in its own code path (`scoreboard.py:302-426`), while the randomization module independently computes the same estimand for the permutation test. If the weighting logic (by `window_days`) or window filtering ever diverges, the delta shown in the scoreboard table won't match the delta the significance test was run on—and the user would see significance columns attached to a different point estimate. **Fix:** Factor the delta computation into a shared function called by both modules, or have the scoreboard read the observed delta from the randomization output CSV rather than recomputing it.
+
+**D. No Monte Carlo stability check for borderline p-values.** With only 2,000 permutations, p-values near decision boundaries (0.05, 0.10) have non-trivial simulation noise (~±0.01). A metric with true p≈0.06 could land in "supportive" on one seed and "exploratory" on another. **Fix:** Either increase default permutations to 10,000 (trivial compute cost for this problem size), or run at least 3 seeds and report the range, as already noted in `analysis_rationale_and_findings.md:320` but not yet implemented.
+
+**E. Transform-family correlation inflates the "count of significant metrics" interpretation.** The 37 metrics include many correlated transforms of the same underlying series (e.g., 6 GDP growth variants, 10 inflation variants). Reporting "7 metrics at q<0.10" overstates the evidence breadth because they may represent only 2–3 truly independent signals. BH FDR assumes independence or positive regression dependency (PRDS), which is satisfied here, so the FDR control is valid—but the *narrative* interpretation of "how many families show effects" is misleading without grouping. **Fix:** Report significance at the **family** level (best primary metric per family), not raw metric count. The `family` field already exists in the YAML spec; use it.
+
+---
+
+## 2) Should Improve Soon
+
+**A. Add HAC/Newey-West or cluster-robust standard errors as a parallel inference track.** The permutation test is valid but unfamiliar to many economists. Blinder-Watson (2014) reports both. Having a regression-based table alongside the permutation table lets readers cross-check and increases credibility. This is already identified in `analysis_rationale_and_findings.md:302-303`.
+
+**B. Report minimum detectable effect (MDE) or power proxies.** Many within-president cells have n_with_both ≤ 5. Rather than just flagging low n, state: "at n=5, the test can only detect effects of size X at 80% power." This contextualizes the "exploratory" tier as "underpowered," not "null."
+
+**C. Pin the primary metric per family in the YAML spec.** The `primary: true` field exists and is used, but the rationale doc doesn't formally justify *why* each primary was chosen over its alternates. For example, `cpi_inflation_yoy_mean_nsa` is primary over the SA variant—the rationale in `metrics_rationale.md:33-35` is good, but it should be a formal pre-registration statement in the spec, not just prose.
+
+**D. Add a data-vintage sensitivity panel.** Macro series (especially GDP, CPI) get revised. Results computed today vs. 6 months ago could differ. Cache two vintages and show the delta on headline claims.
+
+**E. Publication narrative template.** `analysis_rationale_and_findings.md:321` notes this is needed. A template that mechanically maps claims-table rows to prose (no manual cherry-picking) would close the causal-overreach risk at the writing stage.
+
+---
+
+## 3) Metrics To Add/Remove
+
+### Add
+
+| Metric | Reason |
+|---|---|
+| **FEDFUNDS (Fed Funds rate)** | Listed in `known_omissions`. Interest rates are a first-order macro variable and a major channel in Blinder-Watson's decomposition of the party gap. Omitting it leaves a hole in the fiscal/monetary story. |
+| **DGS10 or T10Y2Y (yield curve)** | Yield curve slope is the most-cited recession predictor and directly relevant to the recession-share metric already included. |
+| **Core CPI or Core PCE (ex food/energy)** | Headline CPI/PCE includes volatile food/energy. Core measures are what the Fed targets and what economists cite for underlying inflation trends. Without them, the inflation family is incomplete. |
+| **Real wage growth (nominal wages deflated explicitly)** | Currently relying only on pre-deflated `LES1252881600Q`. Adding average hourly earnings (CES) + explicit CPI/PCE deflation gives a cross-check and broader coverage (all workers, not just full-time median). |
+| **Participation rate (CIVPART)** | Unemployment rate alone misses discouraged-worker effects. Participation rate or employment-population ratio is needed to interpret the unemployment numbers honestly. |
+
+### Remove (or demote to diagnostic-only)
+
+| Metric | Reason |
+|---|---|
+| **`sp500_backfilled_pre1957_*` (2 metrics)** | The spec correctly warns these are not the modern S&P 500 and should not be stitched. But including them as separate metrics in the test battery adds two tests to the BH family that are conceptually different from every other metric (different index definition, different era). They dilute the FDR correction while being nearly uninterpretable for the D-vs-R question (very few post-WWII terms fall entirely pre-1957). Demote to a footnote diagnostic, exclude from the BH family. |
+| **`ff_mkt_excess_return_ann_arith`** | Arithmetic annualized excess return double-counts with the compound version and is known to be upward-biased for volatile series. The compound version is already primary. Remove or demote to avoid inflating the metric count. |
+
+### Transform symmetry issues to resolve
+
+- GDP has 6 variants; inflation has 10. Employment has 8. Stock returns has 8. This means the BH correction is dominated by price/return metrics. If one family is over-represented in transforms, its signal is diluted by its own alternates while other families get a free ride. **Recommendation:** Run BH separately within each family (or use a hierarchical testing procedure like Yekutieli's hierarchical FDR) so that adding more transforms to one family doesn't penalize another.
+
+---
+
+## 4) Methodology Assessment: Is Current Significance Usage Valid/Standard?
+
+**Overall: Yes, directionally valid and better than most popular-press treatments. Not yet publication-grade for an economics journal.**
+
+**What's correct and well-done:**
+- Permutation p-values with the Phipson-Smyth `(1+k)/(1+n)` correction are textbook.
+- BH FDR adjustment is the right multiplicity correction for this exploratory-to-confirmatory screen.
+- Within-president permutation respects the paired/clustered structure—this is a genuine methodological strength over naive cross-term comparisons.
+- The three-tier classification system (confirmatory/supportive/exploratory) is a reasonable decision framework that avoids binary "significant or not."
+- The baseline-vs-strict sensitivity comparison is excellent practice and rarely seen in this literature.
+
+**What's nonstandard or problematic:**
+- **No classical inference benchmark.** Every major paper in this literature (Blinder-Watson, Santa-Clara-Valkanov) reports HAC or clustered standard errors alongside any resampling-based inference. The permutation-only approach is valid but looks incomplete to econometricians.
+- **Percentile bootstrap at small n is known to undercover.** The bootstrap CI should either be upgraded to BCa or explicitly documented as illustrative. Using it as a hard gate in tier classification is the main concrete error.
+- **The default exchangeability assumption (no temporal blocking) is too strong.** GDP growth has declined secularly over the sample period. Unrestricted shuffling can attribute trend effects to party. The code supports blocking; the default should use it.
+- **n≈10 per group for the main D-vs-R test is genuinely small.** This is inherent to the problem (there have only been ~16 presidential terms since WWII) and shared with all papers in this literature. The current approach handles it better than most via permutation rather than asymptotic tests, but power is limited and should be stated explicitly.
+- **No causal identification strategy.** The notes correctly describe the findings as "associational," but the tiering language ("confirmatory") could be misread as causal confirmation. Consider renaming to "robust association" / "suggestive association" / "exploratory."
+
+**Bottom line:** The inference stack is a legitimate, defensible approach for *associational screening*. The main risk is not that the method is wrong but that presentation language could overstate what the method proves. The fixes above (temporal blocking default, BCa or CI demotion, family-level reporting) would close the gap between what the code does and what publication-grade claims require.
+
+---
+
+## 5) Minimal Next Iteration Plan (5–8 Steps)
+
+1. **Change default `block_years` to 20 and `permutations` to 10,000.** This eliminates the two biggest technical vulnerabilities (anticonservative null distribution, Monte Carlo noise at boundaries) in a single config change. Re-run all randomization outputs.
+
+2. **Demote bootstrap CI from a hard tier-gate to an annotation.** Modify `_classify_evidence()` in `randomization.py` so that confirmatory/supportive tiers depend only on `q_bh_fdr` + `min_n`, not on "CI excludes zero." Continue reporting CI bounds in output tables as effect-size context.
+
+3. **Unify the within-president delta computation.** Factor the weighted-delta calculation out of `scoreboard.py` and `randomization.py` into a shared utility. Have both modules call it. Add a unit test that verifies the scoreboard delta exactly matches the randomization observed delta for a fixture dataset.
+
+4. **Add family-level BH reporting.** For the headline summary, apply BH over only the primary metric per family (currently 7 families × 1 primary = 7 tests). Report this alongside the all-metrics BH. This gives a cleaner "how many independent economic dimensions show a signal" answer.
+
+5. **Add 3 high-priority series: FEDFUNDS, CIVPART, and core CPI (CPILFESL).** Define metrics in `metrics_v1.yaml` with the same transform battery as their respective families. This closes the most obvious omissions flagged in both `known_omissions` and the Blinder-Watson decomposition.
+
+6. **Add a parallel HAC/cluster-robust table for primary metrics.** Even a simple OLS regression of `metric ~ party_dummy` with Newey-West SEs (or clustered by presidential term) for each primary metric, reported alongside the permutation p-value, would satisfy the "dual inference" expectation. This is step 1 from the "Potential Next Steps" already documented.
+
+7. **Rename tier labels from "confirmatory"/"supportive" to "robust association"/"suggestive association."** This is a zero-code-cost change (string literals) that substantially reduces causal-overreach risk in any downstream narrative that cites the tier.
+
+8. **Run multi-seed stability check.** Execute `rb randomization` at seeds 42, 137, 271 with 10,000 permutations each. Report the range of q-values for each primary metric. Any metric whose tier changes across seeds gets flagged as "boundary-unstable" in the claims table.
