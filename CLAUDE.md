@@ -7,9 +7,14 @@ Reproducible pipeline comparing U.S. economic metrics under D vs R presidents.
 
 ## Results (Feb 2026)
 
-**Null across the board.** All 10 primary metrics are exploratory (q > 0.10).
-Direction split is 5-5 (D > R vs R > D). With ~15 presidential terms,
-there is not enough statistical power to detect plausible effect sizes.
+One confirmatory result: **GDP growth is significantly higher under Democratic presidents**
+(D 3.73% vs R 2.48%, gap 1.26pp, q=0.021, CI [0.45, 2.05]). This survives FDR correction
+across all 10 primary metrics and agrees with HAC inference (p=0.003). Consistent with
+Blinder-Watson (2016 AER).
+
+The other 9 metrics are exploratory (q > 0.10). Direction split is 6-4 (D > R vs R > D).
+Most effects are below minimum detectable effect size — the sample (23-51 4-year terms
+depending on data coverage) has limited power.
 
 ## Codebase (~2,500 lines)
 

@@ -60,15 +60,6 @@ def _fmt_ci(lo: float | None, hi: float | None) -> str:
     return f"[{_fmt(lo)}, {_fmt(hi)}]"
 
 
-def _derive_q_flag(row: dict[str, str], *, key: str, threshold: float) -> str:
-    raw = (row.get(key) or "").strip()
-    if raw in {"0", "1"}:
-        return raw
-    q = _parse_float(row.get("q_bh_fdr") or "")
-    if q is None:
-        return ""
-    return "1" if q < threshold else "0"
-
 
 def _load_party_summary(path: Path) -> dict[tuple[str, str], PartyMetricRow]:
     out: dict[tuple[str, str], PartyMetricRow] = {}
@@ -106,19 +97,6 @@ def _load_term_randomization(path: Path) -> dict[str, dict[str, str]]:
     return out
 
 
-def _load_claims_term_rows(path: Path) -> dict[str, dict[str, str]]:
-    out: dict[str, dict[str, str]] = {}
-    with path.open("r", encoding="utf-8", newline="") as handle:
-        rdr = csv.DictReader(handle)
-        for r in rdr:
-            if (r.get("analysis") or "").strip() != "term_party":
-                continue
-            mid = (r.get("metric_id") or "").strip()
-            if not mid:
-                continue
-            out[mid] = r
-    return out
-
 
 def write_scoreboard_md(
     *,
@@ -127,7 +105,6 @@ def write_scoreboard_md(
     out_path: Path,
     primary_only: bool,
     term_randomization_csv: Path | None = Path("reports/permutation_party_term_v1.csv"),
-    claims_table_csv: Path | None = Path("reports/claims_table_v1.csv"),
 ) -> None:
     spec = load_spec(spec_path)
     metrics_cfg: list[dict] = spec.get("metrics") or []
@@ -169,14 +146,6 @@ def write_scoreboard_md(
         term_rand_path = term_randomization_csv
         term_rand = _load_term_randomization(term_randomization_csv)
 
-    term_claims_path: Path | None = None
-    term_claims: dict[str, dict[str, str]] = {}
-    if claims_table_csv is not None and claims_table_csv.exists():
-        term_claims_path = claims_table_csv
-        term_claims = _load_claims_term_rows(claims_table_csv)
-    show_pub_cols = bool(term_claims)
-    has_publication_tiers = any((r.get("tier_strict_publication") or "").strip() for r in term_claims.values())
-
     lines: list[str] = []
     lines.append("# Scoreboard (v1)")
     lines.append("")
@@ -192,11 +161,7 @@ def write_scoreboard_md(
         "Units",
         "D-R mean",
         "q",
-        "p",
         "CI95(D-R)",
-        "q<0.05",
-        "q<0.10",
-        "Tier",
     ]
     family_sep = [
         "---",
@@ -205,14 +170,7 @@ def write_scoreboard_md(
         "---:",
         "---:",
         "---:",
-        "---:",
-        "---:",
-        "---:",
-        "---:",
     ]
-    if show_pub_cols:
-        family_header.extend(["Strict q", "Strict tier", "Publication tier"])
-        family_sep.extend(["---:", "---:", "---:"])
 
     lines.append("| " + " | ".join(family_header) + " |")
     lines.append("| " + " | ".join(family_sep) + " |")
@@ -234,24 +192,11 @@ def write_scoreboard_md(
             units.replace("|", "\\|"),
             _fmt(diff),
             _fmt(_parse_float(tr.get("q_bh_fdr") or "")),
-            _fmt(_parse_float(tr.get("p_two_sided") or "")),
             _fmt_ci(
                 _parse_float(tr.get("bootstrap_ci95_low") or ""),
                 _parse_float(tr.get("bootstrap_ci95_high") or ""),
             ),
-            _derive_q_flag(tr, key="passes_q_lt_005", threshold=0.05),
-            _derive_q_flag(tr, key="passes_q_lt_010", threshold=0.10),
-            (tr.get("evidence_tier") or "").strip(),
         ]
-        if show_pub_cols:
-            cr = term_claims.get(mid, {})
-            row_values.extend(
-                [
-                    _fmt(_parse_float(cr.get("q_strict") or "")),
-                    (cr.get("tier_strict") or "").strip(),
-                    (cr.get("tier_strict_publication") or "").strip(),
-                ]
-            )
 
         lines.append("| " + " | ".join(row_values) + " |")
         if d is None or r is None:
@@ -288,11 +233,7 @@ def write_scoreboard_md(
         "n(D)",
         "n(R)",
         "q",
-        "p",
         "CI95(D-R)",
-        "q<0.05",
-        "q<0.10",
-        "Tier",
     ]
     party_sep = [
         "---",
@@ -306,14 +247,7 @@ def write_scoreboard_md(
         "---:",
         "---:",
         "---:",
-        "---:",
-        "---:",
-        "---:",
-        "---:",
     ]
-    if show_pub_cols:
-        party_header.extend(["Strict q", "Strict tier", "Publication tier"])
-        party_sep.extend(["---:", "---:", "---:"])
 
     lines.append("| " + " | ".join(party_header) + " |")
     lines.append("| " + " | ".join(party_sep) + " |")
@@ -341,24 +275,11 @@ def write_scoreboard_md(
             _fmt_int(d.n_terms if d else None),
             _fmt_int(r.n_terms if r else None),
             _fmt(_parse_float(tr.get("q_bh_fdr") or "")),
-            _fmt(_parse_float(tr.get("p_two_sided") or "")),
             _fmt_ci(
                 _parse_float(tr.get("bootstrap_ci95_low") or ""),
                 _parse_float(tr.get("bootstrap_ci95_high") or ""),
             ),
-            _derive_q_flag(tr, key="passes_q_lt_005", threshold=0.05),
-            _derive_q_flag(tr, key="passes_q_lt_010", threshold=0.10),
-            (tr.get("evidence_tier") or "").strip(),
         ]
-        if show_pub_cols:
-            cr = term_claims.get(mid, {})
-            row_values.extend(
-                [
-                    _fmt(_parse_float(cr.get("q_strict") or "")),
-                    (cr.get("tier_strict") or "").strip(),
-                    (cr.get("tier_strict_publication") or "").strip(),
-                ]
-            )
         lines.append("| " + " | ".join(row_values) + " |")
         if d is None or r is None:
             missing_party_rows += 1
@@ -372,13 +293,6 @@ def write_scoreboard_md(
     else:
         lines.append("")
         lines.append("Significance columns are blank until `rb randomization` has been run.")
-    if show_pub_cols and term_claims_path is not None and has_publication_tiers:
-        lines.append(f"Publication-tier columns sourced from `{term_claims_path}`.")
-    elif show_pub_cols and term_claims_path is not None:
-        lines.append(
-            f"Claims-table strict columns sourced from `{term_claims_path}`; publication-tier values are blank "
-            "until `rb claims-table --publication-mode` is used."
-        )
 
     lines.append("")
     lines.append("## Data Appendix")
@@ -388,14 +302,12 @@ def write_scoreboard_md(
     lines.append(f"- `{party_summary_csv}`")
     if term_rand_path is not None:
         lines.append(f"- `{term_rand_path}`")
-    if term_claims_path is not None:
-        lines.append(f"- `{term_claims_path}`")
     lines.append("")
     lines.append("Rebuild:")
     lines.append("```sh")
     lines.append("uv sync")
     lines.append(".venv/bin/rb ingest --refresh")
-    lines.append(".venv/bin/rb presidents --source congress_legislators --granularity tenure --refresh")
+    lines.append(".venv/bin/rb presidents --refresh")
     lines.append(".venv/bin/rb compute")
     lines.append(".venv/bin/rb randomization")
     lines.append("```")

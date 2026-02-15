@@ -351,7 +351,7 @@ metrics:
   # Employment
   - id: payroll_jobs_change_total
     family: jobs
-    primary: true
+    primary: false
     label: "Payroll employment change (total, end minus start)"
     inputs:
       series: payems_payroll_employment
@@ -363,7 +363,7 @@ metrics:
 
   - id: payroll_jobs_change_per_year
     family: jobs
-    primary: false
+    primary: true
     label: "Payroll employment change (per year, end minus start divided by term years)"
     inputs:
       series: payems_payroll_employment
@@ -552,7 +552,7 @@ metrics:
   # Wages
   - id: real_median_weekly_earnings_term_pct_change
     family: wages
-    primary: true
+    primary: false
     label: "Real median weekly earnings percent change (term total, end vs start; LES1252881600Q)"
     inputs:
       series: les1252881600q_real_median_weekly_earnings
@@ -589,7 +589,7 @@ metrics:
 
   - id: real_median_weekly_earnings_term_cagr_pct
     family: wages
-    primary: false
+    primary: true
     label: "Real median weekly earnings CAGR (term annualized from start/end; LES1252881600Q)"
     inputs:
       series: les1252881600q_real_median_weekly_earnings

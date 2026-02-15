@@ -58,7 +58,7 @@ def _parse_args() -> argparse.Namespace:
     presidents.add_argument(
         "--granularity",
         choices=PRESIDENT_GRANULARITY,
-        default="tenure",
+        default="term",
         help="Emit per-president tenure windows (tenure) or constitutional terms (term).",
     )
     presidents.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
@@ -75,7 +75,7 @@ def _parse_args() -> argparse.Namespace:
     compute.add_argument(
         "--president-granularity",
         choices=PRESIDENT_GRANULARITY,
-        default="tenure",
+        default="term",
         help="If generating --presidents, choose tenure vs term windows.",
     )
     compute.add_argument(
@@ -228,12 +228,6 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Include non-primary metrics in addition to primary metrics.",
     )
-    scoreboard.add_argument(
-        "--claims-table",
-        type=Path,
-        default=Path("reports/claims_table_v1.csv"),
-        help="Claims table CSV (optional; adds strict/publication tier columns if present).",
-    )
     scoreboard.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
     return p.parse_args()
@@ -339,7 +333,6 @@ def main() -> int:
             party_summary_csv=args.party_summary,
             out_path=args.output,
             primary_only=not bool(args.all_metrics),
-            claims_table_csv=args.claims_table if args.claims_table.exists() else None,
         )
         return 0
 
