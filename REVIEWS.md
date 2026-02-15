@@ -1,7 +1,8 @@
 # External Reviews
 
-Raw review files are in git history at `e3a82f3` (`reviews/`). This file
-summarizes actionable findings across all review rounds.
+Raw review files for rounds 1-3 are in git history at `e3a82f3` (`reviews/`).
+Round 4 raw files are in `reviews/`. This file summarizes actionable findings
+across all review rounds.
 
 ## Round 4: Post-simplification (commit `0dde770`)
 

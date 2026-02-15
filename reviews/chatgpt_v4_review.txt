@@ -1,0 +1,142 @@
+Short answer: structurally yes; epistemically almost; politically not yet.
+
+Architecture and reproducibility
+
+From the tree and README, the core design is disciplined and close to your stated goal.
+
+You have:
+
+* Declarative metric specs in `spec/` rather than hard-coded transforms.
+* Separate ingestion (`rb/sources/`), transformation (`metrics.py`), attribution (`presidents.py`), inference (`randomization.py`), and rendering (`scoreboard.py`).
+* Cached raw data and explicit source modules (FRED, NBER, Ken French, Wikidata).
+* A permutation test with single-universe BH-FDR correction across all 83 metrics.
+* A validate step and CI workflow.
+
+That is clean, minimal, and methodologically serious. The separation between:
+
+* measurement,
+* inference,
+* and presentation
+  is especially strong. The switch to unrestricted permutation as default is a defensible conservative choice and aligns with your “robust, not cute” objective.
+
+The spec-first design is the biggest win. It makes the project auditable and extendable without code edits.
+
+Methodological posture
+
+You are clearly trying to avoid:
+
+* asymptotic overconfidence,
+* selective p-value reporting,
+* block-shuffling hacks that inflate significance,
+* causal overclaiming.
+
+Using term-level units and permutation with fixed D/R counts is appropriate for small-N settings. Applying BH-FDR across the full metric universe rather than cherry-picking families is consistent with your “single universe” claim.
+
+The README language is mostly restrained:
+
+* “association”
+* “lack power”
+* “exploratory”
+* sensitivity flags exposed
+
+That is consistent with “unopinionated economic analysis.”
+
+Where it drifts from unopinionated
+
+The repo’s research question is not neutral. It is narrowly framed around D vs R presidents, and the literature folder is heavily weighted toward sources defending the “Democrats perform better” claim (EPI, JEC Democrats, Belfer, op-eds).
+
+Even if the pipeline itself is neutral, the intellectual framing is not symmetric.
+
+Concretely:
+
+1. Literature balance
+   There are few sources in `literature/` that argue the opposite thesis or that critique partisan growth comparisons on structural grounds (e.g., secular trend confounding, party sorting, congressional dominance, war/pandemic clustering). You have some caveats (CRS, CRFB, FactCheck), but the corpus leans one direction.
+
+2. Hypothesis framing
+   The repo title and README are implicitly answering a politically loaded question. A more neutral framing would be something like:
+   “Term-level macroeconomic performance under presidential administrations, 1949–present.”
+
+3. Mechanism asymmetry
+   You emphasize that fiscal/monetary policy do not explain the gap (good), but you do not appear to symmetrically model:
+
+   * inherited conditions,
+   * global growth regime shifts,
+   * oil intensity changes,
+   * monetary regime breaks,
+   * pandemic shock isolation as a first-class spec dimension.
+
+4. Pandemic handling
+   If 2020–2022 is in-sample without special structural treatment, it dominates variance. You mention sensitivity, but unless shock isolation is codified in spec (not CLI flags only), it remains analyst discretion.
+
+5. Metric proliferation risk
+   83 metrics across 10 families with limited term counts means:
+
+   * high correlation structure,
+   * low effective dimensionality,
+   * FDR helps, but interpretation still requires discipline.
+
+A truly “minimal” analysis might define a pre-registered core set (e.g., 6–10 metrics) and treat the rest as secondary.
+
+What is strong
+
+* Explicit attribution windows.
+* Parameterized lag rules.
+* Permutation rather than parametric inference.
+* Clear statement that “association ≠ policy causation.”
+* Acknowledge power limits.
+* No narrative explanation module embedded in the pipeline itself.
+
+That is closer to academic practice than most public writeups.
+
+What would make it genuinely unopinionated
+
+1. Reframe README
+   Replace:
+   “comparing Democratic vs Republican presidents”
+   with:
+   “estimating party-conditional differences in term-level macro outcomes.”
+
+2. Add symmetric critique module
+   Include:
+
+   * secular time-trend regressions,
+   * placebo party randomization on synthetic partitions,
+   * pre/post structural break analysis (e.g., post-Volcker, post-1990 globalization).
+
+3. Make shock-isolation first-class
+   Pandemic, oil shocks, wars:
+
+   * spec-level exclusion flags,
+   * publish side-by-side “all terms” vs “shock-adjusted.”
+
+4. Publish null stability tests
+   Show:
+
+   * how many metrics flip sign under alternative lag rules,
+   * how sensitive the unemployment result is to 1-term removal,
+   * leave-one-term-out analysis.
+
+5. Balance literature
+   Add:
+
+   * serious critiques of partisan growth comparisons,
+   * literature on political selection effects (voters elect D in recessions, R in expansions, etc.),
+   * forecasting-error decomposition work.
+
+6. Add explicit non-causal disclaimer in scoreboard
+   Force the output layer to state:
+   “Descriptive term-level association; no causal identification.”
+
+Verdict
+
+On engineering and statistical hygiene: strong.
+
+On epistemic humility: good but could be tightened.
+
+On political neutrality: the code is neutral; the framing is not fully neutral.
+
+It achieves “clean” and “robust.”
+It partially achieves “minimal.”
+It does not fully achieve “unopinionated” yet, mainly due to framing and corpus selection, not due to statistical malpractice.
+
+If you want, I can outline a concrete “v0.2 neutrality hardening” plan that keeps your current results intact but strengthens its credibility with skeptical readers.
