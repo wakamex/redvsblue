@@ -33,6 +33,7 @@ rb scoreboard                    # markdown scoreboard from computed CSVs
 ## Key Outputs
 
 - `reports/term_metrics_v1.csv` — metric values per presidential term
+- `reports/party_summary_v1.csv` — D vs R party-level means and medians
 - `reports/permutation_party_term_v1.csv` — permutation test results with FDR q-values
 - `reports/scoreboard.md` — human-readable summary (sorted by q)
 
