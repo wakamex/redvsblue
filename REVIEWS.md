@@ -16,16 +16,14 @@ Reviewers: Gemini 3, ChatGPT 5.2.
    (33 tests covering `_std_population`, `_percentile`, `_diff_d_minus_r`,
    `_bootstrap_diff_d_minus_r`, `_add_bh_q_values`, `_p_two_sided`).
 
-2. **Leave-one-term-out sensitivity** (ChatGPT). Check whether the confirmatory
-   unemployment result depends on a single outlier term. Cheap robustness check.
-
-3. **Note metric correlation structure** (ChatGPT). The 83 metrics are highly
+2. **Note metric correlation structure** (ChatGPT). The 83 metrics are highly
    correlated; the 3 significant results (unemployment change, unemployment change/yr,
    payroll jobs) reflect 1-2 independent signals, not 3. BH-FDR overstates the
    effective test count. Already in CLAUDE.md but not surfaced to readers.
 
 ### Considered, not pursued
 
+- **Leave-one-term-out sensitivity** (ChatGPT). Cheap robustness check but not a priority given structural power limits.
 - **Visualization / `rb plot`** (Gemini). A plot would help but is not a correctness issue.
 - **Exogenous shock covariates** (Gemini, ChatGPT). Requires regression, not permutation. Small N makes it impractical.
 - **Pandemic term isolation** (ChatGPT). Better handled by leave-one-term-out than ad hoc exclusion flags.
