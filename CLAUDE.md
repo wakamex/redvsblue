@@ -30,6 +30,7 @@ has limited power for smaller effect sizes.
 - `rb/scoreboard.py` — markdown scoreboard renderer (sorted by q)
 - `rb/cli.py` — 6 subcommands
 - `spec/` — declarative metric and attribution definitions
+- `tests/` — unit tests (`uv run pytest`)
 
 ## Commands
 
@@ -39,6 +40,7 @@ rb ingest --refresh              # fetch raw data
 rb compute                       # term metrics + party summaries
 rb randomization                 # permutation tests
 rb scoreboard                    # human-readable summary
+uv run pytest                    # unit tests
 ```
 
 ## Permutation blocking note
