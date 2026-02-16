@@ -7,6 +7,7 @@ reports/
 *.egg-info/
 build/
 dist/
+.claude/
 
 # Large vendored deps; re-install via literature/_scripts/requirements.txt when needed.
 literature/_scripts/_vendor/

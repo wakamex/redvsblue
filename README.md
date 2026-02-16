@@ -8,6 +8,9 @@ unemployment rate change (D -1.16pp vs R +1.16pp, q=0.025). Two more are support
 (q < 0.10): unemployment change per year and payroll employment percent change.
 GDP growth is exploratory (q=0.149) under unrestricted permutation. Most metrics lack
 power — the sample of 23-51 four-year presidential terms is small for the effect sizes involved.
+The 83 metrics are intentionally broad but highly correlated, so the 3 significant results
+likely reflect 1-2 independent signals (unemployment and employment). BH-FDR corrects for
+the nominal test count, not the effective one — this is conservative by design.
 
 **Caveat on permutation blocking:** Results are highly sensitive to the `--term-block-years`
 setting. Unrestricted permutation (default, block_years=0) yields 1 confirmatory result.
