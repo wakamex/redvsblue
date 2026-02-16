@@ -16,10 +16,11 @@ Reviewers: Gemini 3, ChatGPT 5.2.
    (33 tests covering `_std_population`, `_percentile`, `_diff_d_minus_r`,
    `_bootstrap_diff_d_minus_r`, `_add_bh_q_values`, `_p_two_sided`).
 
-2. **Note metric correlation structure** (ChatGPT). The 83 metrics are highly
+2. ~~**Note metric correlation structure** (ChatGPT). The 83 metrics are highly
    correlated; the 3 significant results (unemployment change, unemployment change/yr,
    payroll jobs) reflect 1-2 independent signals, not 3. BH-FDR overstates the
-   effective test count. Already in CLAUDE.md but not surfaced to readers.
+   effective test count. Already in CLAUDE.md but not surfaced to readers.~~ **Done** —
+   noted in README.
 
 ### Considered, not pursued
 
