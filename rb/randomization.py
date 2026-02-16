@@ -140,6 +140,13 @@ def _add_bh_q_values(rows: list[dict[str, str]], *, p_col: str, q_col: str) -> N
         r[q_col] = _fmt(q) if q is not None else ""
 
 
+def _p_two_sided(observed: float, perm_diffs: list[float]) -> float | None:
+    if not perm_diffs:
+        return None
+    extreme = sum(1 for d in perm_diffs if abs(d) >= abs(observed))
+    return (1 + extreme) / (1 + len(perm_diffs))
+
+
 def _diff_d_minus_r(values: list[float], labels: list[str]) -> float | None:
     sum_d = 0.0
     sum_r = 0.0
@@ -316,8 +323,7 @@ def run_randomization(
             z = (observed - perm_mean) / perm_std
         p_two = None
         if observed is not None and perm_diffs:
-            extreme = sum(1 for d in perm_diffs if abs(d) >= abs(observed))
-            p_two = (1 + extreme) / (1 + len(perm_diffs))
+            p_two = _p_two_sided(observed, perm_diffs)
         ci_lo, ci_hi = _bootstrap_diff_d_minus_r(
             d_vals=d_vals,
             r_vals=r_vals,

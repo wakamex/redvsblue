@@ -10,9 +10,11 @@ Reviewers: Gemini 3, ChatGPT 5.2.
 
 ### Actionable
 
-1. **Unit tests for core math** (Gemini). No tests exist for permutation p-value
+1. ~~**Unit tests for core math** (Gemini). No tests exist for permutation p-value
    calculation, BH-FDR ranking, or bootstrap CI. `rb validate` checks data sanity,
-   not code correctness. High-value, small scope.
+   not code correctness. High-value, small scope.~~ **Done** — `tests/test_randomization.py`
+   (33 tests covering `_std_population`, `_percentile`, `_diff_d_minus_r`,
+   `_bootstrap_diff_d_minus_r`, `_add_bh_q_values`, `_p_two_sided`).
 
 2. **Leave-one-term-out sensitivity** (ChatGPT). Check whether the confirmatory
    unemployment result depends on a single outlier term. Cheap robustness check.
