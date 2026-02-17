@@ -55,6 +55,8 @@ jobs:
             ${{ runner.os }}-rb-smoke-fred-
 
       - name: Smoke pipeline (ingest -> compute -> validate)
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: |
           retry() {
             for i in 1 2 3; do
