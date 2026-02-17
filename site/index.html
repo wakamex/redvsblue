@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>D vs R Economic Scoreboard</title>
+<title>Red vs. Blue</title>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{background:#1a1a1a;color:#e0e0e0;font-family:system-ui,-apple-system,sans-serif;
-       line-height:1.6;padding:1rem;max-width:1200px;margin:0 auto}
+       line-height:1.6;padding:1rem 2rem;margin:0}
   h1{color:#ff9800;margin-bottom:.25rem;font-size:1.6rem}
   .subtitle{color:#999;font-size:.85rem;margin-bottom:1rem}
   .summary{margin-bottom:1.25rem;font-size:.9rem;color:#bbb;max-width:72ch}
@@ -25,11 +25,20 @@
   th.num{text-align:right}
   td{padding:.4rem .6rem;border-bottom:1px solid #2a2a2a;white-space:nowrap}
   td.num{text-align:right;font-variant-numeric:tabular-nums}
-  tr:nth-child(even) td{background:#1f1f1f}
-  tr:hover td{background:#2a2a2a}
+  tr:nth-child(even of :not(.detail-row)) td{background:#1f1f1f}
+  tr:hover:not(.detail-row) td{background:#2a2a2a}
   tr.tier-confirmatory td:first-child{border-left:3px solid #4caf50}
   tr.tier-supportive td:first-child{border-left:3px solid #ff9800}
   tr.tier-exploratory td:first-child{border-left:3px solid transparent}
+  tr.metric-row{cursor:pointer}
+  tr.metric-row td:first-child::before{content:"\25B6";font-size:.6rem;margin-right:.4rem;
+    display:inline-block;transition:transform .15s}
+  tr.metric-row.expanded td:first-child::before{transform:rotate(90deg)}
+  .detail-row td{background:#151515 !important;padding:0;border-left:3px solid #444}
+  .detail-inner{padding:.75rem 1rem 1rem;overflow-x:auto}
+  .detail-inner h3{font-size:.85rem;color:#ccc;margin-bottom:.5rem;font-weight:500}
+  .detail-chart{margin-bottom:.75rem}
+  .detail-chart svg{display:block}
   .footer{font-size:.75rem;color:#777;margin-top:1rem;max-width:72ch;line-height:1.5}
   .footer a{color:#ff9800;text-decoration:none}
   .footer a:hover{text-decoration:underline}
@@ -44,12 +53,12 @@
 </head>
 <body>
 
-<h1>D vs R Economic Scoreboard</h1>
-<p class="subtitle">Permutation-based inference across 83 U.S. economic metrics</p>
+<h1>Red vs. Blue</h1>
+<p class="subtitle">U.S. economic metrics under Democratic vs. Republican presidents</p>
+<p class="subtitle" style="margin-top:-.5rem">Permutation-based inference across 83 U.S. economic metrics</p>
 
 <div class="summary">
-  Metrics sorted by BH-FDR corrected q-value. Equal weight per presidential term.
-  Only metrics with q&lt;0.05 survive multiple-testing correction (confirmatory).
+  Metrics sorted by BH-FDR corrected q-value.
 </div>
 
 <div class="legend">
@@ -88,7 +97,7 @@
     See <code>--term-block-years</code> for block-shuffle sensitivity analysis.
   </p>
   <p style="margin-top:.5rem">
-    Source: <a href="https://github.com/wakamex/rb">github.com/wakamex/rb</a>
+    For full details see: <a href="https://github.com/wakamex/rb">github.com/wakamex/rb</a>
   </p>
 </div>
 
@@ -97,6 +106,12 @@
   var CDN = "https://cdn.jsdelivr.net/gh/wakamex/rb@main/site/data.json";
   var tbody = document.getElementById("tbody");
   var status = document.getElementById("status");
+  var COL_SPAN = 11;
+  var COLOR_D = "#4a90d9";
+  var COLOR_R = "#d94a4a";
+
+  // Store metrics data for detail expansion
+  var metricsData = [];
 
   function fmt(v, digits) {
     if (v == null) return "";
@@ -108,16 +123,142 @@
     return "[" + fmt(lo) + ", " + fmt(hi) + "]";
   }
 
+  function esc(s) {
+    if (!s) return "";
+    var d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function lastName(name) {
+    var parts = (name || "").trim().split(/\s+/);
+    return parts[parts.length - 1];
+  }
+
+  function termYears(start, end) {
+    var s = (start || "").slice(0, 4);
+    var e = (end || "").slice(0, 4);
+    if (s && e) return s + "-" + e;
+    if (s) return s + "-";
+    return "";
+  }
+
+  function buildChart(terms, dMean, rMean) {
+    if (!terms || terms.length === 0) return "";
+
+    var barH = 18, gap = 3, labelW = 160, gapW = 55, padR = 60, padT = 5, padB = 5;
+    var chartH = padT + terms.length * (barH + gap) - gap + padB;
+
+    // Find extent of values
+    var vals = terms.map(function(t) { return t.value; });
+    var minV = Math.min.apply(null, vals);
+    var maxV = Math.max.apply(null, vals);
+    // Ensure zero is included
+    if (minV > 0) minV = 0;
+    if (maxV < 0) maxV = 0;
+    var range = maxV - minV || 1;
+
+    var barAreaW = 400;
+    var barAreaX = labelW + gapW;
+    var svgW = barAreaX + barAreaW + padR;
+
+    // Zero position in bar area (snap to whole pixel)
+    var zeroX = Math.round(barAreaX + (-minV / range) * barAreaW);
+
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + svgW + '" height="' + chartH + '" style="font-family:system-ui,sans-serif;font-size:11px">';
+
+    // Zero line
+    svg += '<line x1="' + zeroX + '" y1="0" x2="' + zeroX + '" y2="' + chartH + '" stroke="#555" stroke-width="1" stroke-dasharray="3,3"/>';
+
+    for (var i = 0; i < terms.length; i++) {
+      var t = terms[i];
+      var y = padT + i * (barH + gap);
+      var color = t.party === "D" ? COLOR_D : COLOR_R;
+      var label = lastName(t.president) + " " + termYears(t.term_start, t.term_end);
+
+      // Label
+      svg += '<text x="' + (labelW - 5) + '" y="' + (y + barH / 2 + 4) + '" text-anchor="end" fill="#aaa">' + esc(label) + '</text>';
+
+      // Bar (round to whole pixels to avoid anti-aliasing color shifts)
+      var v = t.value;
+      var barX, barW;
+      if (v >= 0) {
+        barX = zeroX;
+        barW = Math.round((v / range) * barAreaW);
+      } else {
+        barW = Math.round((-v / range) * barAreaW);
+        barX = zeroX - barW;
+      }
+      if (barW < 1) barW = 1;
+      svg += '<rect x="' + barX + '" y="' + y + '" width="' + barW + '" height="' + barH + '" fill="' + color + '" rx="2"/>';
+
+      // Value label
+      var valLabel = fmt(v, 2);
+      var valX = v >= 0 ? barX + barW + 4 : barX - 4;
+      var valAnchor = v >= 0 ? "start" : "end";
+      svg += '<text x="' + valX + '" y="' + (y + barH / 2 + 4) + '" text-anchor="' + valAnchor + '" fill="#ccc">' + valLabel + '</text>';
+    }
+
+    // Party mean vertical lines
+    function meanLine(val, color) {
+      if (val == null) return "";
+      var x = Math.round(barAreaX + ((val - minV) / range) * barAreaW);
+      return '<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + chartH + '" stroke="' + color + '" stroke-width="2" stroke-dasharray="6,3"/>';
+    }
+    svg += meanLine(dMean, COLOR_D);
+    svg += meanLine(rMean, COLOR_R);
+
+    svg += '</svg>';
+    return svg;
+  }
+
+  function toggleDetail(metricRow, idx) {
+    var existing = metricRow.nextElementSibling;
+    if (existing && existing.classList.contains("detail-row")) {
+      existing.remove();
+      metricRow.classList.remove("expanded");
+      return;
+    }
+
+    // Close any other open detail
+    var open = tbody.querySelectorAll(".detail-row");
+    for (var k = 0; k < open.length; k++) {
+      var prev = open[k].previousElementSibling;
+      if (prev) prev.classList.remove("expanded");
+      open[k].remove();
+    }
+
+    metricRow.classList.add("expanded");
+
+    var m = metricsData[idx];
+    var terms = m.terms || [];
+
+    var detailTr = document.createElement("tr");
+    detailTr.className = "detail-row";
+    var td = document.createElement("td");
+    td.colSpan = COL_SPAN;
+
+    var inner = document.createElement("div");
+    inner.className = "detail-inner";
+    var subtitle = [m.agg, m.units].filter(Boolean).join(", ");
+    inner.innerHTML = "<h3>" + esc(m.metric) + (subtitle ? " \u2014 " + esc(subtitle) : "") + "</h3>"
+      + '<div class="detail-chart">' + buildChart(terms, m.d_mean, m.r_mean) + "</div>";
+
+    td.appendChild(inner);
+    detailTr.appendChild(td);
+    metricRow.after(detailTr);
+  }
+
   function render(data) {
     var updated = data.updated || "";
     status.textContent = "Updated: " + updated;
 
-    var metrics = data.metrics || [];
+    metricsData = data.metrics || [];
     var html = "";
-    for (var i = 0; i < metrics.length; i++) {
-      var m = metrics[i];
-      var cls = "tier-" + (m.tier || "exploratory");
-      html += '<tr class="' + cls + '">'
+    for (var i = 0; i < metricsData.length; i++) {
+      var m = metricsData[i];
+      var cls = "metric-row tier-" + (m.tier || "exploratory");
+      html += '<tr class="' + cls + '" data-idx="' + i + '">'
         + "<td>" + esc(m.metric) + "</td>"
         + "<td>" + esc(m.family) + "</td>"
         + "<td>" + esc(m.agg) + "</td>"
@@ -132,13 +273,17 @@
         + "</tr>";
     }
     tbody.innerHTML = html;
-  }
 
-  function esc(s) {
-    if (!s) return "";
-    var d = document.createElement("div");
-    d.textContent = s;
-    return d.innerHTML;
+    // Attach click handlers
+    var rows = tbody.querySelectorAll(".metric-row");
+    for (var j = 0; j < rows.length; j++) {
+      (function(row) {
+        row.addEventListener("click", function() {
+          var idx = parseInt(row.getAttribute("data-idx"), 10);
+          toggleDetail(row, idx);
+        });
+      })(rows[j]);
+    }
   }
 
   function load(url) {
