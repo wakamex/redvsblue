@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>D vs R Economic Scoreboard</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{background:#1a1a1a;color:#e0e0e0;font-family:system-ui,-apple-system,sans-serif;
+       line-height:1.6;padding:1rem;max-width:1200px;margin:0 auto}
+  h1{color:#ff9800;margin-bottom:.25rem;font-size:1.6rem}
+  .subtitle{color:#999;font-size:.85rem;margin-bottom:1rem}
+  .summary{margin-bottom:1.25rem;font-size:.9rem;color:#bbb;max-width:72ch}
+  .legend{display:flex;gap:1.25rem;margin-bottom:1rem;font-size:.8rem;flex-wrap:wrap}
+  .legend-item{display:flex;align-items:center;gap:.35rem}
+  .swatch{width:14px;height:14px;border-radius:2px;flex-shrink:0}
+  .swatch-confirmatory{background:#4caf50}
+  .swatch-supportive{background:#ff9800}
+  .swatch-exploratory{background:#555}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:1.5rem}
+  table{border-collapse:collapse;width:100%;min-width:800px;font-size:.82rem}
+  thead{position:sticky;top:0;z-index:1}
+  th{background:#2a2a2a;color:#ff9800;text-align:left;padding:.5rem .6rem;
+     border-bottom:2px solid #444;white-space:nowrap;font-weight:600}
+  th.num{text-align:right}
+  td{padding:.4rem .6rem;border-bottom:1px solid #2a2a2a;white-space:nowrap}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr:nth-child(even) td{background:#1f1f1f}
+  tr:hover td{background:#2a2a2a}
+  tr.tier-confirmatory td:first-child{border-left:3px solid #4caf50}
+  tr.tier-supportive td:first-child{border-left:3px solid #ff9800}
+  tr.tier-exploratory td:first-child{border-left:3px solid transparent}
+  .footer{font-size:.75rem;color:#777;margin-top:1rem;max-width:72ch;line-height:1.5}
+  .footer a{color:#ff9800;text-decoration:none}
+  .footer a:hover{text-decoration:underline}
+  #status{color:#999;font-size:.85rem;margin-bottom:1rem}
+  @media(max-width:600px){
+    body{padding:.5rem}
+    h1{font-size:1.25rem}
+    table{font-size:.72rem}
+    td,th{padding:.3rem .4rem}
+  }
+</style>
+</head>
+<body>
+
+<h1>D vs R Economic Scoreboard</h1>
+<p class="subtitle">Permutation-based inference across 83 U.S. economic metrics</p>
+
+<div class="summary">
+  Metrics sorted by BH-FDR corrected q-value. Equal weight per presidential term.
+  Only metrics with q&lt;0.05 survive multiple-testing correction (confirmatory).
+</div>
+
+<div class="legend">
+  <span class="legend-item"><span class="swatch swatch-confirmatory"></span> Confirmatory (q&lt;0.05)</span>
+  <span class="legend-item"><span class="swatch swatch-supportive"></span> Supportive (q&lt;0.10)</span>
+  <span class="legend-item"><span class="swatch swatch-exploratory"></span> Exploratory</span>
+</div>
+
+<div id="status">Loading data&hellip;</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Metric</th>
+        <th>Family</th>
+        <th>Agg</th>
+        <th>Units</th>
+        <th class="num">D mean</th>
+        <th class="num">R mean</th>
+        <th class="num">D-R</th>
+        <th class="num">n(D)</th>
+        <th class="num">n(R)</th>
+        <th class="num">q</th>
+        <th class="num">CI 95%</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div class="footer">
+  <p>
+    Methodology: unrestricted permutation test (10,000 shuffles) with Benjamini-Hochberg FDR
+    correction across all metrics in a single universe. Bootstrap 95% CIs (2,000 resamples).
+    See <code>--term-block-years</code> for block-shuffle sensitivity analysis.
+  </p>
+  <p style="margin-top:.5rem">
+    Source: <a href="https://github.com/wakamex/rb">github.com/wakamex/rb</a>
+  </p>
+</div>
+
+<script>
+(function() {
+  var CDN = "https://cdn.jsdelivr.net/gh/wakamex/rb@main/site/data.json";
+  var tbody = document.getElementById("tbody");
+  var status = document.getElementById("status");
+
+  function fmt(v, digits) {
+    if (v == null) return "";
+    return Number(v).toFixed(digits != null ? digits : 2);
+  }
+
+  function fmtCI(lo, hi) {
+    if (lo == null || hi == null) return "";
+    return "[" + fmt(lo) + ", " + fmt(hi) + "]";
+  }
+
+  function render(data) {
+    var updated = data.updated || "";
+    status.textContent = "Updated: " + updated;
+
+    var metrics = data.metrics || [];
+    var html = "";
+    for (var i = 0; i < metrics.length; i++) {
+      var m = metrics[i];
+      var cls = "tier-" + (m.tier || "exploratory");
+      html += '<tr class="' + cls + '">'
+        + "<td>" + esc(m.metric) + "</td>"
+        + "<td>" + esc(m.family) + "</td>"
+        + "<td>" + esc(m.agg) + "</td>"
+        + "<td>" + esc(m.units) + "</td>"
+        + '<td class="num">' + fmt(m.d_mean) + "</td>"
+        + '<td class="num">' + fmt(m.r_mean) + "</td>"
+        + '<td class="num">' + fmt(m.diff) + "</td>"
+        + '<td class="num">' + (m.n_d != null ? m.n_d : "") + "</td>"
+        + '<td class="num">' + (m.n_r != null ? m.n_r : "") + "</td>"
+        + '<td class="num">' + fmt(m.q, 3) + "</td>"
+        + '<td class="num">' + fmtCI(m.ci_low, m.ci_high) + "</td>"
+        + "</tr>";
+    }
+    tbody.innerHTML = html;
+  }
+
+  function esc(s) {
+    if (!s) return "";
+    var d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function load(url) {
+    return fetch(url).then(function(r) {
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    });
+  }
+
+  load(CDN)
+    .then(render)
+    .catch(function() {
+      // Fallback: relative path for local dev
+      load("./data.json")
+        .then(render)
+        .catch(function(err) {
+          status.textContent = "Failed to load data: " + err.message;
+        });
+    });
+})();
+</script>
+</body>
+</html>
