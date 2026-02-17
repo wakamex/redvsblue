@@ -1,0 +1,65 @@
+name: publish
+
+on:
+  schedule:
+    - cron: "0 6 * * 0"  # Sunday 6am UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Sync dependencies
+        run: uv sync --locked
+
+      - name: Cache data artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/raw
+            data/derived
+          key: ${{ runner.os }}-rb-publish-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-rb-publish-
+
+      - name: Run pipeline
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          retry() {
+            for i in 1 2 3; do
+              "$@" && return 0
+              sleep $((i * 5))
+            done
+            return 1
+          }
+          retry .venv/bin/rb ingest --refresh
+          .venv/bin/rb presidents --refresh
+          .venv/bin/rb compute
+          .venv/bin/rb validate
+          .venv/bin/rb randomization
+          .venv/bin/rb scoreboard
+          .venv/bin/rb export-json
+
+      - name: Commit site/data.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add site/data.json
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "Update site/data.json [skip ci]"
+          git push
