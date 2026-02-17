@@ -1,0 +1,24 @@
+term_id,person_qid,president,party_qid,party,party_abbrev,term_number_for_person,term_start,term_end
+govtrack:410956_1945-04-12,govtrack:410956,Harry Truman,Q29552,Democratic Party,D,1,1945-04-12,1949-01-20
+govtrack:410956_1949-01-20,govtrack:410956,Harry Truman,Q29552,Democratic Party,D,2,1949-01-20,1953-01-20
+govtrack:412366_1953-01-20,govtrack:412366,Dwight Eisenhower,Q29468,Republican Party,R,1,1953-01-20,1957-01-20
+govtrack:412366_1957-01-20,govtrack:412366,Dwight Eisenhower,Q29468,Republican Party,R,2,1957-01-20,1961-01-20
+govtrack:406274_1961-01-20,govtrack:406274,John Kennedy,Q29552,Democratic Party,D,1,1961-01-20,1963-11-22
+govtrack:406058_1963-11-22,govtrack:406058,Lyndon Johnson,Q29552,Democratic Party,D,1,1963-11-22,1965-01-20
+govtrack:406058_1965-01-20,govtrack:406058,Lyndon Johnson,Q29552,Democratic Party,D,2,1965-01-20,1969-01-20
+govtrack:408200_1969-01-20,govtrack:408200,Richard Nixon,Q29468,Republican Party,R,1,1969-01-20,1973-01-20
+govtrack:408200_1973-01-20,govtrack:408200,Richard Nixon,Q29468,Republican Party,R,2,1973-01-20,1974-08-09
+govtrack:404212_1974-08-09,govtrack:404212,Gerald Ford,Q29468,Republican Party,R,1,1974-08-09,1977-01-20
+govtrack:412371_1977-01-20,govtrack:412371,James Carter,Q29552,Democratic Party,D,1,1977-01-20,1981-01-20
+govtrack:412372_1981-01-20,govtrack:412372,Ronald Reagan,Q29468,Republican Party,R,1,1981-01-20,1985-01-20
+govtrack:412372_1985-01-20,govtrack:412372,Ronald Reagan,Q29468,Republican Party,R,2,1985-01-20,1989-01-20
+govtrack:402108_1989-01-20,govtrack:402108,George Bush,Q29468,Republican Party,R,1,1989-01-20,1993-01-20
+govtrack:412374_1993-01-20,govtrack:412374,William Clinton,Q29552,Democratic Party,D,1,1993-01-20,1997-01-20
+govtrack:412374_1997-01-20,govtrack:412374,William Clinton,Q29552,Democratic Party,D,2,1997-01-20,2001-01-20
+Q207_2001-01-20,Q207,George Bush,Q29468,Republican Party,R,1,2001-01-20,2005-01-20
+Q207_2005-01-20,Q207,George Bush,Q29468,Republican Party,R,2,2005-01-20,2009-01-20
+Q76_2009-01-20,Q76,Barack Obama,Q29552,Democratic Party,D,1,2009-01-20,2013-01-20
+Q76_2013-01-20,Q76,Barack Obama,Q29552,Democratic Party,D,2,2013-01-20,2017-01-20
+Q22686_2017-01-20,Q22686,Donald Trump,Q29468,Republican Party,R,1,2017-01-20,2021-01-20
+Q6279_2021-01-20,Q6279,Joseph Biden,Q29552,Democratic Party,D,1,2021-01-20,2025-01-20
+Q22686_2025-01-20,Q22686,Donald Trump,Q29468,Republican Party,R,2,2025-01-20,2029-01-20
