@@ -9,6 +9,7 @@ from rb.metrics import compute_term_metrics
 from rb.presidents import ensure_presidents
 from rb.randomization import run_randomization
 from rb.scoreboard import write_scoreboard_md
+from rb.site import write_site_json
 from rb.validate import validate_all
 
 PRESIDENT_SOURCES = ("congress_legislators", "wikidata")
@@ -131,6 +132,11 @@ def _parse_args() -> argparse.Namespace:
     )
     scoreboard.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
+    export_json = sub.add_parser("export-json", help="Export scoreboard data as JSON for the static site.")
+    export_json.add_argument("--party-summary", type=Path, default=Path("reports/party_summary_v1.csv"), help="Party summary CSV.")
+    export_json.add_argument("--output-dir", type=Path, default=Path("site"), help="Output directory (writes data.json).")
+    export_json.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
+
     return p.parse_args()
 
 
@@ -202,6 +208,15 @@ def main() -> int:
         write_scoreboard_md(
             party_summary_csv=args.party_summary,
             out_path=args.output,
+        )
+        return 0
+
+    if args.cmd == "export-json":
+        if not args.party_summary.exists():
+            raise FileNotFoundError(f"Missing {args.party_summary}; run `rb compute` first.")
+        write_site_json(
+            party_summary_csv=args.party_summary,
+            output_dir=args.output_dir,
         )
         return 0
 
