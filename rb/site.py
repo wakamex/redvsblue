@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -8,13 +9,49 @@ from rb.scoreboard import _load_party_summary, _load_term_randomization, _parse_
 from rb.util import write_text_atomic
 
 
+def _load_term_details(
+    term_metrics_csv: Path,
+) -> dict[str, list[dict]]:
+    """Load per-term values grouped by metric_id.
+
+    Returns {metric_id: [{president, party, term_start, term_end, value}, ...]}
+    sorted chronologically within each metric.
+    """
+    groups: dict[str, list[dict]] = {}
+    with term_metrics_csv.open("r", encoding="utf-8", newline="") as fh:
+        for row in csv.DictReader(fh):
+            mid = (row.get("metric_id") or "").strip()
+            party = (row.get("party_abbrev") or "").strip()
+            error = (row.get("error") or "").strip()
+            if not mid or party not in ("D", "R") or error:
+                continue
+            val = _parse_float(row.get("value") or "")
+            if val is None:
+                continue
+            groups.setdefault(mid, []).append({
+                "president": (row.get("president") or "").strip(),
+                "party": party,
+                "term_start": (row.get("term_start") or "").strip(),
+                "term_end": (row.get("term_end") or "").strip(),
+                "value": round(val, 4),
+            })
+    for terms in groups.values():
+        terms.sort(key=lambda t: t["term_start"])
+    return groups
+
+
 def write_site_json(
     *,
     party_summary_csv: Path,
     output_dir: Path = Path("site"),
     term_randomization_csv: Path | None = Path("reports/permutation_party_term_v1.csv"),
+    term_metrics_csv: Path | None = Path("reports/term_metrics_v1.csv"),
 ) -> None:
     party = _load_party_summary(party_summary_csv)
+
+    term_details: dict[str, list[dict]] = {}
+    if term_metrics_csv is not None and term_metrics_csv.exists():
+        term_details = _load_term_details(term_metrics_csv)
 
     metric_ids: list[str] = []
     seen: set[str] = set()
@@ -68,6 +105,7 @@ def write_site_json(
             "ci_low": _round_or_none(ci_low),
             "ci_high": _round_or_none(ci_high),
             "tier": tier,
+            "terms": term_details.get(mid, []),
         }
         rows.append((q_val if q_val is not None else 1e9, row))
 
