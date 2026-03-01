@@ -1,5 +1,5 @@
 {
-  "updated": "2026-02-22T06:21:16Z",
+  "updated": "2026-03-01T06:20:41Z",
   "metrics": [
     {
       "metric": "Unemployment rate change",
@@ -566,7 +566,7 @@
       "diff": 4.653333,
       "n_d": 9,
       "n_r": 12,
-      "q": 0.133613,
+      "q": 0.130293,
       "ci_low": 1.396035,
       "ci_high": 8.471792,
       "tier": "exploratory",
@@ -730,7 +730,7 @@
       "diff": 1.124746,
       "n_d": 11,
       "n_r": 12,
-      "q": 0.133613,
+      "q": 0.130293,
       "ci_low": 0.326965,
       "ci_high": 1.860134,
       "tier": "exploratory",
@@ -908,7 +908,7 @@
       "diff": 1.201954,
       "n_d": 11,
       "n_r": 12,
-      "q": 0.133613,
+      "q": 0.130293,
       "ci_low": 0.396818,
       "ci_high": 2.023719,
       "tier": "exploratory",
@@ -1086,7 +1086,7 @@
       "diff": 1.279203,
       "n_d": 11,
       "n_r": 12,
-      "q": 0.133613,
+      "q": 0.130293,
       "ci_low": 0.48245,
       "ci_high": 2.080026,
       "tier": "exploratory",
@@ -1264,7 +1264,7 @@
       "diff": 1.382283,
       "n_d": 11,
       "n_r": 12,
-      "q": 0.133613,
+      "q": 0.130293,
       "ci_low": 0.510556,
       "ci_high": 2.314845,
       "tier": "exploratory",
@@ -1442,7 +1442,7 @@
       "diff": 4268.464286,
       "n_d": 14,
       "n_r": 12,
-      "q": 0.133613,
+      "q": 0.130293,
       "ci_low": 1438.967857,
       "ci_high": 7170.047024,
       "tier": "exploratory",
@@ -1637,13 +1637,13 @@
       "agg": "end_minus_start",
       "units": "percentage points",
       "d_mean": 1.18125,
-      "r_mean": -0.947,
-      "diff": 2.12825,
+      "r_mean": -0.953,
+      "diff": 2.13425,
       "n_d": 8,
       "n_r": 10,
-      "q": 0.133613,
-      "ci_low": 0.6064,
-      "ci_high": 3.812956,
+      "q": 0.130293,
+      "ci_low": 0.606437,
+      "ci_high": 3.819931,
       "tier": "exploratory",
       "terms": [
         {
@@ -1770,7 +1770,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": -0.53
+          "value": -0.59
         }
       ]
     },
@@ -3017,7 +3017,7 @@
       "diff": 4.767443,
       "n_d": 11,
       "n_r": 12,
-      "q": 0.212549,
+      "q": 0.215316,
       "ci_low": 0.583359,
       "ci_high": 9.239228,
       "tier": "exploratory",
@@ -3191,13 +3191,13 @@
       "agg": "end_minus_start_per_year",
       "units": "percentage points per year",
       "d_mean": 0.301699,
-      "r_mean": -0.224634,
-      "diff": 0.526333,
+      "r_mean": -0.229204,
+      "diff": 0.530903,
       "n_d": 8,
       "n_r": 10,
-      "q": 0.212549,
-      "ci_low": 0.056278,
-      "ci_high": 0.993236,
+      "q": 0.215316,
+      "ci_low": 0.059827,
+      "ci_high": 1.002376,
       "tier": "exploratory",
       "terms": [
         {
@@ -3324,7 +3324,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": -0.4864
+          "value": -0.5321
         }
       ]
     },
@@ -3334,13 +3334,13 @@
       "agg": "end_minus_start_per_year",
       "units": "percentage points per year",
       "d_mean": -0.209693,
-      "r_mean": 0.180936,
-      "diff": -0.390629,
+      "r_mean": 0.179065,
+      "diff": -0.388758,
       "n_d": 6,
       "n_r": 7,
-      "q": 0.212549,
-      "ci_low": -0.67726,
-      "ci_high": -0.098401,
+      "q": 0.215316,
+      "ci_low": -0.675091,
+      "ci_high": -0.094973,
       "tier": "exploratory",
       "terms": [
         {
@@ -3432,7 +3432,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 0.238
+          "value": 0.2249
         }
       ]
     },
@@ -3662,13 +3662,13 @@
       "agg": "end_minus_start",
       "units": "percentage points",
       "d_mean": -0.838333,
-      "r_mean": 0.624286,
-      "diff": -1.462619,
+      "r_mean": 0.622857,
+      "diff": -1.46119,
       "n_d": 6,
       "n_r": 7,
       "q": 0.249805,
       "ci_low": -2.591244,
-      "ci_high": -0.326554,
+      "ci_high": -0.325089,
       "tier": "exploratory",
       "terms": [
         {
@@ -3760,7 +3760,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 0.26
+          "value": 0.25
         }
       ]
     },
@@ -4172,7 +4172,7 @@
       "diff": 2.530322,
       "n_d": 11,
       "n_r": 12,
-      "q": 0.284494,
+      "q": 0.280181,
       "ci_low": -0.02283,
       "ci_high": 4.981282,
       "tier": "exploratory",
@@ -4346,13 +4346,13 @@
       "agg": "cagr_from_levels",
       "units": "percent",
       "d_mean": 11.509987,
-      "r_mean": 4.350342,
-      "diff": 7.159645,
+      "r_mean": 4.286027,
+      "diff": 7.22396,
       "n_d": 9,
       "n_r": 11,
-      "q": 0.284494,
-      "ci_low": 0.940699,
-      "ci_high": 14.375678,
+      "q": 0.280181,
+      "ci_low": 1.047693,
+      "ci_high": 14.418665,
       "tier": "exploratory",
       "terms": [
         {
@@ -4493,7 +4493,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 13.8499
+          "value": 13.1424
         }
       ]
     },
@@ -4503,13 +4503,13 @@
       "agg": "pct_change_from_levels",
       "units": "percent",
       "d_mean": 47.142296,
-      "r_mean": 21.451767,
-      "diff": 25.690529,
+      "r_mean": 21.405332,
+      "diff": 25.736964,
       "n_d": 9,
       "n_r": 11,
-      "q": 0.284494,
-      "ci_low": 1.250434,
-      "ci_high": 50.411135,
+      "q": 0.280181,
+      "ci_low": 1.251594,
+      "ci_high": 50.45757,
       "tier": "exploratory",
       "terms": [
         {
@@ -4650,7 +4650,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 15.2226
+          "value": 14.7119
         }
       ]
     },
@@ -5952,13 +5952,13 @@
       "agg": "mean",
       "units": "percent",
       "d_mean": 4.76134,
-      "r_mean": 6.59901,
-      "diff": -1.83767,
+      "r_mean": 6.598609,
+      "diff": -1.837269,
       "n_d": 9,
       "n_r": 10,
-      "q": 0.380464,
-      "ci_low": -4.079112,
-      "ci_high": 0.426866,
+      "q": 0.380724,
+      "ci_low": -4.079102,
+      "ci_high": 0.427267,
       "tier": "exploratory",
       "terms": [
         {
@@ -6092,7 +6092,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 4.2646
+          "value": 4.2606
         }
       ]
     },
@@ -6577,13 +6577,13 @@
       "agg": "last",
       "units": "percentage points",
       "d_mean": 0.531667,
-      "r_mean": 1.1225,
-      "diff": -0.590833,
+      "r_mean": 1.12125,
+      "diff": -0.589583,
       "n_d": 6,
       "n_r": 8,
-      "q": 0.439144,
-      "ci_low": -1.392958,
-      "ci_high": 0.168531,
+      "q": 0.444598,
+      "ci_low": -1.39174,
+      "ci_high": 0.170969,
       "tier": "exploratory",
       "terms": [
         {
@@ -6682,7 +6682,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 0.6
+          "value": 0.59
         }
       ]
     },
@@ -7436,7 +7436,7 @@
       "diff": -1.036544,
       "n_d": 9,
       "n_r": 11,
-      "q": 0.501739,
+      "q": 0.496361,
       "ci_low": -2.565255,
       "ci_high": 0.655655,
       "tier": "exploratory",
@@ -7584,918 +7584,18 @@
       ]
     },
     {
-      "metric": "Federal surplus/deficit",
-      "family": "fiscal",
-      "agg": "end_minus_start",
-      "units": "percentage points",
-      "d_mean": 1.286519,
-      "r_mean": -1.857555,
-      "diff": 3.144074,
-      "n_d": 14,
-      "n_r": 13,
-      "q": 0.501739,
-      "ci_low": -1.240591,
-      "ci_high": 8.262306,
-      "tier": "exploratory",
-      "terms": [
-        {
-          "president": "Herbert Hoover",
-          "party": "R",
-          "term_start": "1929-03-04",
-          "term_end": "1933-03-04",
-          "value": -5.297
-        },
-        {
-          "president": "Franklin Roosevelt",
-          "party": "D",
-          "term_start": "1933-03-04",
-          "term_end": "1937-01-20",
-          "value": -0.5211
-        },
-        {
-          "president": "Franklin Roosevelt",
-          "party": "D",
-          "term_start": "1937-01-20",
-          "term_end": "1941-01-20",
-          "value": -0.4797
-        },
-        {
-          "president": "Franklin Roosevelt",
-          "party": "D",
-          "term_start": "1941-01-20",
-          "term_end": "1945-01-20",
-          "value": -17.3674
-        },
-        {
-          "president": "Harry Truman",
-          "party": "D",
-          "term_start": "1945-04-12",
-          "term_end": "1949-01-20",
-          "value": 25.1537
-        },
-        {
-          "president": "Harry Truman",
-          "party": "D",
-          "term_start": "1949-01-20",
-          "term_end": "1953-01-20",
-          "value": -0.6264
-        },
-        {
-          "president": "Dwight Eisenhower",
-          "party": "R",
-          "term_start": "1953-01-20",
-          "term_end": "1957-01-20",
-          "value": 2.5466
-        },
-        {
-          "president": "Dwight Eisenhower",
-          "party": "R",
-          "term_start": "1957-01-20",
-          "term_end": "1961-01-20",
-          "value": -0.6643
-        },
-        {
-          "president": "John Kennedy",
-          "party": "D",
-          "term_start": "1961-01-20",
-          "term_end": "1963-11-22",
-          "value": -0.1529
-        },
-        {
-          "president": "Lyndon Johnson",
-          "party": "D",
-          "term_start": "1963-11-22",
-          "term_end": "1965-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "Lyndon Johnson",
-          "party": "D",
-          "term_start": "1965-01-20",
-          "term_end": "1969-01-20",
-          "value": -2.4848
-        },
-        {
-          "president": "Richard Nixon",
-          "party": "R",
-          "term_start": "1969-01-20",
-          "term_end": "1973-01-20",
-          "value": -2.1459
-        },
-        {
-          "president": "Richard Nixon",
-          "party": "R",
-          "term_start": "1973-01-20",
-          "term_end": "1974-08-09",
-          "value": 0.6489
-        },
-        {
-          "president": "Gerald Ford",
-          "party": "R",
-          "term_start": "1974-08-09",
-          "term_end": "1977-01-20",
-          "value": -0.7758
-        },
-        {
-          "president": "James Carter",
-          "party": "D",
-          "term_start": "1977-01-20",
-          "term_end": "1981-01-20",
-          "value": -0.0064
-        },
-        {
-          "president": "Ronald Reagan",
-          "party": "R",
-          "term_start": "1981-01-20",
-          "term_end": "1985-01-20",
-          "value": -2.1287
-        },
-        {
-          "president": "Ronald Reagan",
-          "party": "R",
-          "term_start": "1985-01-20",
-          "term_end": "1989-01-20",
-          "value": 1.9296
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "1989-01-20",
-          "term_end": "1993-01-20",
-          "value": -1.7469
-        },
-        {
-          "president": "William Clinton",
-          "party": "D",
-          "term_start": "1993-01-20",
-          "term_end": "1997-01-20",
-          "value": 2.388
-        },
-        {
-          "president": "William Clinton",
-          "party": "D",
-          "term_start": "1997-01-20",
-          "term_end": "2001-01-20",
-          "value": 2.5597
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "2001-01-20",
-          "term_end": "2005-01-20",
-          "value": -4.5901
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "2005-01-20",
-          "term_end": "2009-01-20",
-          "value": -0.6632
-        },
-        {
-          "president": "Barack Obama",
-          "party": "D",
-          "term_start": "2009-01-20",
-          "term_end": "2013-01-20",
-          "value": 3.134
-        },
-        {
-          "president": "Barack Obama",
-          "party": "D",
-          "term_start": "2013-01-20",
-          "term_end": "2017-01-20",
-          "value": 0.9179
-        },
-        {
-          "president": "Donald Trump",
-          "party": "R",
-          "term_start": "2017-01-20",
-          "term_end": "2021-01-20",
-          "value": -11.2615
-        },
-        {
-          "president": "Joseph Biden",
-          "party": "D",
-          "term_start": "2021-01-20",
-          "term_end": "2025-01-20",
-          "value": 5.4966
-        },
-        {
-          "president": "Donald Trump",
-          "party": "R",
-          "term_start": "2025-01-20",
-          "term_end": "2029-01-20",
-          "value": 0.0
-        }
-      ]
-    },
-    {
-      "metric": "Federal surplus/deficit",
-      "family": "fiscal",
-      "agg": "end_minus_start_per_year",
-      "units": "percentage points per year",
-      "d_mean": 0.460182,
-      "r_mean": -0.678297,
-      "diff": 1.138479,
-      "n_d": 13,
-      "n_r": 12,
-      "q": 0.501739,
-      "ci_low": -0.470969,
-      "ci_high": 2.981287,
-      "tier": "exploratory",
-      "terms": [
-        {
-          "president": "Herbert Hoover",
-          "party": "R",
-          "term_start": "1929-03-04",
-          "term_end": "1933-03-04",
-          "value": -1.7669
-        },
-        {
-          "president": "Franklin Roosevelt",
-          "party": "D",
-          "term_start": "1933-03-04",
-          "term_end": "1937-01-20",
-          "value": -0.1738
-        },
-        {
-          "president": "Franklin Roosevelt",
-          "party": "D",
-          "term_start": "1937-01-20",
-          "term_end": "1941-01-20",
-          "value": -0.16
-        },
-        {
-          "president": "Franklin Roosevelt",
-          "party": "D",
-          "term_start": "1941-01-20",
-          "term_end": "1945-01-20",
-          "value": -5.7931
-        },
-        {
-          "president": "Harry Truman",
-          "party": "D",
-          "term_start": "1945-04-12",
-          "term_end": "1949-01-20",
-          "value": 8.3903
-        },
-        {
-          "president": "Harry Truman",
-          "party": "D",
-          "term_start": "1949-01-20",
-          "term_end": "1953-01-20",
-          "value": -0.2089
-        },
-        {
-          "president": "Dwight Eisenhower",
-          "party": "R",
-          "term_start": "1953-01-20",
-          "term_end": "1957-01-20",
-          "value": 0.8494
-        },
-        {
-          "president": "Dwight Eisenhower",
-          "party": "R",
-          "term_start": "1957-01-20",
-          "term_end": "1961-01-20",
-          "value": -0.2216
-        },
-        {
-          "president": "John Kennedy",
-          "party": "D",
-          "term_start": "1961-01-20",
-          "term_end": "1963-11-22",
-          "value": -0.0765
-        },
-        {
-          "president": "Lyndon Johnson",
-          "party": "D",
-          "term_start": "1965-01-20",
-          "term_end": "1969-01-20",
-          "value": -0.8288
-        },
-        {
-          "president": "Richard Nixon",
-          "party": "R",
-          "term_start": "1969-01-20",
-          "term_end": "1973-01-20",
-          "value": -0.7158
-        },
-        {
-          "president": "Richard Nixon",
-          "party": "R",
-          "term_start": "1973-01-20",
-          "term_end": "1974-08-09",
-          "value": 0.6493
-        },
-        {
-          "president": "Gerald Ford",
-          "party": "R",
-          "term_start": "1974-08-09",
-          "term_end": "1977-01-20",
-          "value": -0.7763
-        },
-        {
-          "president": "James Carter",
-          "party": "D",
-          "term_start": "1977-01-20",
-          "term_end": "1981-01-20",
-          "value": -0.0021
-        },
-        {
-          "president": "Ronald Reagan",
-          "party": "R",
-          "term_start": "1981-01-20",
-          "term_end": "1985-01-20",
-          "value": -0.71
-        },
-        {
-          "president": "Ronald Reagan",
-          "party": "R",
-          "term_start": "1985-01-20",
-          "term_end": "1989-01-20",
-          "value": 0.6436
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "1989-01-20",
-          "term_end": "1993-01-20",
-          "value": -0.5827
-        },
-        {
-          "president": "William Clinton",
-          "party": "D",
-          "term_start": "1993-01-20",
-          "term_end": "1997-01-20",
-          "value": 0.7965
-        },
-        {
-          "president": "William Clinton",
-          "party": "D",
-          "term_start": "1997-01-20",
-          "term_end": "2001-01-20",
-          "value": 0.8538
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "2001-01-20",
-          "term_end": "2005-01-20",
-          "value": -1.5311
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "2005-01-20",
-          "term_end": "2009-01-20",
-          "value": -0.2212
-        },
-        {
-          "president": "Barack Obama",
-          "party": "D",
-          "term_start": "2009-01-20",
-          "term_end": "2013-01-20",
-          "value": 1.0454
-        },
-        {
-          "president": "Barack Obama",
-          "party": "D",
-          "term_start": "2013-01-20",
-          "term_end": "2017-01-20",
-          "value": 0.3062
-        },
-        {
-          "president": "Donald Trump",
-          "party": "R",
-          "term_start": "2017-01-20",
-          "term_end": "2021-01-20",
-          "value": -3.7564
-        },
-        {
-          "president": "Joseph Biden",
-          "party": "D",
-          "term_start": "2021-01-20",
-          "term_end": "2025-01-20",
-          "value": 1.8335
-        }
-      ]
-    },
-    {
-      "metric": "PCE inflation",
-      "family": "inflation",
-      "agg": "mean",
-      "units": "percent",
-      "d_mean": 2.691103,
-      "r_mean": 3.80915,
-      "diff": -1.118047,
-      "n_d": 9,
-      "n_r": 11,
-      "q": 0.501739,
-      "ci_low": -2.961069,
-      "ci_high": 0.963221,
-      "tier": "exploratory",
-      "terms": [
-        {
-          "president": "Dwight Eisenhower",
-          "party": "R",
-          "term_start": "1957-01-20",
-          "term_end": "1961-01-20",
-          "value": 1.6366
-        },
-        {
-          "president": "John Kennedy",
-          "party": "D",
-          "term_start": "1961-01-20",
-          "term_end": "1963-11-22",
-          "value": 1.1129
-        },
-        {
-          "president": "Lyndon Johnson",
-          "party": "D",
-          "term_start": "1963-11-22",
-          "term_end": "1965-01-20",
-          "value": 1.4349
-        },
-        {
-          "president": "Lyndon Johnson",
-          "party": "D",
-          "term_start": "1965-01-20",
-          "term_end": "1969-01-20",
-          "value": 2.6597
-        },
-        {
-          "president": "Richard Nixon",
-          "party": "R",
-          "term_start": "1969-01-20",
-          "term_end": "1973-01-20",
-          "value": 4.1897
-        },
-        {
-          "president": "Richard Nixon",
-          "party": "R",
-          "term_start": "1973-01-20",
-          "term_end": "1974-08-09",
-          "value": 7.1807
-        },
-        {
-          "president": "Gerald Ford",
-          "party": "R",
-          "term_start": "1974-08-09",
-          "term_end": "1977-01-20",
-          "value": 7.6117
-        },
-        {
-          "president": "James Carter",
-          "party": "D",
-          "term_start": "1977-01-20",
-          "term_end": "1981-01-20",
-          "value": 8.3811
-        },
-        {
-          "president": "Ronald Reagan",
-          "party": "R",
-          "term_start": "1981-01-20",
-          "term_end": "1985-01-20",
-          "value": 5.5059
-        },
-        {
-          "president": "Ronald Reagan",
-          "party": "R",
-          "term_start": "1985-01-20",
-          "term_end": "1989-01-20",
-          "value": 3.1808
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "1989-01-20",
-          "term_end": "1993-01-20",
-          "value": 3.658
-        },
-        {
-          "president": "William Clinton",
-          "party": "D",
-          "term_start": "1993-01-20",
-          "term_end": "1997-01-20",
-          "value": 2.1966
-        },
-        {
-          "president": "William Clinton",
-          "party": "D",
-          "term_start": "1997-01-20",
-          "term_end": "2001-01-20",
-          "value": 1.64
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "2001-01-20",
-          "term_end": "2005-01-20",
-          "value": 1.9725
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "2005-01-20",
-          "term_end": "2009-01-20",
-          "value": 2.7529
-        },
-        {
-          "president": "Barack Obama",
-          "party": "D",
-          "term_start": "2009-01-20",
-          "term_end": "2013-01-20",
-          "value": 1.5123
-        },
-        {
-          "president": "Barack Obama",
-          "party": "D",
-          "term_start": "2013-01-20",
-          "term_end": "2017-01-20",
-          "value": 0.9898
-        },
-        {
-          "president": "Donald Trump",
-          "party": "R",
-          "term_start": "2017-01-20",
-          "term_end": "2021-01-20",
-          "value": 1.5775
-        },
-        {
-          "president": "Joseph Biden",
-          "party": "D",
-          "term_start": "2021-01-20",
-          "term_end": "2025-01-20",
-          "value": 4.2927
-        },
-        {
-          "president": "Donald Trump",
-          "party": "R",
-          "term_start": "2025-01-20",
-          "term_end": "2029-01-20",
-          "value": 2.6343
-        }
-      ]
-    },
-    {
-      "metric": "10y-2y inversion share",
-      "family": "interest_rates",
-      "agg": "mean",
-      "units": "percent of trading days",
-      "d_mean": 21.762871,
-      "r_mean": 9.318183,
-      "diff": 12.444688,
-      "n_d": 6,
-      "n_r": 8,
-      "q": 0.501739,
-      "ci_low": -7.652091,
-      "ci_high": 33.70706,
-      "tier": "exploratory",
-      "terms": [
-        {
-          "president": "Gerald Ford",
-          "party": "R",
-          "term_start": "1974-08-09",
-          "term_end": "1977-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "James Carter",
-          "party": "D",
-          "term_start": "1977-01-20",
-          "term_end": "1981-01-20",
-          "value": 51.2072
-        },
-        {
-          "president": "Ronald Reagan",
-          "party": "R",
-          "term_start": "1981-01-20",
-          "term_end": "1985-01-20",
-          "value": 31.4629
-        },
-        {
-          "president": "Ronald Reagan",
-          "party": "R",
-          "term_start": "1985-01-20",
-          "term_end": "1989-01-20",
-          "value": 2.006
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "1989-01-20",
-          "term_end": "1993-01-20",
-          "value": 17.0
-        },
-        {
-          "president": "William Clinton",
-          "party": "D",
-          "term_start": "1993-01-20",
-          "term_end": "1997-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "William Clinton",
-          "party": "D",
-          "term_start": "1997-01-20",
-          "term_end": "2001-01-20",
-          "value": 25.324
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "2001-01-20",
-          "term_end": "2005-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "2005-01-20",
-          "term_end": "2009-01-20",
-          "value": 23.7762
-        },
-        {
-          "president": "Barack Obama",
-          "party": "D",
-          "term_start": "2009-01-20",
-          "term_end": "2013-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "Barack Obama",
-          "party": "D",
-          "term_start": "2013-01-20",
-          "term_end": "2017-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "Donald Trump",
-          "party": "R",
-          "term_start": "2017-01-20",
-          "term_end": "2021-01-20",
-          "value": 0.3003
-        },
-        {
-          "president": "Joseph Biden",
-          "party": "D",
-          "term_start": "2021-01-20",
-          "term_end": "2025-01-20",
-          "value": 54.046
-        },
-        {
-          "president": "Donald Trump",
-          "party": "R",
-          "term_start": "2025-01-20",
-          "term_end": "2029-01-20",
-          "value": 0.0
-        }
-      ]
-    },
-    {
-      "metric": "10y-2y inversion share",
-      "family": "interest_rates",
-      "agg": "mean",
-      "units": "percent of months",
-      "d_mean": 21.875,
-      "r_mean": 9.375,
-      "diff": 12.5,
-      "n_d": 6,
-      "n_r": 8,
-      "q": 0.501739,
-      "ci_low": -7.291667,
-      "ci_high": 32.725694,
-      "tier": "exploratory",
-      "terms": [
-        {
-          "president": "Gerald Ford",
-          "party": "R",
-          "term_start": "1974-08-09",
-          "term_end": "1977-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "James Carter",
-          "party": "D",
-          "term_start": "1977-01-20",
-          "term_end": "1981-01-20",
-          "value": 52.0833
-        },
-        {
-          "president": "Ronald Reagan",
-          "party": "R",
-          "term_start": "1981-01-20",
-          "term_end": "1985-01-20",
-          "value": 29.1667
-        },
-        {
-          "president": "Ronald Reagan",
-          "party": "R",
-          "term_start": "1985-01-20",
-          "term_end": "1989-01-20",
-          "value": 2.0833
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "1989-01-20",
-          "term_end": "1993-01-20",
-          "value": 16.6667
-        },
-        {
-          "president": "William Clinton",
-          "party": "D",
-          "term_start": "1993-01-20",
-          "term_end": "1997-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "William Clinton",
-          "party": "D",
-          "term_start": "1997-01-20",
-          "term_end": "2001-01-20",
-          "value": 25.0
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "2001-01-20",
-          "term_end": "2005-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "2005-01-20",
-          "term_end": "2009-01-20",
-          "value": 27.0833
-        },
-        {
-          "president": "Barack Obama",
-          "party": "D",
-          "term_start": "2009-01-20",
-          "term_end": "2013-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "Barack Obama",
-          "party": "D",
-          "term_start": "2013-01-20",
-          "term_end": "2017-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "Donald Trump",
-          "party": "R",
-          "term_start": "2017-01-20",
-          "term_end": "2021-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "Joseph Biden",
-          "party": "D",
-          "term_start": "2021-01-20",
-          "term_end": "2025-01-20",
-          "value": 54.1667
-        },
-        {
-          "president": "Donald Trump",
-          "party": "R",
-          "term_start": "2025-01-20",
-          "term_end": "2029-01-20",
-          "value": 0.0
-        }
-      ]
-    },
-    {
-      "metric": "10y-2y inversion share",
-      "family": "interest_rates",
-      "agg": "mean",
-      "units": "percent of months",
-      "d_mean": 21.527778,
-      "r_mean": 8.333333,
-      "diff": 13.194445,
-      "n_d": 6,
-      "n_r": 8,
-      "q": 0.501739,
-      "ci_low": -6.25217,
-      "ci_high": 33.769531,
-      "tier": "exploratory",
-      "terms": [
-        {
-          "president": "Gerald Ford",
-          "party": "R",
-          "term_start": "1974-08-09",
-          "term_end": "1977-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "James Carter",
-          "party": "D",
-          "term_start": "1977-01-20",
-          "term_end": "1981-01-20",
-          "value": 54.1667
-        },
-        {
-          "president": "Ronald Reagan",
-          "party": "R",
-          "term_start": "1981-01-20",
-          "term_end": "1985-01-20",
-          "value": 27.0833
-        },
-        {
-          "president": "Ronald Reagan",
-          "party": "R",
-          "term_start": "1985-01-20",
-          "term_end": "1989-01-20",
-          "value": 2.0833
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "1989-01-20",
-          "term_end": "1993-01-20",
-          "value": 12.5
-        },
-        {
-          "president": "William Clinton",
-          "party": "D",
-          "term_start": "1993-01-20",
-          "term_end": "1997-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "William Clinton",
-          "party": "D",
-          "term_start": "1997-01-20",
-          "term_end": "2001-01-20",
-          "value": 22.9167
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "2001-01-20",
-          "term_end": "2005-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "2005-01-20",
-          "term_end": "2009-01-20",
-          "value": 25.0
-        },
-        {
-          "president": "Barack Obama",
-          "party": "D",
-          "term_start": "2009-01-20",
-          "term_end": "2013-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "Barack Obama",
-          "party": "D",
-          "term_start": "2013-01-20",
-          "term_end": "2017-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "Donald Trump",
-          "party": "R",
-          "term_start": "2017-01-20",
-          "term_end": "2021-01-20",
-          "value": 0.0
-        },
-        {
-          "president": "Joseph Biden",
-          "party": "D",
-          "term_start": "2021-01-20",
-          "term_end": "2025-01-20",
-          "value": 52.0833
-        },
-        {
-          "president": "Donald Trump",
-          "party": "R",
-          "term_start": "2025-01-20",
-          "term_end": "2029-01-20",
-          "value": 0.0
-        }
-      ]
-    },
-    {
       "metric": "Dow Jones Industrial Average CAGR",
       "family": "stock_levels",
       "agg": "cagr_from_levels",
       "units": "percent",
       "d_mean": 9.309292,
-      "r_mean": 5.034173,
-      "diff": 4.275119,
+      "r_mean": 4.959947,
+      "diff": 4.349345,
       "n_d": 17,
       "n_r": 21,
-      "q": 0.51084,
-      "ci_low": -2.944117,
-      "ci_high": 11.801544,
+      "q": 0.496361,
+      "ci_low": -2.854929,
+      "ci_high": 11.87577,
       "tier": "exploratory",
       "terms": [
         {
@@ -8762,7 +7862,907 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 12.8472
+          "value": 11.2885
+        }
+      ]
+    },
+    {
+      "metric": "Federal surplus/deficit",
+      "family": "fiscal",
+      "agg": "end_minus_start",
+      "units": "percentage points",
+      "d_mean": 1.286519,
+      "r_mean": -1.857555,
+      "diff": 3.144074,
+      "n_d": 14,
+      "n_r": 13,
+      "q": 0.496361,
+      "ci_low": -1.240591,
+      "ci_high": 8.262306,
+      "tier": "exploratory",
+      "terms": [
+        {
+          "president": "Herbert Hoover",
+          "party": "R",
+          "term_start": "1929-03-04",
+          "term_end": "1933-03-04",
+          "value": -5.297
+        },
+        {
+          "president": "Franklin Roosevelt",
+          "party": "D",
+          "term_start": "1933-03-04",
+          "term_end": "1937-01-20",
+          "value": -0.5211
+        },
+        {
+          "president": "Franklin Roosevelt",
+          "party": "D",
+          "term_start": "1937-01-20",
+          "term_end": "1941-01-20",
+          "value": -0.4797
+        },
+        {
+          "president": "Franklin Roosevelt",
+          "party": "D",
+          "term_start": "1941-01-20",
+          "term_end": "1945-01-20",
+          "value": -17.3674
+        },
+        {
+          "president": "Harry Truman",
+          "party": "D",
+          "term_start": "1945-04-12",
+          "term_end": "1949-01-20",
+          "value": 25.1537
+        },
+        {
+          "president": "Harry Truman",
+          "party": "D",
+          "term_start": "1949-01-20",
+          "term_end": "1953-01-20",
+          "value": -0.6264
+        },
+        {
+          "president": "Dwight Eisenhower",
+          "party": "R",
+          "term_start": "1953-01-20",
+          "term_end": "1957-01-20",
+          "value": 2.5466
+        },
+        {
+          "president": "Dwight Eisenhower",
+          "party": "R",
+          "term_start": "1957-01-20",
+          "term_end": "1961-01-20",
+          "value": -0.6643
+        },
+        {
+          "president": "John Kennedy",
+          "party": "D",
+          "term_start": "1961-01-20",
+          "term_end": "1963-11-22",
+          "value": -0.1529
+        },
+        {
+          "president": "Lyndon Johnson",
+          "party": "D",
+          "term_start": "1963-11-22",
+          "term_end": "1965-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "Lyndon Johnson",
+          "party": "D",
+          "term_start": "1965-01-20",
+          "term_end": "1969-01-20",
+          "value": -2.4848
+        },
+        {
+          "president": "Richard Nixon",
+          "party": "R",
+          "term_start": "1969-01-20",
+          "term_end": "1973-01-20",
+          "value": -2.1459
+        },
+        {
+          "president": "Richard Nixon",
+          "party": "R",
+          "term_start": "1973-01-20",
+          "term_end": "1974-08-09",
+          "value": 0.6489
+        },
+        {
+          "president": "Gerald Ford",
+          "party": "R",
+          "term_start": "1974-08-09",
+          "term_end": "1977-01-20",
+          "value": -0.7758
+        },
+        {
+          "president": "James Carter",
+          "party": "D",
+          "term_start": "1977-01-20",
+          "term_end": "1981-01-20",
+          "value": -0.0064
+        },
+        {
+          "president": "Ronald Reagan",
+          "party": "R",
+          "term_start": "1981-01-20",
+          "term_end": "1985-01-20",
+          "value": -2.1287
+        },
+        {
+          "president": "Ronald Reagan",
+          "party": "R",
+          "term_start": "1985-01-20",
+          "term_end": "1989-01-20",
+          "value": 1.9296
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "1989-01-20",
+          "term_end": "1993-01-20",
+          "value": -1.7469
+        },
+        {
+          "president": "William Clinton",
+          "party": "D",
+          "term_start": "1993-01-20",
+          "term_end": "1997-01-20",
+          "value": 2.388
+        },
+        {
+          "president": "William Clinton",
+          "party": "D",
+          "term_start": "1997-01-20",
+          "term_end": "2001-01-20",
+          "value": 2.5597
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "2001-01-20",
+          "term_end": "2005-01-20",
+          "value": -4.5901
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "2005-01-20",
+          "term_end": "2009-01-20",
+          "value": -0.6632
+        },
+        {
+          "president": "Barack Obama",
+          "party": "D",
+          "term_start": "2009-01-20",
+          "term_end": "2013-01-20",
+          "value": 3.134
+        },
+        {
+          "president": "Barack Obama",
+          "party": "D",
+          "term_start": "2013-01-20",
+          "term_end": "2017-01-20",
+          "value": 0.9179
+        },
+        {
+          "president": "Donald Trump",
+          "party": "R",
+          "term_start": "2017-01-20",
+          "term_end": "2021-01-20",
+          "value": -11.2615
+        },
+        {
+          "president": "Joseph Biden",
+          "party": "D",
+          "term_start": "2021-01-20",
+          "term_end": "2025-01-20",
+          "value": 5.4966
+        },
+        {
+          "president": "Donald Trump",
+          "party": "R",
+          "term_start": "2025-01-20",
+          "term_end": "2029-01-20",
+          "value": 0.0
+        }
+      ]
+    },
+    {
+      "metric": "Federal surplus/deficit",
+      "family": "fiscal",
+      "agg": "end_minus_start_per_year",
+      "units": "percentage points per year",
+      "d_mean": 0.460182,
+      "r_mean": -0.678297,
+      "diff": 1.138479,
+      "n_d": 13,
+      "n_r": 12,
+      "q": 0.496361,
+      "ci_low": -0.470969,
+      "ci_high": 2.981287,
+      "tier": "exploratory",
+      "terms": [
+        {
+          "president": "Herbert Hoover",
+          "party": "R",
+          "term_start": "1929-03-04",
+          "term_end": "1933-03-04",
+          "value": -1.7669
+        },
+        {
+          "president": "Franklin Roosevelt",
+          "party": "D",
+          "term_start": "1933-03-04",
+          "term_end": "1937-01-20",
+          "value": -0.1738
+        },
+        {
+          "president": "Franklin Roosevelt",
+          "party": "D",
+          "term_start": "1937-01-20",
+          "term_end": "1941-01-20",
+          "value": -0.16
+        },
+        {
+          "president": "Franklin Roosevelt",
+          "party": "D",
+          "term_start": "1941-01-20",
+          "term_end": "1945-01-20",
+          "value": -5.7931
+        },
+        {
+          "president": "Harry Truman",
+          "party": "D",
+          "term_start": "1945-04-12",
+          "term_end": "1949-01-20",
+          "value": 8.3903
+        },
+        {
+          "president": "Harry Truman",
+          "party": "D",
+          "term_start": "1949-01-20",
+          "term_end": "1953-01-20",
+          "value": -0.2089
+        },
+        {
+          "president": "Dwight Eisenhower",
+          "party": "R",
+          "term_start": "1953-01-20",
+          "term_end": "1957-01-20",
+          "value": 0.8494
+        },
+        {
+          "president": "Dwight Eisenhower",
+          "party": "R",
+          "term_start": "1957-01-20",
+          "term_end": "1961-01-20",
+          "value": -0.2216
+        },
+        {
+          "president": "John Kennedy",
+          "party": "D",
+          "term_start": "1961-01-20",
+          "term_end": "1963-11-22",
+          "value": -0.0765
+        },
+        {
+          "president": "Lyndon Johnson",
+          "party": "D",
+          "term_start": "1965-01-20",
+          "term_end": "1969-01-20",
+          "value": -0.8288
+        },
+        {
+          "president": "Richard Nixon",
+          "party": "R",
+          "term_start": "1969-01-20",
+          "term_end": "1973-01-20",
+          "value": -0.7158
+        },
+        {
+          "president": "Richard Nixon",
+          "party": "R",
+          "term_start": "1973-01-20",
+          "term_end": "1974-08-09",
+          "value": 0.6493
+        },
+        {
+          "president": "Gerald Ford",
+          "party": "R",
+          "term_start": "1974-08-09",
+          "term_end": "1977-01-20",
+          "value": -0.7763
+        },
+        {
+          "president": "James Carter",
+          "party": "D",
+          "term_start": "1977-01-20",
+          "term_end": "1981-01-20",
+          "value": -0.0021
+        },
+        {
+          "president": "Ronald Reagan",
+          "party": "R",
+          "term_start": "1981-01-20",
+          "term_end": "1985-01-20",
+          "value": -0.71
+        },
+        {
+          "president": "Ronald Reagan",
+          "party": "R",
+          "term_start": "1985-01-20",
+          "term_end": "1989-01-20",
+          "value": 0.6436
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "1989-01-20",
+          "term_end": "1993-01-20",
+          "value": -0.5827
+        },
+        {
+          "president": "William Clinton",
+          "party": "D",
+          "term_start": "1993-01-20",
+          "term_end": "1997-01-20",
+          "value": 0.7965
+        },
+        {
+          "president": "William Clinton",
+          "party": "D",
+          "term_start": "1997-01-20",
+          "term_end": "2001-01-20",
+          "value": 0.8538
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "2001-01-20",
+          "term_end": "2005-01-20",
+          "value": -1.5311
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "2005-01-20",
+          "term_end": "2009-01-20",
+          "value": -0.2212
+        },
+        {
+          "president": "Barack Obama",
+          "party": "D",
+          "term_start": "2009-01-20",
+          "term_end": "2013-01-20",
+          "value": 1.0454
+        },
+        {
+          "president": "Barack Obama",
+          "party": "D",
+          "term_start": "2013-01-20",
+          "term_end": "2017-01-20",
+          "value": 0.3062
+        },
+        {
+          "president": "Donald Trump",
+          "party": "R",
+          "term_start": "2017-01-20",
+          "term_end": "2021-01-20",
+          "value": -3.7564
+        },
+        {
+          "president": "Joseph Biden",
+          "party": "D",
+          "term_start": "2021-01-20",
+          "term_end": "2025-01-20",
+          "value": 1.8335
+        }
+      ]
+    },
+    {
+      "metric": "PCE inflation",
+      "family": "inflation",
+      "agg": "mean",
+      "units": "percent",
+      "d_mean": 2.691103,
+      "r_mean": 3.80915,
+      "diff": -1.118047,
+      "n_d": 9,
+      "n_r": 11,
+      "q": 0.496361,
+      "ci_low": -2.961069,
+      "ci_high": 0.963221,
+      "tier": "exploratory",
+      "terms": [
+        {
+          "president": "Dwight Eisenhower",
+          "party": "R",
+          "term_start": "1957-01-20",
+          "term_end": "1961-01-20",
+          "value": 1.6366
+        },
+        {
+          "president": "John Kennedy",
+          "party": "D",
+          "term_start": "1961-01-20",
+          "term_end": "1963-11-22",
+          "value": 1.1129
+        },
+        {
+          "president": "Lyndon Johnson",
+          "party": "D",
+          "term_start": "1963-11-22",
+          "term_end": "1965-01-20",
+          "value": 1.4349
+        },
+        {
+          "president": "Lyndon Johnson",
+          "party": "D",
+          "term_start": "1965-01-20",
+          "term_end": "1969-01-20",
+          "value": 2.6597
+        },
+        {
+          "president": "Richard Nixon",
+          "party": "R",
+          "term_start": "1969-01-20",
+          "term_end": "1973-01-20",
+          "value": 4.1897
+        },
+        {
+          "president": "Richard Nixon",
+          "party": "R",
+          "term_start": "1973-01-20",
+          "term_end": "1974-08-09",
+          "value": 7.1807
+        },
+        {
+          "president": "Gerald Ford",
+          "party": "R",
+          "term_start": "1974-08-09",
+          "term_end": "1977-01-20",
+          "value": 7.6117
+        },
+        {
+          "president": "James Carter",
+          "party": "D",
+          "term_start": "1977-01-20",
+          "term_end": "1981-01-20",
+          "value": 8.3811
+        },
+        {
+          "president": "Ronald Reagan",
+          "party": "R",
+          "term_start": "1981-01-20",
+          "term_end": "1985-01-20",
+          "value": 5.5059
+        },
+        {
+          "president": "Ronald Reagan",
+          "party": "R",
+          "term_start": "1985-01-20",
+          "term_end": "1989-01-20",
+          "value": 3.1808
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "1989-01-20",
+          "term_end": "1993-01-20",
+          "value": 3.658
+        },
+        {
+          "president": "William Clinton",
+          "party": "D",
+          "term_start": "1993-01-20",
+          "term_end": "1997-01-20",
+          "value": 2.1966
+        },
+        {
+          "president": "William Clinton",
+          "party": "D",
+          "term_start": "1997-01-20",
+          "term_end": "2001-01-20",
+          "value": 1.64
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "2001-01-20",
+          "term_end": "2005-01-20",
+          "value": 1.9725
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "2005-01-20",
+          "term_end": "2009-01-20",
+          "value": 2.7529
+        },
+        {
+          "president": "Barack Obama",
+          "party": "D",
+          "term_start": "2009-01-20",
+          "term_end": "2013-01-20",
+          "value": 1.5123
+        },
+        {
+          "president": "Barack Obama",
+          "party": "D",
+          "term_start": "2013-01-20",
+          "term_end": "2017-01-20",
+          "value": 0.9898
+        },
+        {
+          "president": "Donald Trump",
+          "party": "R",
+          "term_start": "2017-01-20",
+          "term_end": "2021-01-20",
+          "value": 1.5775
+        },
+        {
+          "president": "Joseph Biden",
+          "party": "D",
+          "term_start": "2021-01-20",
+          "term_end": "2025-01-20",
+          "value": 4.2927
+        },
+        {
+          "president": "Donald Trump",
+          "party": "R",
+          "term_start": "2025-01-20",
+          "term_end": "2029-01-20",
+          "value": 2.6343
+        }
+      ]
+    },
+    {
+      "metric": "10y-2y inversion share",
+      "family": "interest_rates",
+      "agg": "mean",
+      "units": "percent of trading days",
+      "d_mean": 21.762871,
+      "r_mean": 9.318183,
+      "diff": 12.444688,
+      "n_d": 6,
+      "n_r": 8,
+      "q": 0.496361,
+      "ci_low": -7.652091,
+      "ci_high": 33.70706,
+      "tier": "exploratory",
+      "terms": [
+        {
+          "president": "Gerald Ford",
+          "party": "R",
+          "term_start": "1974-08-09",
+          "term_end": "1977-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "James Carter",
+          "party": "D",
+          "term_start": "1977-01-20",
+          "term_end": "1981-01-20",
+          "value": 51.2072
+        },
+        {
+          "president": "Ronald Reagan",
+          "party": "R",
+          "term_start": "1981-01-20",
+          "term_end": "1985-01-20",
+          "value": 31.4629
+        },
+        {
+          "president": "Ronald Reagan",
+          "party": "R",
+          "term_start": "1985-01-20",
+          "term_end": "1989-01-20",
+          "value": 2.006
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "1989-01-20",
+          "term_end": "1993-01-20",
+          "value": 17.0
+        },
+        {
+          "president": "William Clinton",
+          "party": "D",
+          "term_start": "1993-01-20",
+          "term_end": "1997-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "William Clinton",
+          "party": "D",
+          "term_start": "1997-01-20",
+          "term_end": "2001-01-20",
+          "value": 25.324
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "2001-01-20",
+          "term_end": "2005-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "2005-01-20",
+          "term_end": "2009-01-20",
+          "value": 23.7762
+        },
+        {
+          "president": "Barack Obama",
+          "party": "D",
+          "term_start": "2009-01-20",
+          "term_end": "2013-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "Barack Obama",
+          "party": "D",
+          "term_start": "2013-01-20",
+          "term_end": "2017-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "Donald Trump",
+          "party": "R",
+          "term_start": "2017-01-20",
+          "term_end": "2021-01-20",
+          "value": 0.3003
+        },
+        {
+          "president": "Joseph Biden",
+          "party": "D",
+          "term_start": "2021-01-20",
+          "term_end": "2025-01-20",
+          "value": 54.046
+        },
+        {
+          "president": "Donald Trump",
+          "party": "R",
+          "term_start": "2025-01-20",
+          "term_end": "2029-01-20",
+          "value": 0.0
+        }
+      ]
+    },
+    {
+      "metric": "10y-2y inversion share",
+      "family": "interest_rates",
+      "agg": "mean",
+      "units": "percent of months",
+      "d_mean": 21.875,
+      "r_mean": 9.375,
+      "diff": 12.5,
+      "n_d": 6,
+      "n_r": 8,
+      "q": 0.496361,
+      "ci_low": -7.291667,
+      "ci_high": 32.725694,
+      "tier": "exploratory",
+      "terms": [
+        {
+          "president": "Gerald Ford",
+          "party": "R",
+          "term_start": "1974-08-09",
+          "term_end": "1977-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "James Carter",
+          "party": "D",
+          "term_start": "1977-01-20",
+          "term_end": "1981-01-20",
+          "value": 52.0833
+        },
+        {
+          "president": "Ronald Reagan",
+          "party": "R",
+          "term_start": "1981-01-20",
+          "term_end": "1985-01-20",
+          "value": 29.1667
+        },
+        {
+          "president": "Ronald Reagan",
+          "party": "R",
+          "term_start": "1985-01-20",
+          "term_end": "1989-01-20",
+          "value": 2.0833
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "1989-01-20",
+          "term_end": "1993-01-20",
+          "value": 16.6667
+        },
+        {
+          "president": "William Clinton",
+          "party": "D",
+          "term_start": "1993-01-20",
+          "term_end": "1997-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "William Clinton",
+          "party": "D",
+          "term_start": "1997-01-20",
+          "term_end": "2001-01-20",
+          "value": 25.0
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "2001-01-20",
+          "term_end": "2005-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "2005-01-20",
+          "term_end": "2009-01-20",
+          "value": 27.0833
+        },
+        {
+          "president": "Barack Obama",
+          "party": "D",
+          "term_start": "2009-01-20",
+          "term_end": "2013-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "Barack Obama",
+          "party": "D",
+          "term_start": "2013-01-20",
+          "term_end": "2017-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "Donald Trump",
+          "party": "R",
+          "term_start": "2017-01-20",
+          "term_end": "2021-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "Joseph Biden",
+          "party": "D",
+          "term_start": "2021-01-20",
+          "term_end": "2025-01-20",
+          "value": 54.1667
+        },
+        {
+          "president": "Donald Trump",
+          "party": "R",
+          "term_start": "2025-01-20",
+          "term_end": "2029-01-20",
+          "value": 0.0
+        }
+      ]
+    },
+    {
+      "metric": "10y-2y inversion share",
+      "family": "interest_rates",
+      "agg": "mean",
+      "units": "percent of months",
+      "d_mean": 21.527778,
+      "r_mean": 8.333333,
+      "diff": 13.194445,
+      "n_d": 6,
+      "n_r": 8,
+      "q": 0.496361,
+      "ci_low": -6.25217,
+      "ci_high": 33.769531,
+      "tier": "exploratory",
+      "terms": [
+        {
+          "president": "Gerald Ford",
+          "party": "R",
+          "term_start": "1974-08-09",
+          "term_end": "1977-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "James Carter",
+          "party": "D",
+          "term_start": "1977-01-20",
+          "term_end": "1981-01-20",
+          "value": 54.1667
+        },
+        {
+          "president": "Ronald Reagan",
+          "party": "R",
+          "term_start": "1981-01-20",
+          "term_end": "1985-01-20",
+          "value": 27.0833
+        },
+        {
+          "president": "Ronald Reagan",
+          "party": "R",
+          "term_start": "1985-01-20",
+          "term_end": "1989-01-20",
+          "value": 2.0833
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "1989-01-20",
+          "term_end": "1993-01-20",
+          "value": 12.5
+        },
+        {
+          "president": "William Clinton",
+          "party": "D",
+          "term_start": "1993-01-20",
+          "term_end": "1997-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "William Clinton",
+          "party": "D",
+          "term_start": "1997-01-20",
+          "term_end": "2001-01-20",
+          "value": 22.9167
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "2001-01-20",
+          "term_end": "2005-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "2005-01-20",
+          "term_end": "2009-01-20",
+          "value": 25.0
+        },
+        {
+          "president": "Barack Obama",
+          "party": "D",
+          "term_start": "2009-01-20",
+          "term_end": "2013-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "Barack Obama",
+          "party": "D",
+          "term_start": "2013-01-20",
+          "term_end": "2017-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "Donald Trump",
+          "party": "R",
+          "term_start": "2017-01-20",
+          "term_end": "2021-01-20",
+          "value": 0.0
+        },
+        {
+          "president": "Joseph Biden",
+          "party": "D",
+          "term_start": "2021-01-20",
+          "term_end": "2025-01-20",
+          "value": 52.0833
+        },
+        {
+          "president": "Donald Trump",
+          "party": "R",
+          "term_start": "2025-01-20",
+          "term_end": "2029-01-20",
+          "value": 0.0
         }
       ]
     },
@@ -9358,13 +9358,13 @@
       "agg": "pct_change_from_levels",
       "units": "percent",
       "d_mean": 41.358504,
-      "r_mean": 24.897126,
-      "diff": 16.461378,
+      "r_mean": 24.826165,
+      "diff": 16.532339,
       "n_d": 17,
       "n_r": 21,
-      "q": 0.591316,
-      "ci_low": -14.028662,
-      "ci_high": 53.348996,
+      "q": 0.587326,
+      "ci_low": -13.945194,
+      "ci_high": 53.42267,
       "tier": "exploratory",
       "terms": [
         {
@@ -9631,7 +9631,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 14.1146
+          "value": 12.6244
         }
       ]
     },
@@ -11840,13 +11840,13 @@
       "agg": "last",
       "units": "percent",
       "d_mean": 5.287778,
-      "r_mean": 6.046,
-      "diff": -0.758222,
+      "r_mean": 6.04,
+      "diff": -0.752222,
       "n_d": 9,
       "n_r": 10,
-      "q": 0.775142,
-      "ci_low": -3.302506,
-      "ci_high": 2.122706,
+      "q": 0.779994,
+      "ci_low": -3.296506,
+      "ci_high": 2.126689,
       "tier": "exploratory",
       "terms": [
         {
@@ -11980,7 +11980,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 4.08
+          "value": 4.02
         }
       ]
     },
@@ -14919,13 +14919,13 @@
       "agg": "mean",
       "units": "percentage points",
       "d_mean": 0.829427,
-      "r_mean": 0.872234,
-      "diff": -0.042807,
+      "r_mean": 0.872435,
+      "diff": -0.043008,
       "n_d": 6,
       "n_r": 8,
-      "q": 0.936065,
-      "ci_low": -0.793171,
-      "ci_high": 0.71308,
+      "q": 0.935347,
+      "ci_low": -0.793367,
+      "ci_high": 0.712682,
       "tier": "exploratory",
       "terms": [
         {
@@ -15024,7 +15024,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 0.5111
+          "value": 0.5128
         }
       ]
     },
