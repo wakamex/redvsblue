@@ -1,5 +1,5 @@
 {
-  "updated": "2026-04-19T06:41:15Z",
+  "updated": "2026-04-26T06:45:10Z",
   "metrics": [
     {
       "metric": "Unemployment rate change",
@@ -1637,13 +1637,13 @@
       "agg": "end_minus_start",
       "units": "percentage points",
       "d_mean": 1.18125,
-      "r_mean": -0.923,
-      "diff": 2.10425,
+      "r_mean": -0.921,
+      "diff": 2.10225,
       "n_d": 8,
       "n_r": 10,
-      "q": 0.136654,
-      "ci_low": 0.537556,
-      "ci_high": 3.662619,
+      "q": 0.137444,
+      "ci_low": 0.535556,
+      "ci_high": 3.660812,
       "tier": "exploratory",
       "terms": [
         {
@@ -1770,7 +1770,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": -0.29
+          "value": -0.27
         }
       ]
     },
@@ -3767,13 +3767,13 @@
       "agg": "end_minus_start_per_year",
       "units": "percentage points per year",
       "d_mean": 0.301699,
-      "r_mean": -0.199326,
-      "diff": 0.501025,
+      "r_mean": -0.197387,
+      "diff": 0.499086,
       "n_d": 8,
       "n_r": 10,
       "q": 0.22836,
-      "ci_low": 0.050154,
-      "ci_high": 0.940852,
+      "ci_low": 0.04976,
+      "ci_high": 0.939926,
       "tier": "exploratory",
       "terms": [
         {
@@ -3900,7 +3900,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": -0.2333
+          "value": -0.2139
         }
       ]
     },
@@ -3910,13 +3910,13 @@
       "agg": "end_minus_start",
       "units": "percentage points",
       "d_mean": -0.838333,
-      "r_mean": 0.617143,
-      "diff": -1.455476,
+      "r_mean": 0.614286,
+      "diff": -1.452619,
       "n_d": 6,
       "n_r": 7,
       "q": 0.22836,
-      "ci_low": -2.631012,
-      "ci_high": -0.319024,
+      "ci_low": -2.628095,
+      "ci_high": -0.318048,
       "tier": "exploratory",
       "terms": [
         {
@@ -4008,7 +4008,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 0.21
+          "value": 0.19
         }
       ]
     },
@@ -4018,13 +4018,13 @@
       "agg": "end_minus_start_per_year",
       "units": "percentage points per year",
       "d_mean": -0.209693,
-      "r_mean": 0.171017,
-      "diff": -0.38071,
+      "r_mean": 0.168394,
+      "diff": -0.378087,
       "n_d": 6,
       "n_r": 7,
       "q": 0.22836,
       "ci_low": -0.656644,
-      "ci_high": -0.09684,
+      "ci_high": -0.093097,
       "tier": "exploratory",
       "terms": [
         {
@@ -4116,7 +4116,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 0.1686
+          "value": 0.1502
         }
       ]
     },
@@ -5638,13 +5638,13 @@
       "agg": "mean",
       "units": "percent",
       "d_mean": 4.76134,
-      "r_mean": 6.598602,
-      "diff": -1.837262,
+      "r_mean": 6.598652,
+      "diff": -1.837312,
       "n_d": 9,
       "n_r": 10,
       "q": 0.377056,
-      "ci_low": -4.051201,
-      "ci_high": 0.380439,
+      "ci_low": -4.05125,
+      "ci_high": 0.380339,
       "tier": "exploratory",
       "terms": [
         {
@@ -5778,7 +5778,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 4.2605
+          "value": 4.261
         }
       ]
     },
@@ -6403,7 +6403,7 @@
       "diff": 31.206188,
       "n_d": 15,
       "n_r": 14,
-      "q": 0.436263,
+      "q": 0.438746,
       "ci_low": -8.783632,
       "ci_high": 76.653048,
       "tier": "exploratory",
@@ -6619,13 +6619,13 @@
       "agg": "last",
       "units": "percentage points",
       "d_mean": 0.531667,
-      "r_mean": 1.11625,
-      "diff": -0.584583,
+      "r_mean": 1.11375,
+      "diff": -0.582083,
       "n_d": 6,
       "n_r": 8,
-      "q": 0.436263,
-      "ci_low": -1.423167,
-      "ci_high": 0.153333,
+      "q": 0.438746,
+      "ci_low": -1.423135,
+      "ci_high": 0.153396,
       "tier": "exploratory",
       "terms": [
         {
@@ -6724,7 +6724,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 0.55
+          "value": 0.53
         }
       ]
     },
@@ -10960,13 +10960,13 @@
       "agg": "last",
       "units": "percent",
       "d_mean": 5.287778,
-      "r_mean": 6.07,
-      "diff": -0.782222,
+      "r_mean": 6.072,
+      "diff": -0.784222,
       "n_d": 9,
       "n_r": 10,
       "q": 0.755605,
-      "ci_low": -3.479378,
-      "ci_high": 1.916086,
+      "ci_low": -3.481328,
+      "ci_high": 1.912136,
       "tier": "exploratory",
       "terms": [
         {
@@ -11100,7 +11100,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 4.32
+          "value": 4.34
         }
       ]
     },
@@ -14217,12 +14217,12 @@
       "agg": "mean",
       "units": "percentage points",
       "d_mean": 0.829427,
-      "r_mean": 0.872621,
-      "diff": -0.043194,
+      "r_mean": 0.872637,
+      "diff": -0.04321,
       "n_d": 6,
       "n_r": 8,
       "q": 0.920359,
-      "ci_low": -0.770178,
+      "ci_low": -0.770194,
       "ci_high": 0.704432,
       "tier": "exploratory",
       "terms": [
@@ -14322,7 +14322,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 0.5142
+          "value": 0.5144
         }
       ]
     },
