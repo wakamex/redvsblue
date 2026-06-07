@@ -1,5 +1,5 @@
 {
-  "updated": "2026-05-31T07:26:51Z",
+  "updated": "2026-06-07T07:32:04Z",
   "metrics": [
     {
       "metric": "Unemployment rate change",
@@ -185,13 +185,13 @@
       "agg": "end_minus_start_per_year",
       "units": "percentage points per year",
       "d_mean": -0.284576,
-      "r_mean": 0.346113,
-      "diff": -0.630689,
+      "r_mean": 0.345639,
+      "diff": -0.630215,
       "n_d": 11,
       "n_r": 12,
       "q": 0.03555,
-      "ci_low": -0.913556,
-      "ci_high": -0.290497,
+      "ci_low": -0.913533,
+      "ci_high": -0.289884,
       "tier": "confirmatory",
       "terms": [
         {
@@ -353,7 +353,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 0.0861
+          "value": 0.0805
         }
       ]
     },
@@ -541,13 +541,13 @@
       "agg": "pct_change_from_levels",
       "units": "percent",
       "d_mean": 9.544046,
-      "r_mean": 3.230735,
-      "diff": 6.313311,
+      "r_mean": 3.244685,
+      "diff": 6.299361,
       "n_d": 14,
       "n_r": 12,
       "q": 0.096775,
-      "ci_low": 2.796835,
-      "ci_high": 9.854701,
+      "ci_low": 2.796774,
+      "ci_high": 9.840824,
       "tier": "supportive",
       "terms": [
         {
@@ -730,7 +730,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 0.2691
+          "value": 0.4365
         }
       ]
     },
@@ -1274,12 +1274,12 @@
       "agg": "end_minus_start",
       "units": "percentage points",
       "d_mean": 2.873333,
-      "r_mean": -1.78,
-      "diff": 4.653333,
+      "r_mean": -1.780833,
+      "diff": 4.654166,
       "n_d": 9,
       "n_r": 12,
-      "q": 0.13516,
-      "ci_low": 1.320431,
+      "q": 0.138671,
+      "ci_low": 1.321243,
       "ci_high": 8.87541,
       "tier": "exploratory",
       "terms": [
@@ -1428,7 +1428,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": -0.69
+          "value": -0.7
         }
       ]
     },
@@ -1438,13 +1438,13 @@
       "agg": "end_minus_start",
       "units": "thousands of persons",
       "d_mean": 6802.214286,
-      "r_mean": 2542.833333,
-      "diff": 4259.380953,
+      "r_mean": 2564.916667,
+      "diff": 4237.297619,
       "n_d": 14,
       "n_r": 12,
-      "q": 0.13516,
-      "ci_low": 1320.854762,
-      "ci_high": 7065.843452,
+      "q": 0.138671,
+      "ci_low": 1298.910119,
+      "ci_high": 7022.083929,
       "tier": "exploratory",
       "terms": [
         {
@@ -1627,7 +1627,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 426.0
+          "value": 691.0
         }
       ]
     },
@@ -1637,13 +1637,13 @@
       "agg": "end_minus_start",
       "units": "percentage points",
       "d_mean": 1.18125,
-      "r_mean": -0.91,
-      "diff": 2.09125,
+      "r_mean": -0.908,
+      "diff": 2.08925,
       "n_d": 8,
       "n_r": 10,
-      "q": 0.142184,
-      "ci_low": 0.519925,
-      "ci_high": 3.660263,
+      "q": 0.142974,
+      "ci_low": 0.519875,
+      "ci_high": 3.656837,
       "tier": "exploratory",
       "terms": [
         {
@@ -1770,7 +1770,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": -0.16
+          "value": -0.14
         }
       ]
     },
@@ -1784,7 +1784,7 @@
       "diff": 4.358286,
       "n_d": 11,
       "n_r": 12,
-      "q": 0.162843,
+      "q": 0.167097,
       "ci_low": 0.995058,
       "ci_high": 7.754194,
       "tier": "exploratory",
@@ -1958,13 +1958,13 @@
       "agg": "end_minus_start_per_year",
       "units": "thousands of persons per year",
       "d_mean": 1863.18466,
-      "r_mean": 797.385815,
-      "diff": 1065.798845,
+      "r_mean": 813.131421,
+      "diff": 1050.053239,
       "n_d": 14,
       "n_r": 12,
-      "q": 0.162843,
+      "q": 0.167097,
       "ci_low": 228.685241,
-      "ci_high": 1890.875621,
+      "ci_high": 1867.438319,
       "tier": "exploratory",
       "terms": [
         {
@@ -2147,7 +2147,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 366.9729
+          "value": 555.9202
         }
       ]
     },
@@ -2157,13 +2157,13 @@
       "agg": "cagr_from_levels",
       "units": "percent",
       "d_mean": 2.622981,
-      "r_mean": 0.982227,
-      "diff": 1.640754,
+      "r_mean": 0.992165,
+      "diff": 1.630816,
       "n_d": 14,
       "n_r": 12,
-      "q": 0.162843,
-      "ci_low": 0.292603,
-      "ci_high": 2.915699,
+      "q": 0.167097,
+      "ci_low": 0.290341,
+      "ci_high": 2.901473,
       "tier": "exploratory",
       "terms": [
         {
@@ -2346,7 +2346,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 0.2318
+          "value": 0.351
         }
       ]
     },
@@ -3017,7 +3017,7 @@
       "diff": 0.655785,
       "n_d": 15,
       "n_r": 14,
-      "q": 0.22441,
+      "q": 0.235539,
       "ci_low": 0.046227,
       "ci_high": 1.34453,
       "tier": "exploratory",
@@ -3237,7 +3237,7 @@
       "diff": 4.752996,
       "n_d": 11,
       "n_r": 12,
-      "q": 0.22441,
+      "q": 0.235539,
       "ci_low": 0.603661,
       "ci_high": 9.219237,
       "tier": "exploratory",
@@ -3411,13 +3411,13 @@
       "agg": "end_minus_start_per_year",
       "units": "thousands of persons per year",
       "d_mean": 1693.104794,
-      "r_mean": 865.339851,
-      "diff": 827.764943,
+      "r_mean": 878.725672,
+      "diff": 814.379122,
       "n_d": 11,
       "n_r": 12,
-      "q": 0.22441,
-      "ci_low": 30.106464,
-      "ci_high": 1605.813442,
+      "q": 0.235539,
+      "ci_low": 15.313207,
+      "ci_high": 1583.589967,
       "tier": "exploratory",
       "terms": [
         {
@@ -3579,7 +3579,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": -616.7901
+          "value": -456.1602
         }
       ]
     },
@@ -3589,13 +3589,13 @@
       "agg": "end_minus_start",
       "units": "thousands of persons",
       "d_mean": 6072.909091,
-      "r_mean": 2901.416667,
-      "diff": 3171.492424,
+      "r_mean": 2913.833333,
+      "diff": 3159.075758,
       "n_d": 11,
       "n_r": 12,
-      "q": 0.22441,
-      "ci_low": 253.74375,
-      "ci_high": 6288.609848,
+      "q": 0.235539,
+      "ci_low": 253.122917,
+      "ci_high": 6259.299053,
       "tier": "exploratory",
       "terms": [
         {
@@ -3757,7 +3757,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": -716.0
+          "value": -567.0
         }
       ]
     },
@@ -3767,12 +3767,12 @@
       "agg": "end_minus_start_per_year",
       "units": "percentage points per year",
       "d_mean": 0.301699,
-      "r_mean": -0.187777,
-      "diff": 0.489476,
+      "r_mean": -0.186161,
+      "diff": 0.48786,
       "n_d": 8,
       "n_r": 10,
-      "q": 0.22441,
-      "ci_low": 0.044393,
+      "q": 0.235539,
+      "ci_low": 0.042469,
       "ci_high": 0.931907,
       "tier": "exploratory",
       "terms": [
@@ -3900,7 +3900,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": -0.1178
+          "value": -0.1017
         }
       ]
     },
@@ -3910,13 +3910,13 @@
       "agg": "end_minus_start",
       "units": "percentage points",
       "d_mean": -0.838333,
-      "r_mean": 0.605714,
-      "diff": -1.444047,
+      "r_mean": 0.592857,
+      "diff": -1.43119,
       "n_d": 6,
       "n_r": 7,
-      "q": 0.22441,
-      "ci_low": -2.619613,
-      "ci_high": -0.317833,
+      "q": 0.235539,
+      "ci_low": -2.612887,
+      "ci_high": -0.294595,
       "tier": "exploratory",
       "terms": [
         {
@@ -4008,7 +4008,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 0.13
+          "value": 0.04
         }
       ]
     },
@@ -4018,13 +4018,13 @@
       "agg": "end_minus_start_per_year",
       "units": "percentage points per year",
       "d_mean": -0.209693,
-      "r_mean": 0.160583,
-      "diff": -0.370276,
+      "r_mean": 0.151076,
+      "diff": -0.360769,
       "n_d": 6,
       "n_r": 7,
-      "q": 0.22441,
-      "ci_low": -0.652144,
-      "ci_high": -0.084345,
+      "q": 0.235539,
+      "ci_low": -0.650057,
+      "ci_high": -0.075896,
       "tier": "exploratory",
       "terms": [
         {
@@ -4116,7 +4116,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 0.0955
+          "value": 0.029
         }
       ]
     },
@@ -4346,13 +4346,13 @@
       "agg": "pct_change_from_levels",
       "units": "percent",
       "d_mean": 5.83538,
-      "r_mean": 3.208224,
-      "diff": 2.627156,
+      "r_mean": 3.215826,
+      "diff": 2.619554,
       "n_d": 11,
       "n_r": 12,
       "q": 0.241585,
       "ci_low": 0.034085,
-      "ci_high": 5.186579,
+      "ci_high": 5.18479,
       "tier": "exploratory",
       "terms": [
         {
@@ -4514,7 +4514,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": -0.4384
+          "value": -0.3471
         }
       ]
     },
@@ -4524,13 +4524,13 @@
       "agg": "cagr_from_levels",
       "units": "percent",
       "d_mean": 1.661426,
-      "r_mean": 0.968486,
-      "diff": 0.69294,
+      "r_mean": 0.976683,
+      "diff": 0.684743,
       "n_d": 11,
       "n_r": 12,
-      "q": 0.27426,
-      "ci_low": -0.064097,
-      "ci_high": 1.395464,
+      "q": 0.279632,
+      "ci_low": -0.064271,
+      "ci_high": 1.388708,
       "tier": "exploratory",
       "terms": [
         {
@@ -4692,7 +4692,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": -0.3777
+          "value": -0.2794
         }
       ]
     },
@@ -5474,13 +5474,13 @@
       "agg": "end_minus_start_per_year",
       "units": "percentage points per year",
       "d_mean": 0.783662,
-      "r_mean": -0.322579,
-      "diff": 1.106241,
+      "r_mean": -0.319976,
+      "diff": 1.103638,
       "n_d": 9,
       "n_r": 12,
-      "q": 0.352196,
-      "ci_low": -0.073454,
-      "ci_high": 2.265751,
+      "q": 0.354103,
+      "ci_low": -0.076122,
+      "ci_high": 2.261606,
       "tier": "exploratory",
       "terms": [
         {
@@ -5628,7 +5628,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": -0.5944
+          "value": -0.5632
         }
       ]
     },
@@ -5638,13 +5638,13 @@
       "agg": "mean",
       "units": "percent",
       "d_mean": 4.76134,
-      "r_mean": 6.600069,
-      "diff": -1.838729,
+      "r_mean": 6.600349,
+      "diff": -1.839009,
       "n_d": 9,
       "n_r": 10,
-      "q": 0.37653,
-      "ci_low": -4.052632,
-      "ci_high": 0.377504,
+      "q": 0.376003,
+      "ci_low": -4.052742,
+      "ci_high": 0.376944,
       "tier": "exploratory",
       "terms": [
         {
@@ -5778,7 +5778,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 4.2752
+          "value": 4.278
         }
       ]
     },
@@ -6148,7 +6148,7 @@
       "diff": 1.69302,
       "n_d": 17,
       "n_r": 17,
-      "q": 0.449378,
+      "q": 0.457676,
       "ci_low": -0.694637,
       "ci_high": 4.134951,
       "tier": "exploratory",
@@ -6394,142 +6394,6 @@
       ]
     },
     {
-      "metric": "Federal debt",
-      "family": "fiscal",
-      "agg": "end_minus_start",
-      "units": "percentage points",
-      "d_mean": 1.417536,
-      "r_mean": 7.199425,
-      "diff": -5.781889,
-      "n_d": 7,
-      "n_r": 10,
-      "q": 0.449378,
-      "ci_low": -13.808136,
-      "ci_high": 3.310303,
-      "tier": "exploratory",
-      "terms": [
-        {
-          "president": "Lyndon Johnson",
-          "party": "D",
-          "term_start": "1965-01-20",
-          "term_end": "1969-01-20",
-          "value": -3.3547
-        },
-        {
-          "president": "Richard Nixon",
-          "party": "R",
-          "term_start": "1969-01-20",
-          "term_end": "1973-01-20",
-          "value": -2.4482
-        },
-        {
-          "president": "Richard Nixon",
-          "party": "R",
-          "term_start": "1973-01-20",
-          "term_end": "1974-08-09",
-          "value": -2.2982
-        },
-        {
-          "president": "Gerald Ford",
-          "party": "R",
-          "term_start": "1974-08-09",
-          "term_end": "1977-01-20",
-          "value": 2.9248
-        },
-        {
-          "president": "James Carter",
-          "party": "D",
-          "term_start": "1977-01-20",
-          "term_end": "1981-01-20",
-          "value": -2.4944
-        },
-        {
-          "president": "Ronald Reagan",
-          "party": "R",
-          "term_start": "1981-01-20",
-          "term_end": "1985-01-20",
-          "value": 9.2126
-        },
-        {
-          "president": "Ronald Reagan",
-          "party": "R",
-          "term_start": "1985-01-20",
-          "term_end": "1989-01-20",
-          "value": 9.2743
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "1989-01-20",
-          "term_end": "1993-01-20",
-          "value": 12.7898
-        },
-        {
-          "president": "William Clinton",
-          "party": "D",
-          "term_start": "1993-01-20",
-          "term_end": "1997-01-20",
-          "value": 1.5804
-        },
-        {
-          "president": "William Clinton",
-          "party": "D",
-          "term_start": "1997-01-20",
-          "term_end": "2001-01-20",
-          "value": -10.0864
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "2001-01-20",
-          "term_end": "2005-01-20",
-          "value": 5.4928
-        },
-        {
-          "president": "George Bush",
-          "party": "R",
-          "term_start": "2005-01-20",
-          "term_end": "2009-01-20",
-          "value": 12.3321
-        },
-        {
-          "president": "Barack Obama",
-          "party": "D",
-          "term_start": "2009-01-20",
-          "term_end": "2013-01-20",
-          "value": 22.97
-        },
-        {
-          "president": "Barack Obama",
-          "party": "D",
-          "term_start": "2013-01-20",
-          "term_end": "2017-01-20",
-          "value": 3.9089
-        },
-        {
-          "president": "Donald Trump",
-          "party": "R",
-          "term_start": "2017-01-20",
-          "term_end": "2021-01-20",
-          "value": 22.6912
-        },
-        {
-          "president": "Joseph Biden",
-          "party": "D",
-          "term_start": "2021-01-20",
-          "term_end": "2025-01-20",
-          "value": -2.6012
-        },
-        {
-          "president": "Donald Trump",
-          "party": "R",
-          "term_start": "2025-01-20",
-          "term_end": "2029-01-20",
-          "value": 2.023
-        }
-      ]
-    },
-    {
       "metric": "Stock market total return",
       "family": "stock_returns",
       "agg": "compound_total",
@@ -6539,7 +6403,7 @@
       "diff": 30.810893,
       "n_d": 15,
       "n_r": 14,
-      "q": 0.449378,
+      "q": 0.459315,
       "ci_low": -8.991857,
       "ci_high": 75.868145,
       "tier": "exploratory",
@@ -6750,18 +6614,154 @@
       ]
     },
     {
+      "metric": "Federal debt",
+      "family": "fiscal",
+      "agg": "end_minus_start",
+      "units": "percentage points",
+      "d_mean": 1.417536,
+      "r_mean": 7.199425,
+      "diff": -5.781889,
+      "n_d": 7,
+      "n_r": 10,
+      "q": 0.462218,
+      "ci_low": -13.808136,
+      "ci_high": 3.310303,
+      "tier": "exploratory",
+      "terms": [
+        {
+          "president": "Lyndon Johnson",
+          "party": "D",
+          "term_start": "1965-01-20",
+          "term_end": "1969-01-20",
+          "value": -3.3547
+        },
+        {
+          "president": "Richard Nixon",
+          "party": "R",
+          "term_start": "1969-01-20",
+          "term_end": "1973-01-20",
+          "value": -2.4482
+        },
+        {
+          "president": "Richard Nixon",
+          "party": "R",
+          "term_start": "1973-01-20",
+          "term_end": "1974-08-09",
+          "value": -2.2982
+        },
+        {
+          "president": "Gerald Ford",
+          "party": "R",
+          "term_start": "1974-08-09",
+          "term_end": "1977-01-20",
+          "value": 2.9248
+        },
+        {
+          "president": "James Carter",
+          "party": "D",
+          "term_start": "1977-01-20",
+          "term_end": "1981-01-20",
+          "value": -2.4944
+        },
+        {
+          "president": "Ronald Reagan",
+          "party": "R",
+          "term_start": "1981-01-20",
+          "term_end": "1985-01-20",
+          "value": 9.2126
+        },
+        {
+          "president": "Ronald Reagan",
+          "party": "R",
+          "term_start": "1985-01-20",
+          "term_end": "1989-01-20",
+          "value": 9.2743
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "1989-01-20",
+          "term_end": "1993-01-20",
+          "value": 12.7898
+        },
+        {
+          "president": "William Clinton",
+          "party": "D",
+          "term_start": "1993-01-20",
+          "term_end": "1997-01-20",
+          "value": 1.5804
+        },
+        {
+          "president": "William Clinton",
+          "party": "D",
+          "term_start": "1997-01-20",
+          "term_end": "2001-01-20",
+          "value": -10.0864
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "2001-01-20",
+          "term_end": "2005-01-20",
+          "value": 5.4928
+        },
+        {
+          "president": "George Bush",
+          "party": "R",
+          "term_start": "2005-01-20",
+          "term_end": "2009-01-20",
+          "value": 12.3321
+        },
+        {
+          "president": "Barack Obama",
+          "party": "D",
+          "term_start": "2009-01-20",
+          "term_end": "2013-01-20",
+          "value": 22.97
+        },
+        {
+          "president": "Barack Obama",
+          "party": "D",
+          "term_start": "2013-01-20",
+          "term_end": "2017-01-20",
+          "value": 3.9089
+        },
+        {
+          "president": "Donald Trump",
+          "party": "R",
+          "term_start": "2017-01-20",
+          "term_end": "2021-01-20",
+          "value": 22.6912
+        },
+        {
+          "president": "Joseph Biden",
+          "party": "D",
+          "term_start": "2021-01-20",
+          "term_end": "2025-01-20",
+          "value": -2.6012
+        },
+        {
+          "president": "Donald Trump",
+          "party": "R",
+          "term_start": "2025-01-20",
+          "term_end": "2029-01-20",
+          "value": 2.023
+        }
+      ]
+    },
+    {
       "metric": "10y-2y Treasury spread",
       "family": "interest_rates",
       "agg": "last",
       "units": "percentage points",
       "d_mean": 0.531667,
-      "r_mean": 1.10625,
-      "diff": -0.574583,
+      "r_mean": 1.095,
+      "diff": -0.563333,
       "n_d": 6,
       "n_r": 8,
-      "q": 0.449378,
-      "ci_low": -1.417635,
-      "ci_high": 0.16049,
+      "q": 0.468468,
+      "ci_low": -1.41425,
+      "ci_high": 0.18425,
       "tier": "exploratory",
       "terms": [
         {
@@ -6860,7 +6860,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 0.47
+          "value": 0.38
         }
       ]
     },
@@ -8336,7 +8336,7 @@
       "diff": -0.992695,
       "n_d": 9,
       "n_r": 11,
-      "q": 0.505886,
+      "q": 0.507735,
       "ci_low": -2.528919,
       "ci_high": 0.841781,
       "tier": "exploratory",
@@ -8489,12 +8489,12 @@
       "agg": "mean",
       "units": "percent",
       "d_mean": 3.814239,
-      "r_mean": 5.281962,
-      "diff": -1.467723,
+      "r_mean": 5.279764,
+      "diff": -1.465525,
       "n_d": 9,
       "n_r": 12,
-      "q": 0.505886,
-      "ci_low": -3.98287,
+      "q": 0.507735,
+      "ci_low": -3.978474,
       "ci_high": 1.194021,
       "tier": "exploratory",
       "terms": [
@@ -8643,7 +8643,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 4.052
+          "value": 4.0256
         }
       ]
     },
@@ -10025,13 +10025,13 @@
       "agg": "mean",
       "units": "percent",
       "d_mean": 61.949351,
-      "r_mean": 62.880256,
-      "diff": -0.930905,
+      "r_mean": 62.877558,
+      "diff": -0.928207,
       "n_d": 11,
       "n_r": 12,
       "q": 0.642233,
-      "ci_low": -3.380445,
-      "ci_high": 1.391318,
+      "ci_low": -3.377747,
+      "ci_high": 1.396494,
       "tier": "exploratory",
       "terms": [
         {
@@ -10193,7 +10193,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 62.2857
+          "value": 62.2533
         }
       ]
     },
@@ -10960,13 +10960,13 @@
       "agg": "last",
       "units": "percent",
       "d_mean": 5.287778,
-      "r_mean": 6.083,
-      "diff": -0.795222,
+      "r_mean": 6.085,
+      "diff": -0.797222,
       "n_d": 9,
       "n_r": 10,
-      "q": 0.747446,
-      "ci_low": -3.489836,
-      "ci_high": 1.890411,
+      "q": 0.744598,
+      "ci_low": -3.489886,
+      "ci_high": 1.886461,
       "tier": "exploratory",
       "terms": [
         {
@@ -11100,7 +11100,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 4.45
+          "value": 4.47
         }
       ]
     },
@@ -11930,13 +11930,13 @@
       "agg": "last",
       "units": "percent",
       "d_mean": 5.456667,
-      "r_mean": 4.534167,
-      "diff": 0.9225,
+      "r_mean": 4.533333,
+      "diff": 0.923334,
       "n_d": 9,
       "n_r": 12,
       "q": 0.789005,
       "ci_low": -2.540549,
-      "ci_high": 5.100278,
+      "ci_high": 5.101111,
       "tier": "exploratory",
       "terms": [
         {
@@ -12084,7 +12084,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 3.64
+          "value": 3.63
         }
       ]
     },
@@ -12314,13 +12314,13 @@
       "agg": "end_minus_start_per_year",
       "units": "percentage points per year",
       "d_mean": 0.060612,
-      "r_mean": -0.000314,
-      "diff": 0.060926,
+      "r_mean": 0.003006,
+      "diff": 0.057606,
       "n_d": 11,
       "n_r": 12,
       "q": 0.789005,
-      "ci_low": -0.194694,
-      "ci_high": 0.30235,
+      "ci_low": -0.196254,
+      "ci_high": 0.295731,
       "tier": "exploratory",
       "terms": [
         {
@@ -12482,7 +12482,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": -0.603
+          "value": -0.5632
         }
       ]
     },
@@ -14217,12 +14217,12 @@
       "agg": "mean",
       "units": "percentage points",
       "d_mean": 0.829427,
-      "r_mean": 0.872469,
-      "diff": -0.043042,
+      "r_mean": 0.872279,
+      "diff": -0.042852,
       "n_d": 6,
       "n_r": 8,
-      "q": 0.921068,
-      "ci_low": -0.770022,
+      "q": 0.922385,
+      "ci_low": -0.769827,
       "ci_high": 0.704432,
       "tier": "exploratory",
       "terms": [
@@ -14322,7 +14322,7 @@
           "party": "R",
           "term_start": "2025-01-20",
           "term_end": "2029-01-20",
-          "value": 0.513
+          "value": 0.5115
         }
       ]
     },
