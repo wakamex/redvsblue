@@ -298,11 +298,12 @@
     });
   }
 
-  load(CDN)
+  // Prefer the JSON deployed alongside this page so a mutable-branch CDN cache
+  // cannot leave the UI showing an older metric set after a publish.
+  load("./data.json")
     .then(render)
     .catch(function() {
-      // Fallback: relative path for local dev
-      load("./data.json")
+      load(CDN)
         .then(render)
         .catch(function(err) {
           status.textContent = "Failed to load data: " + err.message;
