@@ -17,7 +17,16 @@ def test_homepage_metric_count_comes_from_loaded_data():
 def test_homepage_explains_and_displays_p_and_q_values():
     html = Path("site/index.html").read_text(encoding="utf-8")
 
-    assert "How to use p and q values" in html
+    summary_start = html.index('<div class="summary">')
+    summary = html[summary_start:html.index("</div>", summary_start)]
+    header_start = html.index("<thead>")
+    header = html[header_start:html.index("</thead>", header_start)]
+
+    assert "info-button" not in summary
+    assert 'aria-label="About p values"' in header
+    assert 'aria-label="About q values"' in header
+    assert 'id="p-tip" role="tooltip"' in header
+    assert 'id="q-tip" role="tooltip"' in header
     assert "the metric was chosen in advance" in html
     assert "Use it when scanning, comparing, or selecting metrics" in html
     assert 'fmt(m.p, 3)' in html
