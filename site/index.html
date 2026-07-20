@@ -55,7 +55,7 @@
 
 <h1>Red vs. Blue</h1>
 <p class="subtitle">U.S. economic metrics under Democratic vs. Republican presidents</p>
-<p class="subtitle" style="margin-top:-.5rem">Reproducible permutation-based inference across 83 U.S. economic metrics</p>
+<p class="subtitle" style="margin-top:-.5rem">Reproducible permutation-based inference across <span id="metric-count">&hellip;</span> U.S. economic metrics</p>
 
 <div class="summary">
   Metrics sorted by BH-FDR corrected q-value.
@@ -97,6 +97,9 @@
     See <code>--term-block-years</code> for block-shuffle sensitivity analysis.
   </p>
   <p style="margin-top:.5rem">
+    Price-index source: <a href="https://datahub.io/core/s-and-p-500">inspect the monthly S&amp;P CSV and license</a>.
+  </p>
+  <p style="margin-top:.5rem">
     For full details see: <a href="https://github.com/wakamex/redvsblue">github.com/wakamex/redvsblue</a>
   </p>
 </div>
@@ -106,6 +109,7 @@
   var CDN = "https://cdn.jsdelivr.net/gh/wakamex/redvsblue@main/site/data.json";
   var tbody = document.getElementById("tbody");
   var status = document.getElementById("status");
+  var metricCount = document.getElementById("metric-count");
   var COL_SPAN = 11;
   var COLOR_D = "#4a90d9";
   var COLOR_R = "#d94a4a";
@@ -254,6 +258,7 @@
     status.textContent = "Updated: " + updated;
 
     metricsData = data.metrics || [];
+    metricCount.textContent = String(metricsData.length);
     var html = "";
     for (var i = 0; i < metricsData.length; i++) {
       var m = metricsData[i];

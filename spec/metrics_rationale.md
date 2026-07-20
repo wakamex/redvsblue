@@ -72,11 +72,11 @@ We include alternates:
 
 Question: do we need levels, not just returns?
 
-Choice (v1): use **Ken French monthly returns** as the main stock market source, and **derive level-like metrics** via compounding.
+Choice (v1): use **Ken French monthly returns** for investor-return comparisons and a recognizable **S&P price-only series** for public verification.
 
 Rationale:
 - Returns are the cleanest unit for comparisons (stationary-ish, not dependent on an arbitrary base year).
-- "Level" comparisons (e.g., S&P 500 start vs end) are common in popular claims, so we should support them, but they are highly sensitive to window endpoints. We treat those as **alternate views**.
+- "Level" comparisons (e.g., S&P 500 start vs end) are common in popular claims and easier for readers to verify independently, so we retain them as alternate views.
 
 Ken French dataset:
 - Monthly observations start in **1926-07**; the latest available month depends on when the file is downloaded.
@@ -89,17 +89,11 @@ Metrics included:
 - `ff_mkt_excess_return_term_total`: compounded excess return over the term window.
 
 Price index levels (Dow and S&P):
-- For popular/press-style “the market went up/down under X” claims, we also include **price index levels** from Stooq:
-- We fetch:
-  - S&P 500 (`^spx` from Stooq)
-  - Dow Jones Industrial Average (`^dji` from Stooq)
-- These are **price-only** indices (exclude dividends), so they are not directly comparable to total return measures. We treat them as supplementary level-based metrics for public-facing claims.
-- For S&P levels, we keep **two separate definitions**:
-  - `sp500_sp500_index` (modern S&P 500 window, 1957+), used for headline S&P level metrics.
-  - `sp500_spx_backfilled_pre1957` (pre-1957 backfilled segment from the same provider), exposed only as a separate historical-composite alternate.
-- We intentionally do **not** stitch pre-1957 backfilled SPX data into the modern 1957+ S&P 500 headline series, to avoid implying one homogeneous index definition across the full history.
-- Boundary alignment for daily series (inaugurations on weekends/holidays, etc.) is handled by the attribution spec (`spec/attribution_v1.yaml`). v1 default is to use the **close of the last trading day strictly before** the inauguration boundary, to avoid time-of-day ambiguity on inauguration day.
-- Stooq is a third-party data source; we should treat it as a convenience feed for “popular claim” metrics (S&P/Dow levels), record retrieval metadata/hashes, and avoid redistributing raw data unless licensing is confirmed.
+- The former Stooq feed was removed because its API and redistribution terms could not be confirmed.
+- The replacement is DataHub Core's versioned monthly S&P CSV. Its data package is offered under ODC-PDDL-1.0 and is directly browsable by users; the package README also discloses that the original Shiller data has no exact license statement.
+- The modern view begins in 1957. The pre-1957 Shiller composite remains a separately labeled historical view so it is not presented as the modern 500-stock index.
+- The values are price-only and exclude dividends. They complement rather than replace the Ken French total-return metrics.
+- We dropped the redundant Dow metrics because no equally transparent, suitably licensed replacement was identified.
 
 Risk context for returns:
 - To reduce “recovery-from-crash” cherry-picking and provide context, we include:
@@ -107,9 +101,8 @@ Risk context for returns:
   - annualized Sharpe ratio of monthly excess returns (`ff_mkt_excess_return_sharpe_ann`)
 
 Level-style term metrics included:
-- Term total percent change (end vs start): `sp500_term_pct_change`, `djia_term_pct_change`
-- Term percent change per year (CAGR, annualized from start/end using elapsed time): `sp500_term_cagr_pct`, `djia_term_cagr_pct`
-- Historical composite alternates (pre-1957 only): `sp500_backfilled_pre1957_term_pct_change`, `sp500_backfilled_pre1957_term_cagr_pct`
+- S&P 500 price percent change and CAGR: `sp500_term_pct_change`, `sp500_term_cagr_pct`
+- Pre-1957 historical composite price percent change and CAGR: `sp500_backfilled_pre1957_term_pct_change`, `sp500_backfilled_pre1957_term_cagr_pct`
 
 MoM/QoQ/YoY:
 - MoM is the monthly return itself.
