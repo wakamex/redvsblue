@@ -23,9 +23,6 @@ sources:
     notes:
       - "Prefer the official FRED API when FRED_API_KEY is available; fall back to graph CSV when it is not."
       - "FRED API requires an api_key; graph CSV usually does not, but is less stable and has less metadata."
-  nber:
-    kind: json
-    url: "https://data.nber.org/data/cycles/business_cycle_dates.json"
   ken_french_ff_factors:
     kind: zip_csv
     url: "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip"
@@ -43,13 +40,15 @@ sources:
     notes:
       - "Monthly Fama/French factors; includes Mkt-RF and RF in percent."
       - "CSV is not a simple header+data file; it contains descriptive preamble text and multiple tables (monthly then annual)."
-  stooq:
-    kind: csv
-    url_template: "https://stooq.com/q/d/l/?s={symbol}&i=d"
+  datahub_sp500:
+    kind: datahub_csv
+    url: "https://datahub.io/core/s-and-p-500/_r/-/data/data.csv"
+    homepage: "https://datahub.io/core/s-and-p-500"
+    license: ODC-PDDL-1.0
     notes:
-      - "Stooq provides historical quotes as CSV with columns: Date,Open,High,Low,Close,Volume."
-      - "Index symbols are prefixed with '^' (e.g., ^spx, ^dji)."
-
+      - "Monthly price-only S&P composite data curated as a versioned, directly inspectable CSV by DataHub Core Datasets."
+      - "The package is offered under ODC-PDDL-1.0; its README notes that the original Shiller data has no exact license statement."
+      - "The Shiller series runs through 2023-06; subsequent SP500 values are extended from FRED."
 series:
   # Macro: output
   gdpc1_real_gdp:
@@ -181,12 +180,6 @@ series:
     frequency: M
     units: "0/1 indicator"
     description: "NBER based Recession Indicators for the United States."
-  nber_business_cycle_dates:
-    source: nber
-    frequency: irregular
-    units: "peaks/troughs"
-    description: "NBER business cycle chronology (peaks/troughs)."
-
   # Fiscal (note: some fiscal series are annual/fiscal-year based)
   gfdegdq188s_federal_debt_pct_gdp:
     source: fred
@@ -216,37 +209,31 @@ series:
         units: "percent"
     description: "Fama/French Research Factors (monthly)."
 
-  # Finance (index levels; price-only, excludes dividends)
+  # Finance (price-only S&P composite levels)
   sp500_sp500_index:
-    source: stooq
-    symbol: "^spx"
-    frequency: D
+    source: datahub_sp500
+    frequency: M
     units: "index"
-    column: Close
-    description: "S&P 500 index level (close; price index, excludes dividends)."
+    date_column: Date
+    value_column: SP500
+    description: "Monthly S&P 500/composite price level (excludes dividends), DataHub/Shiller/FRED."
     filters:
-      start_date: "1957-01-02"
+      start_date: "1957-01-01"
     notes:
-      - "Stooq's ^spx download includes earlier monthly values; we drop observations before 1957-01-02 (S&P 500 inception)."
+      - "The modern view starts at the S&P 500's 1957 inception."
+      - "Monthly values are averages rather than daily closing levels through the Shiller segment."
   sp500_spx_backfilled_pre1957:
-    source: stooq
-    symbol: "^spx"
-    frequency: D
+    source: datahub_sp500
+    frequency: M
     units: "index"
-    column: Close
-    description: "SPX backfilled historical level from Stooq (pre-1957 segment only; not the modern 500-stock index definition)."
+    date_column: Date
+    value_column: SP500
+    description: "Historical S&P composite price level before 1957 (excludes dividends), DataHub/Shiller."
     filters:
       end_date: "1956-12-31"
     notes:
       - "Used only as a separate historical-composite view for pre-1957 windows."
       - "Do not stitch with the modern post-1957 S&P 500 in one continuous headline series."
-  djia_dow_jones:
-    source: stooq
-    symbol: "^dji"
-    frequency: D
-    units: "index"
-    column: Close
-    description: "Dow Jones Industrial Average index level (close; price index, excludes dividends)."
 
 metrics:
   # GDP growth
@@ -1175,10 +1162,11 @@ metrics:
       notes:
         - "Formula: mean(Mkt-RF)*12 / (std(Mkt-RF)*sqrt(12))."
 
-  # Stock index levels (price-only)
+  # Recognizable price-only index views. These intentionally complement the
+  # less familiar Ken French total-return series.
   - id: sp500_term_pct_change
     family: stock_levels
-    label: "S&P 500 percent change (term total, end vs start)"
+    label: "S&P 500 monthly price percent change (term total)"
     inputs:
       series: sp500_sp500_index
     period_transform:
@@ -1190,7 +1178,7 @@ metrics:
 
   - id: sp500_term_cagr_pct
     family: stock_levels
-    label: "S&P 500 CAGR (term annualized from start/end)"
+    label: "S&P 500 monthly price CAGR"
     inputs:
       series: sp500_sp500_index
     period_transform:
@@ -1200,12 +1188,10 @@ metrics:
       scale: 100
       use_actual_time: true
       units: "percent"
-      notes:
-        - "Uses start/end levels and actual elapsed time to annualize."
 
   - id: sp500_backfilled_pre1957_term_pct_change
     family: stock_levels_historical
-    label: "SPX backfilled historical percent change (pre-1957 windows only)"
+    label: "S&P historical composite monthly price percent change (pre-1957)"
     inputs:
       series: sp500_spx_backfilled_pre1957
     period_transform:
@@ -1214,12 +1200,12 @@ metrics:
       kind: pct_change_from_levels
       scale: 100
       units: "percent"
-      notes:
-        - "Separate historical-composite view; not directly comparable to modern S&P 500 headline metrics."
+    notes:
+      - "Separate historical-composite view; not the modern 500-stock index definition."
 
   - id: sp500_backfilled_pre1957_term_cagr_pct
     family: stock_levels_historical
-    label: "SPX backfilled historical CAGR (pre-1957 windows only)"
+    label: "S&P historical composite monthly price CAGR (pre-1957)"
     inputs:
       series: sp500_spx_backfilled_pre1957
     period_transform:
@@ -1229,35 +1215,8 @@ metrics:
       scale: 100
       use_actual_time: true
       units: "percent"
-      notes:
-        - "Separate historical-composite view; not directly comparable to modern S&P 500 headline metrics."
-
-  - id: djia_term_pct_change
-    family: stock_levels
-    label: "Dow Jones Industrial Average percent change (term total, end vs start)"
-    inputs:
-      series: djia_dow_jones
-    period_transform:
-      kind: identity
-    term_aggregation:
-      kind: pct_change_from_levels
-      scale: 100
-      units: "percent"
-
-  - id: djia_term_cagr_pct
-    family: stock_levels
-    label: "Dow Jones Industrial Average CAGR (term annualized from start/end)"
-    inputs:
-      series: djia_dow_jones
-    period_transform:
-      kind: identity
-    term_aggregation:
-      kind: cagr_from_levels
-      scale: 100
-      use_actual_time: true
-      units: "percent"
-      notes:
-        - "Uses start/end levels and actual elapsed time to annualize."
+    notes:
+      - "Separate historical-composite view; not the modern 500-stock index definition."
 
   # Recessions
   - id: recession_month_share

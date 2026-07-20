@@ -69,11 +69,12 @@ Legend:
 
 - `ff_factors_monthly` (`mkt_rf`, `mkt_total`)
   - `covered`: annualized returns, excess/total term-total returns, volatility, Sharpe.
-- `sp500_sp500_index`, `djia_dow_jones`
-  - `covered`: term percent change and CAGR.
+- `sp500_sp500_index`
+  - `covered`: term price percent change and CAGR for the modern 1957+ window.
 - `sp500_spx_backfilled_pre1957`
-  - `covered`: separate historical-composite term percent change and CAGR.
+  - `covered`: separate historical-composite price percent change and CAGR.
   - `intentionally_omitted`: stitched modern+historical headline series.
+  - `note`: both price-only views use DataHub's directly inspectable, versioned monthly CSV rather than Stooq.
 
 ### Interest Rates / Yield Curve
 

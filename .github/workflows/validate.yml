@@ -104,7 +104,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-rb-smoke-nonfred-
 
-      - name: Smoke pipeline (daily + non-FRED source)
+      - name: Smoke pipeline (non-FRED source)
         run: |
           retry() {
             for i in 1 2 3; do

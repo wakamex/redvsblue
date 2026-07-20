@@ -3,11 +3,11 @@
 ## Project
 
 Reproducible pipeline comparing U.S. economic metrics under D vs R presidents.
-83 metrics across 10 families, permutation-based inference with single-universe BH-FDR correction.
+Registry-defined metrics with permutation-based inference and single-universe BH-FDR correction.
 
 ## Results (Feb 2026)
 
-One confirmatory result (q < 0.05, BH-FDR across all 83 metrics, unrestricted permutation):
+One confirmatory result (q < 0.05, BH-FDR across the then-current registry, unrestricted permutation):
 **Unemployment rate change** (D -1.16pp vs R +1.16pp, gap -2.32pp, q=0.025, CI [-3.24, -1.36]).
 
 Two supportive (q < 0.10): unemployment rate change per year (q=0.075), payroll employment
@@ -22,7 +22,7 @@ has limited power for smaller effect sizes.
 
 ## Codebase (~3,000 lines)
 
-- `rb/sources/` — ingest from 7 sources with atomic caching
+- `rb/sources/` — source ingestion with atomic caching
 - `rb/metrics.py` — joins series onto terms, applies transforms
 - `rb/presidents.py` — presidential terms + party labels
 - `rb/validate.py` — sanity checks on derived data
