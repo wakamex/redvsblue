@@ -10,7 +10,16 @@
        line-height:1.6;padding:1rem 2rem;margin:0}
   h1{color:#ff9800;margin-bottom:.25rem;font-size:1.6rem}
   .subtitle{color:#999;font-size:.85rem;margin-bottom:1rem}
-  .summary{margin-bottom:1.25rem;font-size:.9rem;color:#bbb;max-width:72ch}
+  .summary{position:relative;margin-bottom:1.25rem;font-size:.9rem;color:#bbb;max-width:72ch}
+  .info-wrap{display:inline-flex;vertical-align:middle;margin-left:.25rem}
+  .info-button{width:1.25rem;height:1.25rem;border:1px solid #777;border-radius:50%;
+    background:#2a2a2a;color:#ddd;font:600 .75rem/1 system-ui;cursor:help;padding:0}
+  .info-button:hover,.info-button:focus-visible{border-color:#ff9800;color:#ff9800;outline:none}
+  .info-tip{position:absolute;z-index:3;top:calc(100% + .4rem);left:0;width:min(32rem,100%);
+    padding:.65rem .75rem;border:1px solid #555;border-radius:4px;background:#111;color:#ddd;
+    font-size:.78rem;line-height:1.45;text-align:left;box-shadow:0 4px 14px #0008;
+    visibility:hidden;opacity:0;transition:opacity .12s}
+  .info-wrap:hover .info-tip,.info-wrap:focus-within .info-tip{visibility:visible;opacity:1}
   .legend{display:flex;gap:1.25rem;margin-bottom:1rem;font-size:.8rem;flex-wrap:wrap}
   .legend-item{display:flex;align-items:center;gap:.35rem}
   .swatch{width:14px;height:14px;border-radius:2px;flex-shrink:0}
@@ -59,6 +68,16 @@
 
 <div class="summary">
   Metrics sorted by BH-FDR corrected q-value.
+  <span class="info-wrap">
+    <button type="button" class="info-button" aria-label="How to use p and q values" aria-describedby="pq-tip">i</button>
+    <span class="info-tip" id="pq-tip" role="tooltip">
+      <strong>p</strong> evaluates one metric without correcting for the other tests. Use it when
+      the metric was chosen in advance, independently of these results.<br>
+      <strong>q</strong> adjusts for testing all metrics shown using Benjamini&ndash;Hochberg FDR.
+      Use it when scanning, comparing, or selecting metrics from this table. Evidence colors and
+      labels use q.
+    </span>
+  </span>
 </div>
 
 <div class="legend">
@@ -82,6 +101,7 @@
         <th class="num">D-R</th>
         <th class="num">n(D)</th>
         <th class="num">n(R)</th>
+        <th class="num">p</th>
         <th class="num">q</th>
         <th class="num">CI 95%</th>
       </tr>
@@ -110,7 +130,7 @@
   var tbody = document.getElementById("tbody");
   var status = document.getElementById("status");
   var metricCount = document.getElementById("metric-count");
-  var COL_SPAN = 11;
+  var COL_SPAN = 12;
   var COLOR_D = "#4a90d9";
   var COLOR_R = "#d94a4a";
 
@@ -273,6 +293,7 @@
         + '<td class="num">' + fmt(m.diff) + "</td>"
         + '<td class="num">' + (m.n_d != null ? m.n_d : "") + "</td>"
         + '<td class="num">' + (m.n_r != null ? m.n_r : "") + "</td>"
+        + '<td class="num">' + fmt(m.p, 3) + "</td>"
         + '<td class="num">' + fmt(m.q, 3) + "</td>"
         + '<td class="num">' + fmtCI(m.ci_low, m.ci_high) + "</td>"
         + "</tr>";

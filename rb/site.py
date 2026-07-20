@@ -80,6 +80,7 @@ def write_site_json(
         diff = round(d_mean - r_mean, 6) if (d_mean is not None and r_mean is not None) else None
 
         tr = term_rand.get(mid, {})
+        p_val = _parse_float(tr.get("p_two_sided") or "")
         q_val = _parse_float(tr.get("q_bh_fdr") or "")
         ci_low = _parse_float(tr.get("bootstrap_ci95_low") or "")
         ci_high = _parse_float(tr.get("bootstrap_ci95_high") or "")
@@ -101,6 +102,7 @@ def write_site_json(
             "diff": _round_or_none(diff),
             "n_d": d.n_terms if d else None,
             "n_r": r.n_terms if r else None,
+            "p": _round_or_none(p_val),
             "q": _round_or_none(q_val),
             "ci_low": _round_or_none(ci_low),
             "ci_high": _round_or_none(ci_high),
