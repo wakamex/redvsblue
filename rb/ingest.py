@@ -3,10 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from rb.spec import load_spec
+from rb.sources.datahub import ingest_datahub_series
 from rb.sources.fred import ingest_fred_series
 from rb.sources.ken_french import ingest_ken_french_dataset
-from rb.sources.nber import ingest_nber_cycles
-from rb.sources.stooq import ingest_stooq_series
 
 
 def ingest_from_spec(
@@ -27,11 +26,6 @@ def ingest_from_spec(
     data_derived_root.mkdir(parents=True, exist_ok=True)
 
     # One-off datasets (not keyed by a single series_id).
-    if (not only_sources) or ("nber" in only_sources):
-        # Fetch once if the spec references the NBER source.
-        if "nber" in sources_cfg:
-            ingest_nber_cycles(sources_cfg["nber"], refresh=refresh)
-
     if (not only_sources) or ("ken_french_ff_factors" in only_sources):
         if "ken_french_ff_factors" in sources_cfg:
             # Fetch once if any series uses this source.
@@ -42,7 +36,9 @@ def ingest_from_spec(
                     refresh=refresh,
                 )
 
-    # Per-series ingestion.
+    # Per-series ingestion. A shared DataHub CSV is refreshed once, then reused
+    # from the artifact cache for other filtered views of the same source.
+    refreshed_datahub_sources: set[str] = set()
     for series_key, cfg in sorted(series_cfg.items()):
         if only_series and series_key not in only_series:
             continue
@@ -58,11 +54,18 @@ def ingest_from_spec(
 
         if kind == "fred":
             ingest_fred_series(series_key=series_key, series_cfg=cfg, fred_cfg=src_cfg, refresh=refresh)
-        elif src_name == "stooq":
-            ingest_stooq_series(series_key=series_key, series_cfg=cfg, stooq_cfg=src_cfg, refresh=refresh)
-        elif src_name in {"nber", "ken_french_ff_factors"}:
+        elif kind == "datahub_csv":
+            refresh_source = refresh and src_name not in refreshed_datahub_sources
+            ingest_datahub_series(
+                source_name=str(src_name),
+                series_key=series_key,
+                series_cfg=cfg,
+                source_cfg=src_cfg,
+                refresh=refresh_source,
+            )
+            refreshed_datahub_sources.add(str(src_name))
+        elif src_name == "ken_french_ff_factors":
             # Handled above as one-off datasets.
             continue
         else:
             raise ValueError(f"Unsupported source for series {series_key}: source={src_name!r} kind={kind!r}")
-

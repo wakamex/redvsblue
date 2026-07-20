@@ -1,7 +1,7 @@
 # Red vs. Blue
 
 Reproducible pipeline comparing U.S. economic metrics under Democratic vs. Republican presidents.
-83 metrics across 10 families, permutation-based inference with BH-FDR correction.
+The metric registry is evaluated with permutation-based inference and BH-FDR correction.
 
 **Live results:** [redvsblue.fyi](https://redvsblue.fyi)
 
@@ -17,14 +17,14 @@ real one? If the answer is "rarely" the observed gap is unlikely to be chance.
 
 ### Controlling for multiple comparisons (BH-FDR)
 
-Testing 83 metrics at once means some will look significant by luck. The [Benjamini-Hochberg
+Testing many metrics at once means some will look significant by luck. The [Benjamini-Hochberg
 procedure](https://en.wikipedia.org/wiki/False_discovery_rate#Benjamini%E2%80%93Hochberg_procedure) controls the *false discovery rate* — the expected fraction of "discoveries" that are
 false positives. Each metric gets a q-value: the smallest FDR threshold at which it would still
 be called significant. A q-value of 0.05 means that among all metrics at or below that
 threshold, no more than 5% are expected to be false discoveries.
 
-The 83 metrics are intentionally broad but highly correlated (e.g., GDP level and GDP growth
-move together), so the number of truly independent signals is smaller than 83. BH-FDR corrects
+The registered metrics are intentionally broad but highly correlated (e.g., GDP level and GDP growth
+move together), so the number of truly independent signals is smaller than the nominal metric count. BH-FDR corrects
 for the nominal count, not the effective one — this makes it conservative in practice.
 
 ### Confidence intervals
@@ -88,10 +88,10 @@ The Benjamini-Hochberg procedure was originally proven under independence (Benja
 Hochberg, 1995). Benjamini & Yekutieli (2001) later showed it also controls the FDR under
 [*positive regression dependency from a subset* (PRDS)](https://en.wikipedia.org/wiki/False_discovery_rate#Dependency_among_the_test_statistics)
 — roughly, when learning that one test statistic is large makes the others more likely to be
-large too. Our 83 metrics are drawn from
+large too. Our metrics are drawn from
 a handful of underlying economic series (GDP, employment, inflation, etc.), so they are
 positively correlated almost by construction. This satisfies PRDS, meaning BH is formally valid
-here, not merely a heuristic. Because BH corrects for all 83 nominal tests rather than the
+here, not merely a heuristic. Because BH corrects for all nominal tests rather than the
 smaller number of independent signals, the procedure is conservative: the true FDR is likely
 well below the reported q-values.
 

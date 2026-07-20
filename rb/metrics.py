@@ -362,6 +362,7 @@ def compute_term_metrics(
     attribution = load_spec(attribution_path)
     terms = load_presidents_csv(presidents_csv)
 
+    sources_cfg: dict[str, dict] = spec.get("sources", {})
     series_cfg: dict[str, dict] = spec.get("series", {})
     metrics_cfg: list[dict] = spec.get("metrics") or []
 
@@ -399,6 +400,7 @@ def compute_term_metrics(
         if not cfg:
             raise KeyError(f"Metric references unknown series key: {sk}")
         src = cfg.get("source")
+        source_kind = (sources_cfg.get(str(src)) or {}).get("kind")
         freq = str(cfg.get("frequency") or "").strip()
         if not freq:
             raise ValueError(f"Series missing frequency: {sk}")
@@ -414,16 +416,8 @@ def compute_term_metrics(
                 # Back-compat fallback to prior series-id keyed filenames.
                 path = Path("data/derived/fred/observations") / f"{series_id}.csv"
             series_data[sk] = _load_csv_timeseries(path, date_col="date", value_col="value")
-        elif src == "stooq":
-            symbol = cfg.get("symbol")
-            if not symbol:
-                raise ValueError(f"Stooq series missing symbol: {sk}")
-            sym = str(symbol).replace("^", "")
-            # Prefer per-series derived file so we can reuse one symbol with different filters.
-            path = Path("data/derived/stooq") / f"{sk}.csv"
-            if not path.exists():
-                # Back-compat fallback to the historical symbol-based filename.
-                path = Path("data/derived/stooq") / f"{sym}.csv"
+        elif source_kind == "datahub_csv":
+            path = Path("data/derived/datahub") / f"{sk}.csv"
             series_data[sk] = _load_csv_timeseries(path, date_col="date", value_col="value")
         else:
             raise ValueError(f"Unsupported series source for compute: {sk} source={src!r}")
