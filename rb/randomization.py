@@ -1,21 +1,13 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import math
 import random
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Any
-
-DIAGNOSTIC_ONLY_METRIC_IDS = frozenset(
-    {
-        "sp500_backfilled_pre1957_term_pct_change",
-        "sp500_backfilled_pre1957_term_cagr_pct",
-        "ff_mkt_excess_return_ann_arith",
-    }
-)
-
 
 def _parse_float(s: str) -> float | None:
     txt = (s or "").strip()
@@ -51,6 +43,12 @@ def _fmt(v: float | None) -> str:
     if v is None:
         return ""
     return f"{v:.6f}"
+
+
+def _metric_rng(*, seed: int, metric_id: str, stream: str) -> random.Random:
+    material = f"{seed}:{metric_id}:{stream}".encode("utf-8")
+    stable_seed = int.from_bytes(hashlib.sha256(material).digest()[:8], "big")
+    return random.Random(stable_seed)
 
 
 def _mean(xs: list[float]) -> float | None:
@@ -182,8 +180,6 @@ def _load_term_metric_groups(
             party = (row.get("party_abbrev") or "").strip()
             if not metric_id or party not in {"D", "R"}:
                 continue
-            if metric_id in DIAGNOSTIC_ONLY_METRIC_IDS:
-                continue
             v = _parse_float(row.get("value") or "")
             if v is None:
                 continue
@@ -241,9 +237,6 @@ def run_randomization(
         raise FileNotFoundError(f"Missing term metrics CSV: {term_metrics_csv}")
 
     groups = _load_term_metric_groups(term_metrics_csv)
-    rng = random.Random(seed)
-    boot_rng = random.Random(seed + 1000003)
-
     header = [
         "metric_id",
         "metric_label",
@@ -278,6 +271,9 @@ def run_randomization(
         obs: list[_MetricObs] = list(g["obs"])
         if not obs:
             continue
+
+        rng = _metric_rng(seed=seed, metric_id=metric_id, stream="permutation")
+        boot_rng = _metric_rng(seed=seed, metric_id=metric_id, stream="bootstrap")
 
         values = [o.value for o in obs]
         labels = [o.party for o in obs]
