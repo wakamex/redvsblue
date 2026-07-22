@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import random
 
 import pytest
@@ -13,6 +14,7 @@ from rb.randomization import (
     _p_two_sided,
     _percentile,
     _std_population,
+    run_randomization,
 )
 
 
@@ -227,3 +229,66 @@ class TestPTwoSided:
         # observed=0 → |d| >= 0 is always true for all perm_diffs
         # extreme = N, p = (1+N)/(1+N) = 1.0
         assert _p_two_sided(0.0, [0.0, 1.0, -1.0]) == pytest.approx(1.0)
+
+
+def _run_fixture(tmp_path, metric_ids, suffix):
+    term_metrics = tmp_path / f"terms-{suffix}.csv"
+    fieldnames = [
+        "metric_id", "metric_label", "metric_family", "agg_kind", "units",
+        "party_abbrev", "term_start", "value",
+    ]
+    with term_metrics.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for metric_id in metric_ids:
+            for party, year, value in [
+                ("D", 2001, 5.0), ("D", 2005, 2.0), ("D", 2009, 4.0),
+                ("R", 2013, 1.0), ("R", 2017, 3.0), ("R", 2021, 0.0),
+            ]:
+                writer.writerow({
+                    "metric_id": metric_id,
+                    "metric_label": metric_id,
+                    "metric_family": "test",
+                    "agg_kind": "mean",
+                    "units": "percent",
+                    "party_abbrev": party,
+                    "term_start": f"{year}-01-20",
+                    "value": value,
+                })
+
+    output = tmp_path / f"randomization-{suffix}.csv"
+    run_randomization(
+        term_metrics_csv=term_metrics,
+        output_csv=output,
+        permutations=200,
+        bootstrap_samples=100,
+        seed=42,
+        term_block_years=0,
+        q_threshold=0.05,
+        min_term_n_obs=1,
+    )
+    with output.open("r", encoding="utf-8", newline="") as handle:
+        return {row["metric_id"]: row for row in csv.DictReader(handle)}
+
+
+def test_all_displayed_metrics_are_included_in_randomization(tmp_path):
+    metric_ids = [
+        "ff_mkt_excess_return_ann_arith",
+        "sp500_backfilled_pre1957_term_cagr_pct",
+        "sp500_backfilled_pre1957_term_pct_change",
+    ]
+    rows = _run_fixture(tmp_path, metric_ids, "all")
+
+    assert set(rows) == set(metric_ids)
+    assert all(row["p_two_sided"] and row["q_bh_fdr"] for row in rows.values())
+
+
+def test_metric_randomization_is_stable_when_registry_expands(tmp_path):
+    target_only = _run_fixture(tmp_path, ["target"], "one")["target"]
+    expanded = _run_fixture(tmp_path, ["added_before_target", "target"], "two")["target"]
+
+    for column in [
+        "p_two_sided", "perm_mean", "perm_std",
+        "bootstrap_ci95_low", "bootstrap_ci95_high",
+    ]:
+        assert expanded[column] == target_only[column]
