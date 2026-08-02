@@ -56,6 +56,10 @@ def test_homepage_fits_ranked_columns_without_display_breakpoints():
     assert "new ResizeObserver(scheduleFitColumns).observe(tableWrap)" in html
     assert "buildHiddenDetails(metricRow)" in html
     assert 'class="hidden-field"' in html
+    assert 'data-col="details" data-label="More" data-control hidden' in html
+    assert 'class="details-button"' in html
+    assert '"Show " + hiddenColumnCount + " hidden columns for "' in html
+    assert 'row.querySelector(".details-button").addEventListener("click"' in html
     assert "min-width:1100px" not in html
 
 
