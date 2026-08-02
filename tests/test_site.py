@@ -51,6 +51,8 @@ def test_homepage_fits_ranked_columns_without_display_breakpoints():
     assert 'data-col="diff" data-label="D-R" data-priority="1"' in html
     assert 'data-col="q" data-label="q" data-priority="2"' in html
     assert 'data-col="agg" data-label="Agg" data-priority="12"' in html
+    assert 'data-col="units" data-label="Units" data-priority="11"' in html
+    assert 'data-col="family" data-label="Family" data-priority="10"' in html
     assert "function fitColumns()" in html
     assert "table.scrollWidth > tableWrap.clientWidth + 1" in html
     assert "new ResizeObserver(scheduleFitColumns).observe(tableWrap)" in html
