@@ -31,18 +31,32 @@ def test_homepage_explains_and_displays_p_and_q_values():
     assert "Use it when scanning, comparing, or selecting metrics" in html
     assert 'fmt(m.p, 3)' in html
     assert 'fmt(m.q, 3)' in html
-    assert "var COL_SPAN = 13" in html
 
 
 def test_homepage_displays_linked_source_with_accessible_details():
     html = Path("site/index.html").read_text(encoding="utf-8")
 
-    assert "<th>Source</th>" in html
+    assert 'data-col="source" data-label="Source"' in html
     assert "renderSource(m.source, i)" in html
     assert 'class="source-link"' in html
     assert 'role="tooltip"' in html
     assert 'target="_blank" rel="noopener noreferrer"' in html
     assert 'event.target.closest("a,button")' in html
+
+
+def test_homepage_fits_ranked_columns_without_display_breakpoints():
+    html = Path("site/index.html").read_text(encoding="utf-8")
+
+    assert 'data-col="metric" data-label="Metric" data-required' in html
+    assert 'data-col="diff" data-label="D-R" data-priority="1"' in html
+    assert 'data-col="q" data-label="q" data-priority="2"' in html
+    assert 'data-col="agg" data-label="Agg" data-priority="12"' in html
+    assert "function fitColumns()" in html
+    assert "table.scrollWidth > tableWrap.clientWidth + 1" in html
+    assert "new ResizeObserver(scheduleFitColumns).observe(tableWrap)" in html
+    assert "buildHiddenDetails(metricRow)" in html
+    assert 'class="hidden-field"' in html
+    assert "min-width:1100px" not in html
 
 
 def test_registry_provides_source_provenance_for_every_metric():
