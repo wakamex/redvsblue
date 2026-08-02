@@ -65,6 +65,9 @@
     min-width:0;font-size:.78rem}
   .hidden-field dt{color:#999;font-weight:600}
   .hidden-field dd{color:#ddd;min-width:0;overflow-wrap:anywhere}
+  .details-button{min-width:3.2rem;border:1px solid #666;border-radius:3px;background:#252525;
+    color:#ffb74d;font:600 .72rem/1 system-ui;padding:.3rem .4rem;cursor:pointer}
+  .details-button:hover,.details-button:focus-visible{border-color:#ff9800;color:#ff9800;outline:none}
   .detail-chart{margin-bottom:.75rem}
   .detail-chart svg{display:block}
   .footer{font-size:.75rem;color:#777;margin-top:1rem;max-width:72ch;line-height:1.5}
@@ -133,6 +136,7 @@
           </span>
         </th>
         <th class="num" data-col="ci" data-label="CI 95%" data-priority="6">CI 95%</th>
+        <th class="num" data-col="details" data-label="More" data-control hidden>More</th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
@@ -167,6 +171,7 @@
   // Store metrics data for detail expansion
   var metricsData = [];
   var resizeFrame = null;
+  var hiddenColumnCount = 0;
 
   function fmt(v, digits) {
     if (v == null) return "";
@@ -295,7 +300,7 @@
     var html = "";
     for (var i = 0; i < headers.length; i++) {
       var header = headers[i];
-      if (!header.hidden) continue;
+      if (header.hasAttribute("data-control") || !header.hidden) continue;
       var key = header.getAttribute("data-col");
       var cell = metricRow.querySelector('td[data-col="' + key + '"]');
       if (!cell) continue;
@@ -329,6 +334,7 @@
     td.appendChild(inner);
     detailTr.appendChild(td);
     metricRow.after(detailTr);
+    updateDetailsButtons();
   }
 
   function toggleDetail(metricRow, idx) {
@@ -337,6 +343,7 @@
       existing.remove();
       metricRow.classList.remove("expanded");
       metricRow.setAttribute("aria-expanded", "false");
+      updateDetailsButtons();
       return;
     }
 
@@ -358,6 +365,22 @@
     for (var i = 0; i < cells.length; i++) cells[i].hidden = hidden;
   }
 
+  function updateDetailsButtons() {
+    var buttons = tbody.querySelectorAll(".details-button");
+    for (var i = 0; i < buttons.length; i++) {
+      var button = buttons[i];
+      var row = button.closest(".metric-row");
+      var expanded = row.classList.contains("expanded");
+      var metric = metricsData[parseInt(row.getAttribute("data-idx"), 10)];
+      button.textContent = expanded ? "Close" : "+" + hiddenColumnCount;
+      button.setAttribute("aria-expanded", expanded ? "true" : "false");
+      button.setAttribute(
+        "aria-label",
+        (expanded ? "Hide details for " : "Show " + hiddenColumnCount + " hidden columns for ") + metric.metric
+      );
+    }
+  }
+
   function fitColumns() {
     resizeFrame = null;
     var expanded = tbody.querySelector(".metric-row.expanded");
@@ -365,19 +388,29 @@
     if (detail && detail.classList.contains("detail-row")) detail.remove();
 
     var headers = Array.from(table.querySelectorAll("thead th[data-col]"));
-    for (var i = 0; i < headers.length; i++) {
-      setColumnHidden(headers[i].getAttribute("data-col"), false);
+    var contentHeaders = headers.filter(function(header) {
+      return !header.hasAttribute("data-control");
+    });
+    for (var i = 0; i < contentHeaders.length; i++) {
+      setColumnHidden(contentHeaders[i].getAttribute("data-col"), false);
     }
+    setColumnHidden("details", true);
 
-    var candidates = headers.filter(function(header) {
+    var candidates = contentHeaders.filter(function(header) {
       return !header.hasAttribute("data-required");
     }).sort(function(a, b) {
       return Number(b.getAttribute("data-priority")) - Number(a.getAttribute("data-priority"));
     });
 
-    for (var j = 0; j < candidates.length && table.scrollWidth > tableWrap.clientWidth + 1; j++) {
-      setColumnHidden(candidates[j].getAttribute("data-col"), true);
+    hiddenColumnCount = 0;
+    if (table.scrollWidth > tableWrap.clientWidth + 1) {
+      setColumnHidden("details", false);
+      for (var j = 0; j < candidates.length && table.scrollWidth > tableWrap.clientWidth + 1; j++) {
+        setColumnHidden(candidates[j].getAttribute("data-col"), true);
+        hiddenColumnCount++;
+      }
     }
+    updateDetailsButtons();
 
     if (expanded) {
       openDetail(expanded, parseInt(expanded.getAttribute("data-idx"), 10));
@@ -413,6 +446,8 @@
         + '<td class="num" data-col="p">' + fmt(m.p, 3) + "</td>"
         + '<td class="num" data-col="q">' + fmt(m.q, 3) + "</td>"
         + '<td class="num" data-col="ci">' + fmtCI(m.ci_low, m.ci_high) + "</td>"
+        + '<td class="num" data-col="details" hidden><button type="button" class="details-button"'
+        + ' aria-expanded="false">More</button></td>'
         + "</tr>";
     }
     tbody.innerHTML = html;
@@ -421,6 +456,10 @@
     var rows = tbody.querySelectorAll(".metric-row");
     for (var j = 0; j < rows.length; j++) {
       (function(row) {
+        row.querySelector(".details-button").addEventListener("click", function(event) {
+          event.stopPropagation();
+          toggleDetail(row, parseInt(row.getAttribute("data-idx"), 10));
+        });
         row.addEventListener("click", function(event) {
           if (event.target.closest("a,button")) return;
           var idx = parseInt(row.getAttribute("data-idx"), 10);
