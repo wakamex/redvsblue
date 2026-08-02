@@ -23,6 +23,9 @@ sources:
     notes:
       - "Prefer the official FRED API when FRED_API_KEY is available; fall back to graph CSV when it is not."
       - "FRED API requires an api_key; graph CSV usually does not, but is less stable and has less metadata."
+    provenance:
+      access_provider: "FRED"
+      url: "https://fred.stlouisfed.org/series/{series_id}"
   ken_french_ff_factors:
     kind: zip_csv
     url: "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_Factors_CSV.zip"
@@ -40,6 +43,11 @@ sources:
     notes:
       - "Monthly Fama/French factors; includes Mkt-RF and RF in percent."
       - "CSV is not a simple header+data file; it contains descriptive preamble text and multiple tables (monthly then annual)."
+    provenance:
+      publisher: "Kenneth R. French"
+      program: "Data Library — Fama/French Research Factors"
+      access_provider: "Kenneth R. French Data Library"
+      url: "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html"
   datahub_sp500:
     kind: datahub_csv
     url: "https://datahub.io/core/s-and-p-500/_r/-/data/data.csv"
@@ -49,6 +57,11 @@ sources:
       - "Monthly price-only S&P composite data curated as a versioned, directly inspectable CSV by DataHub Core Datasets."
       - "The package is offered under ODC-PDDL-1.0; its README notes that the original Shiller data has no exact license statement."
       - "The Shiller series runs through 2023-06; subsequent SP500 values are extended from FRED."
+    provenance:
+      publisher: "DataHub Core Datasets"
+      program: "S&P 500 monthly price dataset"
+      access_provider: "DataHub"
+      url: "https://datahub.io/core/s-and-p-500"
 series:
   # Macro: output
   gdpc1_real_gdp:
@@ -57,12 +70,20 @@ series:
     frequency: Q
     units: "billions of chained dollars (SAAR)"
     description: "Real Gross Domestic Product (BEA)."
+    provenance:
+      label: "BEA · GDPC1"
+      publisher: "U.S. Bureau of Economic Analysis"
+      program: "National Income and Product Accounts"
   a939rx0q048sbea_real_gdp_per_capita:
     source: fred
     series_id: A939RX0Q048SBEA
     frequency: Q
     units: "chained dollars per person"
     description: "Real GDP per capita (BEA)."
+    provenance:
+      label: "BEA · A939RX0Q048SBEA"
+      publisher: "U.S. Bureau of Economic Analysis"
+      program: "National Income and Product Accounts"
 
   # Labor market
   payems_payroll_employment:
@@ -71,30 +92,55 @@ series:
     frequency: M
     units: "thousands of persons"
     description: "All Employees: Total Nonfarm Payrolls (BLS CES, SA)."
+    provenance:
+      label: "BLS CES · PAYEMS"
+      publisher: "U.S. Bureau of Labor Statistics"
+      program: "Current Employment Statistics (Establishment Survey)"
+      source_id: "CES0000000001"
   manemp_manufacturing_employment:
     source: fred
     series_id: MANEMP
     frequency: M
     units: "thousands of persons"
     description: "All Employees: Manufacturing (BLS CES, SA)."
+    provenance:
+      label: "BLS CES · MANEMP"
+      publisher: "U.S. Bureau of Labor Statistics"
+      program: "Current Employment Statistics (Establishment Survey)"
+      source_id: "CES3000000001"
   ce16ov_household_employment:
     source: fred
     series_id: CE16OV
     frequency: M
     units: "thousands of persons"
     description: "Civilian Employment Level (BLS CPS)."
+    provenance:
+      label: "BLS CPS · CE16OV"
+      publisher: "U.S. Bureau of Labor Statistics"
+      program: "Current Population Survey (Household Survey)"
+      source_id: "LNS12000000"
   unrate_unemployment_rate:
     source: fred
     series_id: UNRATE
     frequency: M
     units: "percent"
     description: "Civilian Unemployment Rate (BLS CPS, SA)."
+    provenance:
+      label: "BLS CPS · UNRATE"
+      publisher: "U.S. Bureau of Labor Statistics"
+      program: "Current Population Survey (Household Survey)"
+      source_id: "LNS14000000"
   civpart_labor_force_participation:
     source: fred
     series_id: CIVPART
     frequency: M
     units: "percent"
     description: "Labor Force Participation Rate: Civilian labor force as share of civilian noninstitutional population (BLS CPS, SA)."
+    provenance:
+      label: "BLS CPS · CIVPART"
+      publisher: "U.S. Bureau of Labor Statistics"
+      program: "Current Population Survey (Household Survey)"
+      source_id: "LNS11300000"
 
   # Wages
   les1252881600q_real_median_weekly_earnings:
@@ -103,6 +149,10 @@ series:
     frequency: Q
     units: "1982-84 dollars per week"
     description: "Employed full time: Median usual weekly real earnings (CPS; CPI-adjusted)."
+    provenance:
+      label: "BLS CPS · LES1252881600Q"
+      publisher: "U.S. Bureau of Labor Statistics"
+      program: "Weekly and Hourly Earnings from the Current Population Survey"
 
   # Prices
   cpiaucsl_cpi:
@@ -112,6 +162,10 @@ series:
     units: "index"
     description: "CPI-U: All Items (BLS, SA)."
     seasonal_adjustment: SA
+    provenance:
+      label: "BLS CPI · CPIAUCSL"
+      publisher: "U.S. Bureau of Labor Statistics"
+      program: "Consumer Price Index"
   cpiaucns_cpi_unadjusted:
     source: fred
     series_id: CPIAUCNS
@@ -119,6 +173,10 @@ series:
     units: "index"
     description: "CPI-U: All Items (BLS, not seasonally adjusted)."
     seasonal_adjustment: NSA
+    provenance:
+      label: "BLS CPI · CPIAUCNS"
+      publisher: "U.S. Bureau of Labor Statistics"
+      program: "Consumer Price Index"
   pcepi_pce_price_index:
     source: fred
     series_id: PCEPI
@@ -126,6 +184,10 @@ series:
     units: "index"
     description: "PCE Price Index (BEA, SA)."
     seasonal_adjustment: SA
+    provenance:
+      label: "BEA · PCEPI"
+      publisher: "U.S. Bureau of Economic Analysis"
+      program: "Personal Income and Outlays"
   cpilfesl_core_cpi:
     source: fred
     series_id: CPILFESL
@@ -133,6 +195,10 @@ series:
     units: "index"
     description: "CPI-U less food and energy (Core CPI, SA)."
     seasonal_adjustment: SA
+    provenance:
+      label: "BLS CPI · CPILFESL"
+      publisher: "U.S. Bureau of Labor Statistics"
+      program: "Consumer Price Index"
   pcepilfe_core_pce_price_index:
     source: fred
     series_id: PCEPILFE
@@ -140,6 +206,10 @@ series:
     units: "index"
     description: "Personal Consumption Expenditures Excluding Food and Energy (Core PCE, SA)."
     seasonal_adjustment: SA
+    provenance:
+      label: "BEA · PCEPILFE"
+      publisher: "U.S. Bureau of Economic Analysis"
+      program: "Personal Income and Outlays"
 
   # Interest rates / yield curve
   fedfunds_policy_rate:
@@ -148,18 +218,31 @@ series:
     frequency: M
     units: "percent"
     description: "Effective Federal Funds Rate (monthly average)."
+    provenance:
+      label: "Federal Reserve · FEDFUNDS"
+      publisher: "Board of Governors of the Federal Reserve System"
+      program: "H.15 Selected Interest Rates"
   dgs10_treasury_10y_rate:
     source: fred
     series_id: DGS10
     frequency: D
     units: "percent"
     description: "10-Year Treasury Constant Maturity Rate."
+    provenance:
+      label: "Federal Reserve · DGS10"
+      publisher: "Board of Governors of the Federal Reserve System"
+      program: "H.15 Selected Interest Rates"
   t10y2y_yield_spread:
     source: fred
     series_id: T10Y2Y
     frequency: D
     units: "percentage points"
     description: "10-Year minus 2-Year Treasury Constant Maturity yield spread."
+    provenance:
+      label: "FRED derived · T10Y2Y"
+      publisher: "Federal Reserve Bank of St. Louis"
+      program: "Interest Rate Spreads"
+      note: "Calculated from U.S. Treasury 10-year and 2-year constant-maturity yields."
   t10y2y_yield_spread_monthly_eop:
     source: fred
     series_id: T10Y2Y
@@ -169,6 +252,11 @@ series:
     api_params:
       frequency: m
       aggregation_method: eop
+    provenance:
+      label: "FRED derived · T10Y2Y"
+      publisher: "Federal Reserve Bank of St. Louis"
+      program: "Interest Rate Spreads; monthly end-of-period resampling"
+      note: "Calculated from U.S. Treasury 10-year and 2-year constant-maturity yields."
   t10y2y_yield_spread_monthly_avg:
     source: fred
     series_id: T10Y2Y
@@ -178,6 +266,11 @@ series:
     api_params:
       frequency: m
       aggregation_method: avg
+    provenance:
+      label: "FRED derived · T10Y2Y"
+      publisher: "Federal Reserve Bank of St. Louis"
+      program: "Interest Rate Spreads; monthly average resampling"
+      note: "Calculated from U.S. Treasury 10-year and 2-year constant-maturity yields."
 
   # Business cycle labels
   usrec_recession_indicator:
@@ -186,6 +279,11 @@ series:
     frequency: M
     units: "0/1 indicator"
     description: "NBER based Recession Indicators for the United States."
+    provenance:
+      label: "FRED/NBER · USREC"
+      publisher: "Federal Reserve Bank of St. Louis"
+      program: "Recession Indicators Series"
+      note: "FRED's trough-method interpretation of NBER business-cycle dates."
   # Fiscal (note: some fiscal series are annual/fiscal-year based)
   gfdegdq188s_federal_debt_pct_gdp:
     source: fred
@@ -193,12 +291,22 @@ series:
     frequency: Q
     units: "percent of GDP"
     description: "Federal Debt: Total Public Debt as Percent of GDP."
+    provenance:
+      label: "FRED derived · GFDEGDQ188S"
+      publisher: "Federal Reserve Bank of St. Louis"
+      program: "Debt to Gross Domestic Product Ratios"
+      note: "Calculated from total public debt and BEA gross domestic product."
   fyfsgda188s_federal_surplus_deficit_pct_gdp:
     source: fred
     series_id: FYFSGDA188S
     frequency: A
     units: "percent of GDP"
     description: "Federal Surplus or Deficit [-] as Percent of GDP (annual)."
+    provenance:
+      label: "FRED derived · FYFSGDA188S"
+      publisher: "Federal Reserve Bank of St. Louis"
+      program: "Debt to Gross Domestic Product Ratios"
+      note: "Calculated from the federal surplus or deficit and BEA gross domestic product."
 
   # Finance (returns)
   ff_factors_monthly:
@@ -214,6 +322,9 @@ series:
         expr: "mkt_rf + rf"
         units: "percent"
     description: "Fama/French Research Factors (monthly)."
+    provenance:
+      label: "Ken French · FF Factors"
+      access_id: "F-F_Research_Data_Factors"
 
   # Finance (price-only S&P composite levels)
   sp500_sp500_index:
@@ -228,6 +339,10 @@ series:
     notes:
       - "The modern view starts at the S&P 500's 1957 inception."
       - "Monthly values are averages rather than daily closing levels through the Shiller segment."
+    provenance:
+      label: "DataHub · S&P 500"
+      access_id: "SP500 (1957+)"
+      note: "Price-only monthly composite: Shiller history, extended with FRED after 2023-06."
   sp500_spx_backfilled_pre1957:
     source: datahub_sp500
     frequency: M
@@ -240,6 +355,10 @@ series:
     notes:
       - "Used only as a separate historical-composite view for pre-1957 windows."
       - "Do not stitch with the modern post-1957 S&P 500 in one continuous headline series."
+    provenance:
+      label: "DataHub · S&P composite"
+      access_id: "SP500 (pre-1957)"
+      note: "Price-only monthly historical composite from the Shiller segment."
 
 metrics:
   # GDP growth

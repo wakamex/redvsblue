@@ -2,7 +2,7 @@ import csv
 import json
 from pathlib import Path
 
-from rb.site import write_site_json
+from rb.site import _load_metric_sources, write_site_json
 
 
 def test_homepage_metric_count_comes_from_loaded_data():
@@ -31,7 +31,27 @@ def test_homepage_explains_and_displays_p_and_q_values():
     assert "Use it when scanning, comparing, or selecting metrics" in html
     assert 'fmt(m.p, 3)' in html
     assert 'fmt(m.q, 3)' in html
-    assert "var COL_SPAN = 12" in html
+    assert "var COL_SPAN = 13" in html
+
+
+def test_homepage_displays_linked_source_with_accessible_details():
+    html = Path("site/index.html").read_text(encoding="utf-8")
+
+    assert "<th>Source</th>" in html
+    assert "renderSource(m.source, i)" in html
+    assert 'class="source-link"' in html
+    assert 'role="tooltip"' in html
+    assert 'target="_blank" rel="noopener noreferrer"' in html
+    assert 'event.target.closest("a,button")' in html
+
+
+def test_registry_provides_source_provenance_for_every_metric():
+    sources = _load_metric_sources(Path("spec/metrics_v1.yaml"))
+
+    assert len(sources) == 88
+    assert sources["payroll_jobs_change_total"]["label"] == "BLS CES · PAYEMS"
+    assert sources["manufacturing_jobs_change_total"]["label"] == "BLS CES · MANEMP"
+    assert sources["household_employment_change_total"]["label"] == "BLS CPS · CE16OV"
 
 
 def test_site_json_exports_raw_p_and_adjusted_q_values(tmp_path):
@@ -73,14 +93,53 @@ def test_site_json_exports_raw_p_and_adjusted_q_values(tmp_path):
             "bootstrap_ci95_low": "0.5", "bootstrap_ci95_high": "3.5",
         })
 
+    spec = tmp_path / "metrics.yaml"
+    spec.write_text(
+        """
+sources:
+  example_api:
+    provenance:
+      access_provider: Example API
+      url: https://example.test/series/{series_id}
+series:
+  example_series:
+    source: example_api
+    series_id: EXAMPLE1
+    frequency: M
+    units: source units
+    provenance:
+      label: Example Bureau · EXAMPLE1
+      publisher: Example Bureau
+      program: Example Survey
+      source_id: ORIGINAL1
+metrics:
+  - id: example
+    inputs:
+      series: example_series
+""".lstrip(),
+        encoding="utf-8",
+    )
+
     output_dir = tmp_path / "site"
     write_site_json(
         party_summary_csv=party_summary,
         term_randomization_csv=randomization,
         term_metrics_csv=None,
+        spec_path=spec,
         output_dir=output_dir,
     )
 
     metric = json.loads((output_dir / "data.json").read_text(encoding="utf-8"))["metrics"][0]
     assert metric["p"] == 0.012346
     assert metric["q"] == 0.045679
+    assert metric["source"] == {
+        "label": "Example Bureau · EXAMPLE1",
+        "publisher": "Example Bureau",
+        "program": "Example Survey",
+        "access_provider": "Example API",
+        "access_id": "EXAMPLE1",
+        "url": "https://example.test/series/EXAMPLE1",
+        "frequency": "Monthly",
+        "units": "source units",
+        "source_id": "ORIGINAL1",
+    }

@@ -21,6 +21,16 @@
     font-size:.78rem;line-height:1.45;text-align:left;box-shadow:0 4px 14px #0008;
     visibility:hidden;opacity:0;transition:opacity .12s}
   .info-wrap:hover .info-tip,.info-wrap:focus-within .info-tip{visibility:visible;opacity:1}
+  .source-wrap{display:inline-flex;position:relative;align-items:center;gap:.3rem}
+  .source-link{color:#ffb74d;text-decoration:none}
+  .source-link:hover,.source-link:focus-visible{text-decoration:underline;outline:none}
+  .source-tip{position:absolute;z-index:4;bottom:calc(100% + .4rem);left:0;width:24rem;
+    max-width:80vw;white-space:normal;padding:.65rem .75rem;border:1px solid #555;border-radius:4px;
+    background:#111;color:#ddd;font-size:.76rem;line-height:1.45;text-align:left;
+    box-shadow:0 4px 14px #0008;visibility:hidden;opacity:0;transition:opacity .12s}
+  .source-wrap:hover .source-tip,.source-wrap:focus-within .source-tip{visibility:visible;opacity:1}
+  .metric-row:nth-child(-n+4) .source-tip{top:calc(100% + .4rem);bottom:auto}
+  .source-tip strong{color:#fff}
   .legend{display:flex;gap:1.25rem;margin-bottom:1rem;font-size:.8rem;flex-wrap:wrap}
   .legend-item{display:flex;align-items:center;gap:.35rem}
   .swatch{width:14px;height:14px;border-radius:2px;flex-shrink:0}
@@ -28,7 +38,7 @@
   .swatch-supportive{background:#ff9800}
   .swatch-exploratory{background:#555}
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:1.5rem}
-  table{border-collapse:collapse;width:100%;min-width:800px;font-size:.82rem}
+  table{border-collapse:collapse;width:100%;min-width:1100px;font-size:.82rem}
   thead{position:sticky;top:0;z-index:1}
   th{background:#2a2a2a;color:#ff9800;text-align:left;padding:.5rem .6rem;
      border-bottom:2px solid #444;white-space:nowrap;font-weight:600}
@@ -84,6 +94,7 @@
     <thead>
       <tr>
         <th>Metric</th>
+        <th>Source</th>
         <th>Family</th>
         <th>Agg</th>
         <th>Units</th>
@@ -140,7 +151,7 @@
   var tbody = document.getElementById("tbody");
   var status = document.getElementById("status");
   var metricCount = document.getElementById("metric-count");
-  var COL_SPAN = 12;
+  var COL_SPAN = 13;
   var COLOR_D = "#4a90d9";
   var COLOR_R = "#d94a4a";
 
@@ -162,6 +173,29 @@
     var d = document.createElement("div");
     d.textContent = s;
     return d.innerHTML;
+  }
+
+  function renderSource(source, idx) {
+    if (!source) return "";
+    var tipId = "source-tip-" + idx;
+    var details = [
+      ["Publisher", source.publisher],
+      ["Program", source.program],
+      ["Access", [source.access_provider, source.access_id].filter(Boolean).join(" · ")],
+      ["Original series ID", source.source_id],
+      ["Frequency", source.frequency],
+      ["Base units", source.units],
+      ["Note", source.note]
+    ].filter(function(item) { return item[1]; }).map(function(item) {
+      return "<strong>" + esc(item[0]) + ":</strong> " + esc(item[1]);
+    }).join("<br>");
+    return '<span class="source-wrap">'
+      + '<a class="source-link" href="' + esc(source.url) + '" target="_blank" rel="noopener noreferrer">'
+      + esc(source.label) + "</a>"
+      + '<button type="button" class="info-button" aria-label="Source details for ' + esc(source.label)
+      + '" aria-describedby="' + tipId + '">i</button>'
+      + '<span class="source-tip" id="' + tipId + '" role="tooltip">' + details + "</span>"
+      + "</span>";
   }
 
   function lastName(name) {
@@ -295,6 +329,7 @@
       var cls = "metric-row tier-" + (m.tier || "exploratory");
       html += '<tr class="' + cls + '" data-idx="' + i + '">'
         + "<td>" + esc(m.metric) + "</td>"
+        + "<td>" + renderSource(m.source, i) + "</td>"
         + "<td>" + esc(m.family) + "</td>"
         + "<td>" + esc(m.agg) + "</td>"
         + "<td>" + esc(m.units) + "</td>"
@@ -314,7 +349,8 @@
     var rows = tbody.querySelectorAll(".metric-row");
     for (var j = 0; j < rows.length; j++) {
       (function(row) {
-        row.addEventListener("click", function() {
+        row.addEventListener("click", function(event) {
+          if (event.target.closest("a,button")) return;
           var idx = parseInt(row.getAttribute("data-idx"), 10);
           toggleDetail(row, idx);
         });
