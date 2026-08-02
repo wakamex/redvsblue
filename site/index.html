@@ -302,6 +302,7 @@
       var header = headers[i];
       if (header.hasAttribute("data-control") || !header.hidden) continue;
       var key = header.getAttribute("data-col");
+      if (["family", "agg", "units"].indexOf(key) !== -1) continue;
       var cell = metricRow.querySelector('td[data-col="' + key + '"]');
       if (!cell) continue;
       var value = cell.cloneNode(true);
@@ -326,7 +327,7 @@
 
     var inner = document.createElement("div");
     inner.className = "detail-inner";
-    var subtitle = [m.agg, m.units].filter(Boolean).join(", ");
+    var subtitle = [m.agg, m.units, m.family].filter(Boolean).join(", ");
     inner.innerHTML = "<h3>" + esc(m.metric) + (subtitle ? " \u2014 " + esc(subtitle) : "") + "</h3>"
       + buildHiddenDetails(metricRow)
       + '<div class="detail-chart">' + buildChart(terms, m.d_mean, m.r_mean) + "</div>";

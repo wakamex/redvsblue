@@ -58,6 +58,8 @@ def test_homepage_fits_ranked_columns_without_display_breakpoints():
     assert "new ResizeObserver(scheduleFitColumns).observe(tableWrap)" in html
     assert "buildHiddenDetails(metricRow)" in html
     assert 'class="hidden-field"' in html
+    assert 'if (["family", "agg", "units"].indexOf(key) !== -1) continue' in html
+    assert "[m.agg, m.units, m.family].filter(Boolean)" in html
     assert 'data-col="details" data-label="More" data-control hidden' in html
     assert 'class="details-button"' in html
     assert '"Show " + hiddenColumnCount + " hidden columns for "' in html
