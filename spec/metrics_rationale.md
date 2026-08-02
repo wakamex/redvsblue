@@ -157,9 +157,9 @@ Rationale:
 Anti-cherry-picking policy:
 - If we include a per-year version for a metric family, we also include the total-change version (and vice versa).
 - Reports should display both side-by-side for the same underlying series to prevent “we picked the normalization that looks best” critiques.
-- We now also include percent-change and CAGR variants for payroll and household employment so level and rate-style narratives can be cross-checked.
+- We now also include percent-change and CAGR variants for payroll, manufacturing, and household employment so level and rate-style narratives can be cross-checked.
 
-We include both payroll (CES) and household (CPS) employment series to reflect the measurement split in labor statistics.
+We include total payroll (CES) and household (CPS) employment series to reflect the measurement split in labor statistics. Manufacturing employment (`MANEMP`, BLS CES) adds a transparent sector-specific view that readers can verify independently. It is a subset of total payroll employment rather than an independent signal, and remains in the same BH-FDR universe as every other displayed metric.
 
 For unemployment (`UNRATE`), we use level-preserving transforms:
 - term mean,
