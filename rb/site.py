@@ -6,7 +6,72 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from rb.scoreboard import _load_party_summary, _load_term_randomization, _parse_float
+from rb.spec import load_spec
 from rb.util import write_text_atomic
+
+
+_FREQUENCY_LABELS = {
+    "A": "Annual",
+    "D": "Daily",
+    "M": "Monthly",
+    "Q": "Quarterly",
+}
+
+
+def _load_metric_sources(spec_path: Path) -> dict[str, dict[str, str]]:
+    spec = load_spec(spec_path)
+    series_registry = spec.get("series") or {}
+    source_registry = spec.get("sources") or {}
+    metric_sources: dict[str, dict[str, str]] = {}
+
+    for metric in spec.get("metrics") or []:
+        metric_id = str(metric.get("id") or "").strip()
+        inputs = metric.get("inputs") or {}
+        input_id = inputs.get("series") or inputs.get("table")
+        if not metric_id or not input_id:
+            continue
+
+        series = series_registry.get(input_id)
+        if series is None:
+            raise ValueError(f"Metric {metric_id!r} references unknown input {input_id!r}")
+        source_id = series.get("source")
+        source = source_registry.get(source_id) or {}
+        provenance = {
+            **(source.get("provenance") or {}),
+            **(series.get("provenance") or {}),
+        }
+
+        required = ("label", "publisher", "program", "access_provider", "url")
+        missing = [field for field in required if not provenance.get(field)]
+        if missing:
+            raise ValueError(
+                f"Input {input_id!r} is missing provenance fields: {', '.join(missing)}"
+            )
+
+        url = str(provenance["url"]).format(**series)
+        access_id = (
+            provenance.get("access_id")
+            or series.get("series_id")
+            or series.get("dataset")
+            or input_id
+        )
+        frequency_code = str(series.get("frequency") or "")
+        frequency = _FREQUENCY_LABELS.get(frequency_code, frequency_code)
+        metric_sources[metric_id] = {
+            "label": str(provenance["label"]),
+            "publisher": str(provenance["publisher"]),
+            "program": str(provenance["program"]),
+            "access_provider": str(provenance["access_provider"]),
+            "access_id": str(access_id),
+            "url": url,
+            "frequency": frequency,
+            "units": str(series.get("units") or ""),
+        }
+        for optional in ("source_id", "note"):
+            if provenance.get(optional):
+                metric_sources[metric_id][optional] = str(provenance[optional])
+
+    return metric_sources
 
 
 def _load_term_details(
@@ -46,8 +111,10 @@ def write_site_json(
     output_dir: Path = Path("site"),
     term_randomization_csv: Path | None = Path("reports/permutation_party_term_v1.csv"),
     term_metrics_csv: Path | None = Path("reports/term_metrics_v1.csv"),
+    spec_path: Path | None = Path("spec/metrics_v1.yaml"),
 ) -> None:
     party = _load_party_summary(party_summary_csv)
+    metric_sources = _load_metric_sources(spec_path) if spec_path is not None else {}
 
     term_details: dict[str, list[dict]] = {}
     if term_metrics_csv is not None and term_metrics_csv.exists():
@@ -74,6 +141,9 @@ def write_site_json(
         family = d.family if d else (r.family if r else "")
         agg = d.agg_kind if d else (r.agg_kind if r else "")
         units = d.units if d and d.units else (r.units if r and r.units else "")
+        source = metric_sources.get(mid)
+        if spec_path is not None and source is None:
+            raise ValueError(f"Metric {mid!r} has no source provenance in {spec_path}")
 
         d_mean = d.mean if d else None
         r_mean = r.mean if r else None
@@ -97,6 +167,7 @@ def write_site_json(
             "family": family,
             "agg": agg,
             "units": units,
+            "source": source,
             "d_mean": _round_or_none(d_mean),
             "r_mean": _round_or_none(r_mean),
             "diff": _round_or_none(diff),
