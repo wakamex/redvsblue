@@ -6,6 +6,7 @@
 <title>Red vs. Blue</title>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  [hidden]{display:none !important}
   body{background:#1a1a1a;color:#e0e0e0;font-family:system-ui,-apple-system,sans-serif;
        line-height:1.6;padding:1rem 2rem;margin:0}
   h1{color:#ff9800;margin-bottom:.25rem;font-size:1.6rem}
@@ -37,13 +38,14 @@
   .swatch-confirmatory{background:#4caf50}
   .swatch-supportive{background:#ff9800}
   .swatch-exploratory{background:#555}
-  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:1.5rem}
-  table{border-collapse:collapse;width:100%;min-width:1100px;font-size:.82rem}
+  .table-wrap{overflow-x:hidden;margin-bottom:1.5rem}
+  table{border-collapse:collapse;width:100%;min-width:0;font-size:.82rem}
   thead{position:sticky;top:0;z-index:1}
   th{background:#2a2a2a;color:#ff9800;text-align:left;padding:.5rem .6rem;
      border-bottom:2px solid #444;white-space:nowrap;font-weight:600}
   th.num{text-align:right}
   td{padding:.4rem .6rem;border-bottom:1px solid #2a2a2a;white-space:nowrap}
+  td[data-col="metric"]{white-space:normal;min-width:10rem}
   td.num{text-align:right;font-variant-numeric:tabular-nums}
   tr:nth-child(even of :not(.detail-row)) td{background:#1f1f1f}
   tr:hover:not(.detail-row) td{background:#2a2a2a}
@@ -57,6 +59,12 @@
   .detail-row td{background:#151515 !important;padding:0;border-left:3px solid #444}
   .detail-inner{padding:.75rem 1rem 1rem;overflow-x:auto}
   .detail-inner h3{font-size:.85rem;color:#ccc;margin-bottom:.5rem;font-weight:500}
+  .hidden-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));
+    gap:.45rem 1.25rem;margin-bottom:.8rem}
+  .hidden-field{display:grid;grid-template-columns:minmax(5rem,max-content) 1fr;gap:.5rem;
+    min-width:0;font-size:.78rem}
+  .hidden-field dt{color:#999;font-weight:600}
+  .hidden-field dd{color:#ddd;min-width:0;overflow-wrap:anywhere}
   .detail-chart{margin-bottom:.75rem}
   .detail-chart svg{display:block}
   .footer{font-size:.75rem;color:#777;margin-top:1rem;max-width:72ch;line-height:1.5}
@@ -93,17 +101,17 @@
   <table>
     <thead>
       <tr>
-        <th>Metric</th>
-        <th>Source</th>
-        <th>Family</th>
-        <th>Agg</th>
-        <th>Units</th>
-        <th class="num">D mean</th>
-        <th class="num">R mean</th>
-        <th class="num">D-R</th>
-        <th class="num">n(D)</th>
-        <th class="num">n(R)</th>
-        <th class="num">
+        <th data-col="metric" data-label="Metric" data-required>Metric</th>
+        <th data-col="source" data-label="Source" data-priority="7">Source</th>
+        <th data-col="family" data-label="Family" data-priority="11">Family</th>
+        <th data-col="agg" data-label="Agg" data-priority="12">Agg</th>
+        <th data-col="units" data-label="Units" data-priority="10">Units</th>
+        <th class="num" data-col="d-mean" data-label="D mean" data-priority="4">D mean</th>
+        <th class="num" data-col="r-mean" data-label="R mean" data-priority="5">R mean</th>
+        <th class="num" data-col="diff" data-label="D-R" data-priority="1">D-R</th>
+        <th class="num" data-col="n-d" data-label="n(D)" data-priority="8">n(D)</th>
+        <th class="num" data-col="n-r" data-label="n(R)" data-priority="9">n(R)</th>
+        <th class="num" data-col="p" data-label="p" data-priority="3">
           <span class="info-wrap">
             p
             <button type="button" class="info-button" aria-label="About p values" aria-describedby="p-tip">i</button>
@@ -113,7 +121,7 @@
             </span>
           </span>
         </th>
-        <th class="num">
+        <th class="num" data-col="q" data-label="q" data-priority="2">
           <span class="info-wrap">
             q
             <button type="button" class="info-button" aria-label="About q values" aria-describedby="q-tip">i</button>
@@ -124,7 +132,7 @@
             </span>
           </span>
         </th>
-        <th class="num">CI 95%</th>
+        <th class="num" data-col="ci" data-label="CI 95%" data-priority="6">CI 95%</th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
@@ -149,14 +157,16 @@
 (function() {
   var CDN = "https://cdn.jsdelivr.net/gh/wakamex/redvsblue@main/site/data.json";
   var tbody = document.getElementById("tbody");
+  var tableWrap = document.querySelector(".table-wrap");
+  var table = tableWrap.querySelector("table");
   var status = document.getElementById("status");
   var metricCount = document.getElementById("metric-count");
-  var COL_SPAN = 13;
   var COLOR_D = "#4a90d9";
   var COLOR_R = "#d94a4a";
 
   // Store metrics data for detail expansion
   var metricsData = [];
+  var resizeFrame = null;
 
   function fmt(v, digits) {
     if (v == null) return "";
@@ -280,11 +290,53 @@
     return svg;
   }
 
+  function buildHiddenDetails(metricRow) {
+    var headers = table.querySelectorAll("thead th[data-col]");
+    var html = "";
+    for (var i = 0; i < headers.length; i++) {
+      var header = headers[i];
+      if (!header.hidden) continue;
+      var key = header.getAttribute("data-col");
+      var cell = metricRow.querySelector('td[data-col="' + key + '"]');
+      if (!cell) continue;
+      var value = cell.cloneNode(true);
+      var extras = value.querySelectorAll(".info-button,.source-tip");
+      for (var j = 0; j < extras.length; j++) extras[j].remove();
+      html += '<div class="hidden-field"><dt>' + esc(header.getAttribute("data-label"))
+        + "</dt><dd>" + (value.innerHTML || "&mdash;") + "</dd></div>";
+    }
+    return html ? '<dl class="hidden-details">' + html + "</dl>" : "";
+  }
+
+  function openDetail(metricRow, idx) {
+    metricRow.classList.add("expanded");
+    metricRow.setAttribute("aria-expanded", "true");
+
+    var m = metricsData[idx];
+    var terms = m.terms || [];
+    var detailTr = document.createElement("tr");
+    detailTr.className = "detail-row";
+    var td = document.createElement("td");
+    td.colSpan = table.querySelectorAll("thead th:not([hidden])").length;
+
+    var inner = document.createElement("div");
+    inner.className = "detail-inner";
+    var subtitle = [m.agg, m.units].filter(Boolean).join(", ");
+    inner.innerHTML = "<h3>" + esc(m.metric) + (subtitle ? " \u2014 " + esc(subtitle) : "") + "</h3>"
+      + buildHiddenDetails(metricRow)
+      + '<div class="detail-chart">' + buildChart(terms, m.d_mean, m.r_mean) + "</div>";
+
+    td.appendChild(inner);
+    detailTr.appendChild(td);
+    metricRow.after(detailTr);
+  }
+
   function toggleDetail(metricRow, idx) {
     var existing = metricRow.nextElementSibling;
     if (existing && existing.classList.contains("detail-row")) {
       existing.remove();
       metricRow.classList.remove("expanded");
+      metricRow.setAttribute("aria-expanded", "false");
       return;
     }
 
@@ -292,29 +344,49 @@
     var open = tbody.querySelectorAll(".detail-row");
     for (var k = 0; k < open.length; k++) {
       var prev = open[k].previousElementSibling;
-      if (prev) prev.classList.remove("expanded");
+      if (prev) {
+        prev.classList.remove("expanded");
+        prev.setAttribute("aria-expanded", "false");
+      }
       open[k].remove();
     }
+    openDetail(metricRow, idx);
+  }
 
-    metricRow.classList.add("expanded");
+  function setColumnHidden(key, hidden) {
+    var cells = table.querySelectorAll('[data-col="' + key + '"]');
+    for (var i = 0; i < cells.length; i++) cells[i].hidden = hidden;
+  }
 
-    var m = metricsData[idx];
-    var terms = m.terms || [];
+  function fitColumns() {
+    resizeFrame = null;
+    var expanded = tbody.querySelector(".metric-row.expanded");
+    var detail = expanded && expanded.nextElementSibling;
+    if (detail && detail.classList.contains("detail-row")) detail.remove();
 
-    var detailTr = document.createElement("tr");
-    detailTr.className = "detail-row";
-    var td = document.createElement("td");
-    td.colSpan = COL_SPAN;
+    var headers = Array.from(table.querySelectorAll("thead th[data-col]"));
+    for (var i = 0; i < headers.length; i++) {
+      setColumnHidden(headers[i].getAttribute("data-col"), false);
+    }
 
-    var inner = document.createElement("div");
-    inner.className = "detail-inner";
-    var subtitle = [m.agg, m.units].filter(Boolean).join(", ");
-    inner.innerHTML = "<h3>" + esc(m.metric) + (subtitle ? " \u2014 " + esc(subtitle) : "") + "</h3>"
-      + '<div class="detail-chart">' + buildChart(terms, m.d_mean, m.r_mean) + "</div>";
+    var candidates = headers.filter(function(header) {
+      return !header.hasAttribute("data-required");
+    }).sort(function(a, b) {
+      return Number(b.getAttribute("data-priority")) - Number(a.getAttribute("data-priority"));
+    });
 
-    td.appendChild(inner);
-    detailTr.appendChild(td);
-    metricRow.after(detailTr);
+    for (var j = 0; j < candidates.length && table.scrollWidth > tableWrap.clientWidth + 1; j++) {
+      setColumnHidden(candidates[j].getAttribute("data-col"), true);
+    }
+
+    if (expanded) {
+      openDetail(expanded, parseInt(expanded.getAttribute("data-idx"), 10));
+    }
+  }
+
+  function scheduleFitColumns() {
+    if (resizeFrame != null) cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(fitColumns);
   }
 
   function render(data) {
@@ -327,20 +399,20 @@
     for (var i = 0; i < metricsData.length; i++) {
       var m = metricsData[i];
       var cls = "metric-row tier-" + (m.tier || "exploratory");
-      html += '<tr class="' + cls + '" data-idx="' + i + '">'
-        + "<td>" + esc(m.metric) + "</td>"
-        + "<td>" + renderSource(m.source, i) + "</td>"
-        + "<td>" + esc(m.family) + "</td>"
-        + "<td>" + esc(m.agg) + "</td>"
-        + "<td>" + esc(m.units) + "</td>"
-        + '<td class="num">' + fmt(m.d_mean) + "</td>"
-        + '<td class="num">' + fmt(m.r_mean) + "</td>"
-        + '<td class="num">' + fmt(m.diff) + "</td>"
-        + '<td class="num">' + (m.n_d != null ? m.n_d : "") + "</td>"
-        + '<td class="num">' + (m.n_r != null ? m.n_r : "") + "</td>"
-        + '<td class="num">' + fmt(m.p, 3) + "</td>"
-        + '<td class="num">' + fmt(m.q, 3) + "</td>"
-        + '<td class="num">' + fmtCI(m.ci_low, m.ci_high) + "</td>"
+      html += '<tr class="' + cls + '" data-idx="' + i + '" aria-expanded="false">'
+        + '<td data-col="metric">' + esc(m.metric) + "</td>"
+        + '<td data-col="source">' + renderSource(m.source, i) + "</td>"
+        + '<td data-col="family">' + esc(m.family) + "</td>"
+        + '<td data-col="agg">' + esc(m.agg) + "</td>"
+        + '<td data-col="units">' + esc(m.units) + "</td>"
+        + '<td class="num" data-col="d-mean">' + fmt(m.d_mean) + "</td>"
+        + '<td class="num" data-col="r-mean">' + fmt(m.r_mean) + "</td>"
+        + '<td class="num" data-col="diff">' + fmt(m.diff) + "</td>"
+        + '<td class="num" data-col="n-d">' + (m.n_d != null ? m.n_d : "") + "</td>"
+        + '<td class="num" data-col="n-r">' + (m.n_r != null ? m.n_r : "") + "</td>"
+        + '<td class="num" data-col="p">' + fmt(m.p, 3) + "</td>"
+        + '<td class="num" data-col="q">' + fmt(m.q, 3) + "</td>"
+        + '<td class="num" data-col="ci">' + fmtCI(m.ci_low, m.ci_high) + "</td>"
         + "</tr>";
     }
     tbody.innerHTML = html;
@@ -356,6 +428,13 @@
         });
       })(rows[j]);
     }
+    scheduleFitColumns();
+  }
+
+  if (window.ResizeObserver) {
+    new ResizeObserver(scheduleFitColumns).observe(tableWrap);
+  } else {
+    window.addEventListener("resize", scheduleFitColumns);
   }
 
   function load(url) {
