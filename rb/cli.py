@@ -135,6 +135,7 @@ def _parse_args() -> argparse.Namespace:
     export_json = sub.add_parser("export-json", help="Export scoreboard data as JSON for the static site.")
     export_json.add_argument("--party-summary", type=Path, default=Path("reports/party_summary_v1.csv"), help="Party summary CSV.")
     export_json.add_argument("--term-metrics", type=Path, default=Path("reports/term_metrics_v1.csv"), help="Term metrics CSV (for per-term detail data).")
+    export_json.add_argument("--spec", type=Path, default=Path("spec/metrics_v1.yaml"), help="Metric registry with source provenance.")
     export_json.add_argument("--output-dir", type=Path, default=Path("site"), help="Output directory (writes data.json).")
     export_json.add_argument("--dotenv", type=Path, default=Path(".env"), help="Optional .env file to load into env vars.")
 
@@ -219,6 +220,7 @@ def main() -> int:
             party_summary_csv=args.party_summary,
             output_dir=args.output_dir,
             term_metrics_csv=args.term_metrics,
+            spec_path=args.spec,
         )
         return 0
 
