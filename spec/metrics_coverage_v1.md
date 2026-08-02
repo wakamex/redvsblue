@@ -37,7 +37,7 @@ Legend:
 
 ### Labor
 
-- `payems_payroll_employment`, `ce16ov_household_employment`
+- `payems_payroll_employment`, `manemp_manufacturing_employment`, `ce16ov_household_employment`
   - `covered`: total change, per-year change, term percent change, term CAGR.
 - `unrate_unemployment_rate`
   - `covered`: mean, end-of-term value, pp change, pp change per year.

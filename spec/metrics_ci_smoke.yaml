@@ -2,7 +2,7 @@ version: 1
 name: metrics_ci_smoke
 created: "2026-02-11"
 description: >
-  Minimal CI smoke spec for fast pipeline checks. Covers one FRED series and a
+  Minimal CI smoke spec for fast pipeline checks. Covers a small FRED series set and a
   small metric set that exercises ingest -> compute -> validate.
 
 sources:
@@ -20,6 +20,12 @@ series:
     frequency: M
     units: "percent"
     description: "Civilian Unemployment Rate (BLS CPS, SA)."
+  manemp_manufacturing_employment:
+    source: fred
+    series_id: MANEMP
+    frequency: M
+    units: "thousands of persons"
+    description: "All Employees: Manufacturing (BLS CES, SA)."
 
 metrics:
   - id: unemployment_rate_mean
@@ -54,3 +60,50 @@ metrics:
     term_aggregation:
       kind: end_minus_start_per_year
       units: "percentage points per year"
+
+  - id: manufacturing_jobs_change_total
+    family: jobs
+    label: "Manufacturing employment change (total, end minus start)"
+    inputs:
+      series: manemp_manufacturing_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      units: "thousands of persons"
+
+  - id: manufacturing_jobs_change_per_year
+    family: jobs
+    label: "Manufacturing employment change (per year, end minus start divided by term years)"
+    inputs:
+      series: manemp_manufacturing_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      units: "thousands of persons per year"
+
+  - id: manufacturing_jobs_term_pct_change
+    family: jobs
+    label: "Manufacturing employment percent change (term total, end vs start)"
+    inputs:
+      series: manemp_manufacturing_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      scale: 100
+      units: "percent"
+
+  - id: manufacturing_jobs_term_cagr_pct
+    family: jobs
+    label: "Manufacturing employment CAGR (term annualized from start/end)"
+    inputs:
+      series: manemp_manufacturing_employment
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      scale: 100
+      use_actual_time: true
+      units: "percent"
