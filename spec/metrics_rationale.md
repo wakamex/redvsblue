@@ -205,3 +205,24 @@ Notes:
 
 - Whether daily stock level endpoints should use close-before-inauguration vs close-on-inauguration, and whether to also provide an end-of-month-based variant as a robustness check.
 - Whether to support point-in-time/vintage data for key series (ALFRED) to avoid revision effects in historical reproducibility.
+
+
+## Household income, inequality, and poverty
+
+Four annual national series add household purchasing power, income dispersion, and hardship to the registry. Each has two change views: total and annualized percentage growth for real median income, ratio-point change and change per year for inequality, and percentage-point change and change per year for each poverty measure. This adds eight metrics to the existing joint multiple-comparison correction. Individual percentiles, quintile averages, and additional level views are omitted to keep the household additions compact.
+
+The [U.S. Census Bureau's 2025 income tables](https://www.census.gov/data/tables/2026/demo/income-poverty/p60-289.html), Table 6, supply real median household income and the published 90th-to-10th-percentile income ratio for 1967–2025. These estimates come from the [Current Population Survey Annual Social and Economic Supplement (CPS ASEC)](https://www.census.gov/programs-surveys/cps.html). Median income uses the table's 2025 dollars. The dimensionless ratio divides the upper income cutoff by the lower cutoff; larger values indicate greater dispersion between those positions. Its change is in ratio points, not percentage points. The pipeline reads the published ratio directly without registering individual percentile series. The ratio does not measure extreme-top income concentration, and an increase can reflect faster income growth at the top even while lower incomes rise.
+
+The official poverty rate uses Census's all-person percentage series [HSTPOVARAPBPP](https://fred.stlouisfed.org/series/HSTPOVARAPBPP), delivered through [Federal Reserve Economic Data (FRED)](https://fred.stlouisfed.org/). Coverage begins in 1959. The measure uses pretax money income and excludes tax credits and noncash benefits.
+
+The [Columbia historical Supplemental Poverty Measure (SPM)](https://povertycenter.columbia.edu/historical-spm-data) supplies the total-population rate after taxes and transfers for 1967–2024. The selected column is “Historical SPM Poverty Rate,” whose thresholds vary over time. Values are stored as fractions in the workbook and multiplied by 100 for percentage units. The September 9, 2025 workbook predates the [2026 corrections to SPM thresholds](https://www.census.gov/library/stories/2023/09/income-inequality.html); its source note identifies this vintage. It reconstructs 1967–2008 and uses public-use survey data from 2009 onward. Recent estimates can differ from published Census rates because of public-use versus internal data differences. The pipeline retains the coherent published research series rather than splicing releases.
+
+### Annual attribution and minimum coverage
+
+These metrics use the existing calendar-year majority-of-days attribution and first/last observations inside each attributed window. For a 2021–2024 window, change compares 2021 with 2024 and annualizes over the actual elapsed time, approximately three years. It does not include the 2020–2021 change. Labels explicitly say “first to last attributed year.” There is no new normalization or boundary rule. At least two nonmissing annual observations are required for both change views, so a single available year cannot become a misleading zero change. Other metrics retain their existing behavior.
+
+### Source versions and survey revisions
+
+The spreadsheet releases are pinned by their registered download addresses, expected headers, units, and year coverage. New annual releases require updating the registry and verifying their headers and footnotes; refreshing a pinned address alone does not discover a newer release. Raw workbooks are cached with retrieval metadata and content hashes. Derived metadata records the selected year labels, parser settings, units, and source hash. The spreadsheets are read with [openpyxl](https://openpyxl.readthedocs.io/).
+
+Census publishes two rows for 2013 and 2017. The selected labels, “2013 4” and “2017 3,” use the redesigned questionnaire and updated processing system respectively. Columbia's selected labels are “2013b,” “2017b,” and “2019b*,” reflecting the redesigned questionnaire, updated processing, and revised SPM methodology. Its pandemic nonresponse adjustments are retained. These choices do not eliminate historical measurement breaks. Unknown duplicate years, missing years, changed headers, and invalid values fail ingestion rather than silently selecting another column or row.

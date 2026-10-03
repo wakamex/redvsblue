@@ -4,6 +4,7 @@ version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
     "certifi>=2026.1.4",
+    "openpyxl>=3.1.5",
     "pdfminer-six>=20260107",
     "pyyaml>=6.0.3",
 ]

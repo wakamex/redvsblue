@@ -119,3 +119,13 @@ If we reject a candidate transform, record:
 - and where the alternate evidence is represented.
 
 This avoids silent opinionated pruning.
+
+
+## Household income, inequality, and poverty
+
+- `census_real_median_household_income`: covered by percent change and annualized growth, 1967–2025.
+- `census_household_income_90_10_ratio`: covered by ratio-point change and change per year, 1967–2025. Uses the published ratio; individual percentile series are omitted.
+- `official_poverty_rate`: covered by percentage-point change and change per year, beginning in 1959.
+- `historical_supplemental_poverty_rate`: covered by percentage-point change and change per year, 1967–2024, after taxes and transfers.
+
+Mean and end-level views are intentionally omitted for these additions to keep the selection compact. Changes retain the existing within-window endpoint rules and require two annual observations. The [measurement rationale](metrics_rationale.md#household-income-inequality-and-poverty) documents sources, release versions, and survey breaks.

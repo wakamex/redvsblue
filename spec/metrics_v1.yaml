@@ -62,7 +62,123 @@ sources:
       program: "S&P 500 monthly price dataset"
       access_provider: "DataHub"
       url: "https://datahub.io/core/s-and-p-500"
+  census_income:
+    kind: household_xlsx
+    url: https://www2.census.gov/programs-surveys/demo/tables/p60/289/table6.xlsx
+    provenance:
+      publisher: U.S. Census Bureau
+      program: Current Population Survey Annual Social and Economic Supplement
+      access_provider: U.S. Census Bureau
+      url: https://www.census.gov/data/tables/2026/demo/income-poverty/p60-289.html
+  columbia_spm:
+    kind: household_xlsx
+    url: https://povertycenter.columbia.edu/sites/povertycenter.columbia.edu/files/content/Data/Historical/Anchored-and-Historical-Poverty-Rates-1967-to-2024_update-09_09_2025.xlsx
+    provenance:
+      publisher: Columbia University Center on Poverty and Social Policy
+      program: Historical Supplemental Poverty Measure
+      access_provider: Columbia University
+      url: https://povertycenter.columbia.edu/historical-spm-data
 series:
+  census_real_median_household_income:
+    source: census_income
+    frequency: A
+    units: 2025 dollars
+    description: "Census · Median household income"
+    parse:
+      sheet: table6
+      expected_cells:
+        A2: 'Table 6. Selected Measures of Household Income Dispersion: 1967 to 2025'
+        A4: Year
+        A3: '(Income in 2025 dollars, adjusted using the Chained Consumer Price Index for All Urban Consumers (C-CPI-U) (2000-2025)
+          and Consumer Price Index for All Urban Consumers Retroactive Series (R-CPI-U-RS) (pre-2000). More information on inflation
+          adjustment is available in Appendix A of "Income in the United States: 2025" at <https://www2.census.gov/library/publications/2026/demo/p60-289.pdf>.
+          Households as of March of the following year. Information on confidentiality protection, sampling error, nonsampling
+          error, and definitions is available at <https://www2.census.gov/programs-surveys/cps/techdocs/cpsmar26.pdf>)'
+        F7: 50th percentile (median)
+      first_data_row: 8
+      value_column: 6
+      preferred_year_labels:
+        2013: 2013 4
+        2017: 2017 3
+      start_year: 1967
+      end_year: 2025
+      minimum: 1
+      maximum: 1000000
+    provenance:
+      label: "Census · Median household income"
+      source_id: Table 6
+      note: Pretax household money income. Published 2026 release; revised-method rows used for 2013 and 2017. Annual changes
+        compare first and last observations within the attributed term; a full four-year window spans three annual intervals.
+  census_household_income_90_10_ratio:
+    source: census_income
+    frequency: A
+    units: ratio
+    description: "Census · Household income 90/10"
+    parse:
+      sheet: table6
+      expected_cells:
+        A2: 'Table 6. Selected Measures of Household Income Dispersion: 1967 to 2025'
+        A4: Year
+        A3: '(Income in 2025 dollars, adjusted using the Chained Consumer Price Index for All Urban Consumers (C-CPI-U) (2000-2025)
+          and Consumer Price Index for All Urban Consumers Retroactive Series (R-CPI-U-RS) (pre-2000). More information on inflation
+          adjustment is available in Appendix A of "Income in the United States: 2025" at <https://www2.census.gov/library/publications/2026/demo/p60-289.pdf>.
+          Households as of March of the following year. Information on confidentiality protection, sampling error, nonsampling
+          error, and definitions is available at <https://www2.census.gov/programs-surveys/cps/techdocs/cpsmar26.pdf>)'
+        L7: 90th/10th
+      first_data_row: 8
+      value_column: 12
+      preferred_year_labels:
+        2013: 2013 4
+        2017: 2017 3
+      start_year: 1967
+      end_year: 2025
+      minimum: 1
+      maximum: 100
+    provenance:
+      label: "Census · Household income 90/10"
+      source_id: Table 6
+      note: Pretax household money income. Published 2026 release; revised-method rows used for 2013 and 2017. Annual changes
+        compare first and last observations within the attributed term; a full four-year window spans three annual intervals.
+  official_poverty_rate:
+    source: fred
+    series_id: HSTPOVARAPBPP
+    frequency: A
+    units: percent
+    description: Official poverty rate, all people, based on pretax money income.
+    provenance:
+      label: "Census · Official poverty"
+      publisher: U.S. Census Bureau
+      program: Current Population Survey Annual Social and Economic Supplement
+      note: All people below the official poverty threshold. Excludes noncash benefits and tax credits. Annual changes use first
+        and last observations within the attributed term.
+  historical_supplemental_poverty_rate:
+    source: columbia_spm
+    frequency: A
+    units: percent
+    description: Historical supplemental poverty rate, total population, after taxes and transfers.
+    parse:
+      sheet: Poverty Rates
+      expected_cells:
+        A1: Total Population
+        A2: Year
+        E2: Historical SPM Poverty Rate
+      first_data_row: 3
+      value_column: 5
+      scale: 100
+      preferred_year_labels:
+        2013: 2013b
+        2017: 2017b
+        2019: 2019b*
+      start_year: 1967
+      end_year: 2024
+      minimum: 0
+      maximum: 100
+    provenance:
+      label: "Columbia · Supplemental poverty"
+      source_id: Historical SPM, total population
+      note: Historical research estimates after taxes and transfers, with thresholds varying by year. September 2025 release;
+        newer-method rows selected for 2013, 2017, and 2019. This release predates the 2026 threshold corrections. Annual changes
+        use first and last observations within the attributed term.
   # Macro: output
   gdpc1_real_gdp:
     source: fred
@@ -1505,10 +1621,100 @@ metrics:
       kind: end_minus_start_per_year
       units: "percentage points per year"
 
+  # Household income, inequality, and poverty
+  - id: real_median_household_income_term_pct_change
+    family: income
+    label: Real median household income percent change (first to last attributed year)
+    inputs:
+      series: census_real_median_household_income
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: pct_change_from_levels
+      min_observations: 2
+      units: percent
+      scale: 100
+  - id: real_median_household_income_term_cagr_pct
+    family: income
+    label: Real median household income annualized growth (first to last attributed year)
+    inputs:
+      series: census_real_median_household_income
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: cagr_from_levels
+      min_observations: 2
+      units: percent
+      scale: 100
+  - id: household_income_90_10_ratio_change
+    family: inequality
+    label: Household income inequality 90/10 ratio change (first to last attributed year)
+    inputs:
+      series: census_household_income_90_10_ratio
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      min_observations: 2
+      units: ratio points
+  - id: household_income_90_10_ratio_change_per_year
+    family: inequality
+    label: Household income inequality 90/10 ratio change per year (first to last attributed year)
+    inputs:
+      series: census_household_income_90_10_ratio
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      min_observations: 2
+      units: ratio points per year
+  - id: official_poverty_rate_change
+    family: poverty
+    label: Official poverty rate change (first to last attributed year)
+    inputs:
+      series: official_poverty_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      min_observations: 2
+      units: percentage points
+  - id: official_poverty_rate_change_per_year
+    family: poverty
+    label: Official poverty rate change per year (first to last attributed year)
+    inputs:
+      series: official_poverty_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      min_observations: 2
+      units: percentage points per year
+  - id: historical_supplemental_poverty_rate_change
+    family: poverty
+    label: Historical supplemental poverty rate after taxes and transfers change (first to last attributed year)
+    inputs:
+      series: historical_supplemental_poverty_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start
+      min_observations: 2
+      units: percentage points
+  - id: historical_supplemental_poverty_rate_change_per_year
+    family: poverty
+    label: Historical supplemental poverty rate after taxes and transfers change per year (first to last attributed year)
+    inputs:
+      series: historical_supplemental_poverty_rate
+    period_transform:
+      kind: identity
+    term_aggregation:
+      kind: end_minus_start_per_year
+      min_observations: 2
+      units: percentage points per year
+
 known_omissions:
   - family: housing
     reason: "Deferred to v2 (candidates: CSUSHPISA, HOUST)."
   - family: trade
     reason: "Deferred to v2 (candidates: BOPGSTB)."
-  - family: inequality
-    reason: "Deferred to v2 (high-quality distributional metrics are typically annual with lag)."

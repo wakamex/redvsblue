@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 from rb.site import _load_metric_sources, write_site_json
+from rb.spec import load_spec
 
 
 def test_homepage_metric_count_comes_from_loaded_data():
@@ -70,7 +71,8 @@ def test_homepage_fits_ranked_columns_without_display_breakpoints():
 def test_registry_provides_source_provenance_for_every_metric():
     sources = _load_metric_sources(Path("spec/metrics_v1.yaml"))
 
-    assert len(sources) == 88
+    spec = load_spec(Path("spec/metrics_v1.yaml"))
+    assert set(sources) == {metric["id"] for metric in spec["metrics"]}
     assert sources["payroll_jobs_change_total"]["label"] == "BLS CES · PAYEMS"
     assert sources["manufacturing_jobs_change_total"]["label"] == "BLS CES · MANEMP"
     assert sources["household_employment_change_total"]["label"] == "BLS CPS · CE16OV"

@@ -5,6 +5,7 @@ from pathlib import Path
 from rb.spec import load_spec
 from rb.sources.datahub import ingest_datahub_series
 from rb.sources.fred import ingest_fred_series
+from rb.sources.household import ingest_household_series
 from rb.sources.ken_french import ingest_ken_french_dataset
 
 
@@ -39,6 +40,7 @@ def ingest_from_spec(
     # Per-series ingestion. A shared DataHub CSV is refreshed once, then reused
     # from the artifact cache for other filtered views of the same source.
     refreshed_datahub_sources: set[str] = set()
+    refreshed_household_sources: set[str] = set()
     for series_key, cfg in sorted(series_cfg.items()):
         if only_series and series_key not in only_series:
             continue
@@ -64,6 +66,13 @@ def ingest_from_spec(
                 refresh=refresh_source,
             )
             refreshed_datahub_sources.add(str(src_name))
+        elif kind == "household_xlsx":
+            ingest_household_series(
+                source_name=str(src_name), series_key=series_key, series_cfg=cfg,
+                source_cfg=src_cfg,
+                refresh=refresh and src_name not in refreshed_household_sources,
+            )
+            refreshed_household_sources.add(str(src_name))
         elif src_name == "ken_french_ff_factors":
             # Handled above as one-off datasets.
             continue

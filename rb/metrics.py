@@ -416,6 +416,9 @@ def compute_term_metrics(
                 # Back-compat fallback to prior series-id keyed filenames.
                 path = Path("data/derived/fred/observations") / f"{series_id}.csv"
             series_data[sk] = _load_csv_timeseries(path, date_col="date", value_col="value")
+        elif source_kind == "household_xlsx":
+            path = Path("data/derived/household") / f"{sk}.csv"
+            series_data[sk] = _load_csv_timeseries(path, date_col="date", value_col="value")
         elif source_kind == "datahub_csv":
             path = Path("data/derived/datahub") / f"{sk}.csv"
             series_data[sk] = _load_csv_timeseries(path, date_col="date", value_col="value")
@@ -560,6 +563,8 @@ def compute_term_metrics(
             error: str = ""
 
             try:
+                if sum(v is not None for _, v in obs) < int(agg.get("min_observations", 0)):
+                    raise ValueError("insufficient observations in attributed window")
                 if agg_kind == "mean":
                     xs = [v for _, v in obs if v is not None]
                     n_obs = len(xs)
