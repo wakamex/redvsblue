@@ -50,6 +50,14 @@ Monthly, quarterly, and annual endpoint-change metrics use the last nonmissing o
 
 The [baseline comparison report](docs/change-baseline-comparison-2026-10-03.md) records the effect on all 96 metrics using unchanged source data and inference settings.
 
+## Sources and methodology
+
+Each metric on the website links to its source; the adjacent information button explains the publisher, series, frequency, and relevant source notes. The [metric registry](spec/metrics_v1.yaml) records the series and calculations, and the [methodology section](#methodology) explains how presidential terms and party differences are compared.
+
+The footer's data-update date records when the results were generated. Individual series may end earlier because publishers release data on different schedules. Refreshes can also incorporate revisions to earlier observations.
+
+For a detailed audit, download the live [data provenance record](https://redvsblue.fyi/provenance.json) in [JavaScript Object Notation (JSON)](https://www.json.org/json-en.html) format. It identifies the generating release and commit, source URLs, retrieval times, input content hashes, available source modification dates, and calculation settings. The content hashes identify the exact input bytes used by that build.
+
 ## Data freshness
 
 Production runs a versioned release. Its footer links to the release notes and shows the data-update date and provenance. Weekly refreshes use the version currently deployed, including after a rollback. Code and methodology changes receive a new release; routine data updates do not. Each release regenerates its results from fresh inputs. Source availability and revisions can change results between refreshes.

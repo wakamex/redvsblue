@@ -149,9 +149,6 @@
   <p style="margin-top:.5rem">
     Price-index source: <a href="https://datahub.io/core/s-and-p-500">inspect the monthly S&amp;P CSV and license</a>.
   </p>
-  <p style="margin-top:.5rem">
-    For full details see: <a href="https://github.com/wakamex/redvsblue">github.com/wakamex/redvsblue</a>
-  </p>
 </div>
 
 <script>
@@ -516,8 +513,8 @@
     }
     info.appendChild(document.createTextNode(" · Data updated " + provenance.generated_at.slice(0, 10) + " · "));
     var sources = document.createElement("a");
-    sources.href = "./provenance.json";
-    sources.textContent = "Data provenance";
+    sources.href = "https://github.com/wakamex/redvsblue#sources-and-methodology";
+    sources.textContent = "Sources and methodology";
     info.appendChild(sources);
     info.hidden = false;
   }).catch(function() {
