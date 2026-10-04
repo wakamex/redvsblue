@@ -14,7 +14,7 @@ Prepare `release-notes/vX.Y.Z.md` and commit only the version, lockfile, and not
 
 `publish.yml` validates, builds from the tag with fresh inputs, uploads the site artifact for 90 days, creates the immutable release from the notes, and conditionally deploys the same artifact to [Cloudflare Pages](https://developers.cloudflare.com/pages/). Main pushes never deploy production. Publishing release notes does not establish that a version has been deployed.
 
-The repository variable `PRODUCTION_DEPLOY_ENABLED` must equal `true` for any production deploy or scheduled refresh. A missing variable or any other value keeps production unchanged. This permits building and publishing a release while holding deployment. The variable is currently held at `false` until deployment is authorized.
+The repository variable `PRODUCTION_DEPLOY_ENABLED` must equal `true` for any production deploy or scheduled refresh. A missing variable or any other value keeps production unchanged. This permits building and publishing a release while holding deployment. Set the variable to `false` whenever production deployment and refreshes should be held.
 
 After deployment is authorized, set the variable to `true` and manually run `deploy-site.yml` with the successful publish workflow's numeric `run_id`. It verifies the artifact's release identity, static files, and data hash before deploying. This also supports an explicit rollback to a retained earlier release artifact. If an artifact has expired, rerun its tag publication workflow to rebuild with the same released code and fresh inputs; existing release notes remain unchanged. Do not move a tag.
 
