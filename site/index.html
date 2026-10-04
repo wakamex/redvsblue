@@ -11,7 +11,7 @@
        line-height:1.6;padding:1rem 2rem;margin:0}
   h1{color:#ff9800;margin-bottom:.25rem;font-size:1.6rem}
   .subtitle{color:#999;font-size:.85rem;margin-bottom:1rem}
-  .summary{margin-bottom:1.25rem;font-size:.9rem;color:#bbb;max-width:72ch}
+  .summary{margin-bottom:1.25rem;font-size:.9rem;color:#bbb}
   .info-wrap{display:inline-flex;position:relative;align-items:center;gap:.25rem;vertical-align:middle}
   .info-button{width:1.1rem;height:1.1rem;border:1px solid #777;border-radius:50%;
     background:#2a2a2a;color:#ddd;font:600 .65rem/1 system-ui;cursor:help;padding:0}
@@ -70,7 +70,7 @@
   .details-button:hover,.details-button:focus-visible{border-color:#ff9800;color:#ff9800;outline:none}
   .detail-chart{margin-bottom:.75rem}
   .detail-chart svg{display:block}
-  .footer{font-size:.75rem;color:#777;margin-top:1rem;max-width:72ch;line-height:1.5}
+  .footer{font-size:.75rem;color:#777;margin-top:1rem;line-height:1.5}
   .footer a{color:#ff9800;text-decoration:none}
   .footer a:hover{text-decoration:underline}
   #status{color:#999;font-size:.85rem;margin-bottom:1rem}
@@ -145,11 +145,7 @@
 
 <div class="footer">
   <p id="release-info" hidden></p>
-  <p>
-    Methodology: unrestricted permutation test (10,000 shuffles) with Benjamini-Hochberg FDR
-    correction across all metrics in a single universe. Bootstrap 95% CIs (2,000 resamples).
-    See <code>--term-block-years</code> for block-shuffle sensitivity analysis.
-  </p>
+  <p>Methodology: unrestricted permutation test (10,000 shuffles) with Benjamini-Hochberg FDR correction across all metrics in a single universe. Bootstrap 95% CIs (2,000 resamples). See <code>--term-block-years</code> for block-shuffle sensitivity analysis.</p>
   <p style="margin-top:.5rem">
     Price-index source: <a href="https://datahub.io/core/s-and-p-500">inspect the monthly S&amp;P CSV and license</a>.
   </p>
