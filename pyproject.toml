@@ -11,6 +11,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "playwright>=1.63.0",
     "pytest>=8",
 ]
 
