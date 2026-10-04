@@ -4,7 +4,7 @@
 **Authors/Org:** Jere Glover (site operator; compilation effort dating back to ~1980 per site)  
 **Published:** Living webpage (states “Data updated for 2024”)  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/presidentialdata-org/source.*`, `literature/presidentialdata-org/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - Post-WWII, a range of macro indicators “perform better” under Democratic presidents than Republican presidents (GDP growth, job growth, unemployment, recessions, etc.).

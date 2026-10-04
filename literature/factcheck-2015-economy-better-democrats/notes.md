@@ -4,7 +4,7 @@
 **Authors/Org:** Robert Farley (FactCheck.org)  
 **Published:** October 20, 2015  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/factcheck-2015-economy-better-democrats/source.*`, `literature/factcheck-2015-economy-better-democrats/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - Clinton’s claim that “the economy does better when you have a Democrat in the White House” is supported by Blinder & Watson’s empirical findings (as a descriptive average).

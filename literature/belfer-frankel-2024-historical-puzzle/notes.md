@@ -4,7 +4,7 @@
 **Authors/Org:** Jeffrey Frankel (Belfer Center)  
 **Published:** March 28, 2024  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/belfer-frankel-2024-historical-puzzle/source.*`, `literature/belfer-frankel-2024-historical-puzzle/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - Since World War II, US macro performance has been consistently better under Democratic presidents than Republican presidents (a “historical puzzle” analogous to the Biden perception gap).

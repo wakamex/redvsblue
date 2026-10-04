@@ -4,7 +4,7 @@
 **Authors/Org:** Senator Jerry McNerney (California State Senate District 05 website; op-ed)  
 **Published:** November 5, 2025  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/ca-senate-shattering-gop-economic-myth/source.*`, `literature/ca-senate-shattering-gop-economic-myth/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - Republican “better for the economy” narrative is false; by “almost every measure,” Democratic administrations outperform Republican ones.

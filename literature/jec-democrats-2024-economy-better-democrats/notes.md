@@ -4,7 +4,7 @@
 **Authors/Org:** United States Joint Economic Committee (Democrats)  
 **Published:** October 7, 2024  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/jec-democrats-2024-economy-better-democrats/source.*`, `literature/jec-democrats-2024-economy-better-democrats/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - In the “modern era,” the US economy performs better under Democratic presidents than Republican presidents across a wide set of indicators (jobs, unemployment, growth, manufacturing, small business formation, debt).

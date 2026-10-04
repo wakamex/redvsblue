@@ -4,7 +4,7 @@
 **Authors/Org:** Congressional Research Service (CRS); Lida R. Weinstock (Analyst in Macroeconomic Policy)  
 **Published:** Updated October 3, 2024 (IF10411, Version 13; originally authored by Jeffrey Stupak)  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/crs-if10411-business-cycle/source.*`, `literature/crs-if10411-business-cycle/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - “Recession” is **not** defined by NBER as “two consecutive quarters of negative real GDP.” NBER uses a broader definition: a significant, persistent decline in activity spread across the economy, using multiple indicators (GDP, employment, sales, industrial production, etc.).

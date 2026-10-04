@@ -4,7 +4,7 @@
 **Authors/Org:** National Bureau of Economic Research (Business Cycle Dating Committee; data.nber.org)  
 **Published:** Data file (directory listing indicates last-modified July 2021; treat as periodically maintained)  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/nber-business-cycle-dates-json/source.*`, `literature/nber-business-cycle-dates-json/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - Provides the canonical NBER chronology of US business cycle peaks and troughs (monthly dates).

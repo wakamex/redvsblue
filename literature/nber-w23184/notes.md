@@ -4,7 +4,7 @@
 **Authors/Org:** Lubos Pastor; Pietro Veronesi (NBER Working Paper 23184)  
 **Published:** February 2017 (revised May 2019)  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/nber-w23184/source.*`, `literature/nber-w23184/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - The “presidential puzzle” in US stock returns (higher average returns under Democratic presidents) can arise endogenously from time-varying risk aversion.

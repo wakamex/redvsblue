@@ -4,7 +4,7 @@
 **Authors/Org:** Tim Hyde (American Economic Association “Research Highlights”)  
 **Published:** June 20, 2016  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/aea-why-economy-better-under-democrats/source.*`, `literature/aea-why-economy-better-under-democrats/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - Summarizes Blinder & Watson’s finding that postwar US economic performance (especially GDP growth) is better under Democratic presidents than Republican presidents.

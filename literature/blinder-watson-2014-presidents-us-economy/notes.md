@@ -4,7 +4,7 @@
 **Authors/Org:** Alan S. Blinder; Mark W. Watson (NBER Working Paper 20324)  
 **Published:** July 2014 (working paper; later published in *American Economic Review* 106(4), April 2016)  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/blinder-watson-2014-presidents-us-economy/source.*`, `literature/blinder-watson-2014-presidents-us-economy/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - Postwar US macro performance is systematically better under Democratic presidents than Republican presidents (most notably real GDP growth).

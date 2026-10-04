@@ -11,3 +11,6 @@ dist/
 
 # Large vendored deps; re-install via literature/_scripts/requirements.txt when needed.
 literature/_scripts/_vendor/
+
+# Downloaded literature and extracted text remain local.
+/literature/*/source.*

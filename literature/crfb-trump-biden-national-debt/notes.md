@@ -4,7 +4,7 @@
 **Authors/Org:** Committee for a Responsible Federal Budget (CRFB) / US Budget Watch 2024 project  
 **Published:** June 24, 2024  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/crfb-trump-biden-national-debt/source.*`, `literature/crfb-trump-biden-national-debt/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - Compares Presidents Trump and Biden’s fiscal records using **estimated ten-year debt impact of policies approved** (legislation + executive actions) near enactment time.

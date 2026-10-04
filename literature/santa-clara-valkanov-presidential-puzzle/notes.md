@@ -4,7 +4,7 @@
 **Authors/Org:** Pedro Santa-Clara; Rossen Valkanov (UCLA Anderson)  
 **Published:** June 2001 (working paper PDF; eScholarship record lists “Publication Date 2000-06-01”)  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/santa-clara-valkanov-presidential-puzzle/source.*`, `literature/santa-clara-valkanov-presidential-puzzle/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - U.S. stock market **excess returns are substantially higher under Democratic presidents** than Republican presidents (1927-1998), by about **9 percentage points/year** for the value-weighted portfolio and **16 percentage points/year** for the equal-weighted portfolio.

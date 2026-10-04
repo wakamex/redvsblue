@@ -4,7 +4,7 @@
 **Authors/Org:** Jeffrey Frankel (Belfer Center)  
 **Published:** June 27, 2016  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/belfer-2016-economy-better-democrats/source.*`, `literature/belfer-2016-economy-better-democrats/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - Hillary Clinton’s claim that “the economy does better when we have a Democrat in the White House” is true as a descriptive statement (historical averages), but does not imply Democrats *caused* the performance gap.

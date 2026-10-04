@@ -4,7 +4,7 @@
 **Authors/Org:** Josh Bivens (Economic Policy Institute / EPI Action)  
 **Published:** April 2, 2024 (report)  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/epi-bivens-2024-economic-performance/source.*`, `literature/epi-bivens-2024-economic-performance/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - Across a broad set of macro indicators since 1949, average performance is stronger under Democratic presidents than Republican presidents.

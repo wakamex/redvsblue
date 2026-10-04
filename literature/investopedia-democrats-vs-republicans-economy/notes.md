@@ -4,7 +4,7 @@
 **Authors/Org:** Hiranmayi Srinivasan (Investopedia)  
 **Published:** December 16, 2024 (page metadata); Updated February 4, 2026 (page text)  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/investopedia-democrats-vs-republicans-economy/source.*`, `literature/investopedia-democrats-vs-republicans-economy/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - The US national debt exceeded ~$38T in February 2026 and continues to grow.

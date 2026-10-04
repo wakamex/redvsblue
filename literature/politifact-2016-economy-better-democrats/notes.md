@@ -4,7 +4,7 @@
 **Authors/Org:** Anthony Cave (PolitiFact)  
 **Published:** April 6, 2016  
 **Retrieved:** 2026-02-09  
-**Local files:** `literature/politifact-2016-economy-better-democrats/source.*`, `literature/politifact-2016-economy-better-democrats/source.txt`
+Local reference copies (ignored by Git): `source.*` in this directory.
 
 ## What It Claims
 - Confirms that (per Blinder & Watson) average GDP growth has been higher under Democratic presidents in postwar data, but argues Clinton’s wording “always” requires caveats.
