@@ -23,6 +23,13 @@ defaults:
     rule: majority_of_days_in_period
     tie_breaker: president_on_period_end
 
+  # Applies only to endpoint-change aggregations on monthly, quarterly, and annual series.
+  # If no preceding baseline exists, use the first available in-window observation.
+  # Fallback changes require two distinct observations and are labeled partial coverage.
+  # The endpoint remains the last nonmissing observation in the attributed window.
+  # Missing settings in older attribution files retain first_attributed_observation.
+  period_change_baseline: previous_observation_or_first_available
+
   # For daily market series used as levels, define boundary selection rules.
   daily_boundary_rule:
     start: last_trading_day_strictly_before

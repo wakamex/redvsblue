@@ -100,6 +100,11 @@ def _load_term_details(
                 "term_end": (row.get("term_end") or "").strip(),
                 "value": round(val, 4),
             })
+            for key in ("start_obs_date", "end_obs_date"):
+                if row.get(key):
+                    groups[mid][-1][key] = row[key]
+            if row.get("baseline_fallback") == "true":
+                groups[mid][-1]["partial_coverage"] = True
     for terms in groups.values():
         terms.sort(key=lambda t: t["term_start"])
     return groups

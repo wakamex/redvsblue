@@ -85,9 +85,8 @@ class HouseholdTests(unittest.TestCase):
         metrics = [m for m in spec["metrics"] if m["family"] in {"income", "inequality", "poverty"}]
         self.assertEqual(len(metrics), 8)
         self.assertEqual(len({m["inputs"]["series"] for m in metrics}), 4)
-        self.assertTrue(all(m["term_aggregation"]["min_observations"] == 2 for m in metrics))
 
-    def test_annual_attribution_and_single_year_rejection(self):
+    def test_annual_attribution_and_previous_year_baseline(self):
         spec = load_spec(ROOT / "spec/metrics_v1.yaml")
         spec["metrics"] = [m for m in spec["metrics"] if m["family"] in {"income", "inequality", "poverty"}]
         keys = {m["inputs"]["series"] for m in spec["metrics"]}
@@ -107,15 +106,23 @@ class HouseholdTests(unittest.TestCase):
             for row in rows:
                 if row["term_start"] == "2021-01-20":
                     self.assertFalse(row["error"])
-                    self.assertEqual(row["start_obs_date"], "2021-01-01")
+                    self.assertEqual(row["start_obs_date"], "2020-01-01")
                     self.assertEqual(row["end_obs_date"], "2024-01-01")
                     if row["agg_kind"] == "end_minus_start":
-                        self.assertEqual(float(row["value"]), 3)
+                        self.assertEqual(float(row["value"]), 5)
                     if row["agg_kind"] == "pct_change_from_levels":
-                        self.assertAlmostEqual(float(row["value"]), 30)
+                        self.assertAlmostEqual(float(row["value"]), 62.5)
                 if row["term_start"] == "2025-01-20":
-                    self.assertEqual(row["value"], "")
-                    self.assertIn("insufficient observations", row["error"])
+                    self.assertFalse(row["error"])
+                    self.assertEqual(row["start_obs_date"], "2024-01-01")
+                    self.assertEqual(row["end_obs_date"], "2025-01-01")
+                    if row["agg_kind"] == "end_minus_start":
+                        self.assertEqual(float(row["value"]), 1)
+                    elif row["agg_kind"] == "pct_change_from_levels":
+                        self.assertAlmostEqual(float(row["value"]), 100 / 13, places=5)
+                    else:
+                        self.assertGreater(float(row["value"]), 0)
+
 
 
 if __name__ == "__main__":

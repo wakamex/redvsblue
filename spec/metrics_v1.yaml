@@ -108,7 +108,7 @@ series:
       label: "Census · Median household income"
       source_id: Table 6
       note: Pretax household money income. Published 2026 release; revised-method rows used for 2013 and 2017. Annual changes
-        compare first and last observations within the attributed term; a full four-year window spans three annual intervals.
+        compare the preceding annual observation with the last observation in the attributed term.
   census_household_income_90_10_ratio:
     source: census_income
     frequency: A
@@ -138,7 +138,7 @@ series:
       label: "Census · Household income 90/10"
       source_id: Table 6
       note: Pretax household money income. Published 2026 release; revised-method rows used for 2013 and 2017. Annual changes
-        compare first and last observations within the attributed term; a full four-year window spans three annual intervals.
+        compare the preceding annual observation with the last observation in the attributed term.
   official_poverty_rate:
     source: fred
     series_id: HSTPOVARAPBPP
@@ -149,8 +149,7 @@ series:
       label: "Census · Official poverty"
       publisher: U.S. Census Bureau
       program: Current Population Survey Annual Social and Economic Supplement
-      note: All people below the official poverty threshold. Excludes noncash benefits and tax credits. Annual changes use first
-        and last observations within the attributed term.
+      note: All people below the official poverty threshold. Excludes noncash benefits and tax credits. Annual changes compare the preceding annual observation with the last observation in the attributed term.
   historical_supplemental_poverty_rate:
     source: columbia_spm
     frequency: A
@@ -178,7 +177,7 @@ series:
       source_id: Historical SPM, total population
       note: Historical research estimates after taxes and transfers, with thresholds varying by year. September 2025 release;
         newer-method rows selected for 2013, 2017, and 2019. This release predates the 2026 threshold corrections. Annual changes
-        use first and last observations within the attributed term.
+        compare the preceding annual observation with the last observation in the attributed term.
   # Macro: output
   gdpc1_real_gdp:
     source: fred
@@ -525,7 +524,7 @@ metrics:
       scale: 100
       units: "percent"
       notes:
-        - "Uses first/last observation in the attributed window."
+        - "Uses the preceding observation as baseline and the last observation in the attributed window as endpoint."
 
   - id: gdp_growth_real_term_pct_change
     family: gdp_growth
@@ -539,7 +538,7 @@ metrics:
       scale: 100
       units: "percent"
       notes:
-        - "Uses first/last observation in the attributed window."
+        - "Uses the preceding observation as baseline and the last observation in the attributed window as endpoint."
 
   - id: gdp_growth_real_percap_term_pct_change
     family: gdp_growth
@@ -553,7 +552,7 @@ metrics:
       scale: 100
       units: "percent"
       notes:
-        - "Uses first/last observation in the attributed window."
+        - "Uses the preceding observation as baseline and the last observation in the attributed window as endpoint."
 
   - id: gdp_growth_real_percap_term_cagr
     family: gdp_growth
@@ -568,7 +567,7 @@ metrics:
       scale: 100
       units: "percent"
       notes:
-        - "Uses first/last observation in the attributed window."
+        - "Uses the preceding observation as baseline and the last observation in the attributed window as endpoint."
 
   # Employment
   - id: payroll_jobs_change_total
@@ -1624,93 +1623,85 @@ metrics:
   # Household income, inequality, and poverty
   - id: real_median_household_income_term_pct_change
     family: income
-    label: Real median household income percent change (first to last attributed year)
+    label: Real median household income percent change (preceding year to last attributed year)
     inputs:
       series: census_real_median_household_income
     period_transform:
       kind: identity
     term_aggregation:
       kind: pct_change_from_levels
-      min_observations: 2
       units: percent
       scale: 100
   - id: real_median_household_income_term_cagr_pct
     family: income
-    label: Real median household income annualized growth (first to last attributed year)
+    label: Real median household income annualized growth (preceding year to last attributed year)
     inputs:
       series: census_real_median_household_income
     period_transform:
       kind: identity
     term_aggregation:
       kind: cagr_from_levels
-      min_observations: 2
       units: percent
       scale: 100
   - id: household_income_90_10_ratio_change
     family: inequality
-    label: Household income inequality 90/10 ratio change (first to last attributed year)
+    label: Household income inequality 90/10 ratio change (preceding year to last attributed year)
     inputs:
       series: census_household_income_90_10_ratio
     period_transform:
       kind: identity
     term_aggregation:
       kind: end_minus_start
-      min_observations: 2
       units: ratio points
   - id: household_income_90_10_ratio_change_per_year
     family: inequality
-    label: Household income inequality 90/10 ratio change per year (first to last attributed year)
+    label: Household income inequality 90/10 ratio change per year (preceding year to last attributed year)
     inputs:
       series: census_household_income_90_10_ratio
     period_transform:
       kind: identity
     term_aggregation:
       kind: end_minus_start_per_year
-      min_observations: 2
       units: ratio points per year
   - id: official_poverty_rate_change
     family: poverty
-    label: Official poverty rate change (first to last attributed year)
+    label: Official poverty rate change (preceding year to last attributed year)
     inputs:
       series: official_poverty_rate
     period_transform:
       kind: identity
     term_aggregation:
       kind: end_minus_start
-      min_observations: 2
       units: percentage points
   - id: official_poverty_rate_change_per_year
     family: poverty
-    label: Official poverty rate change per year (first to last attributed year)
+    label: Official poverty rate change per year (preceding year to last attributed year)
     inputs:
       series: official_poverty_rate
     period_transform:
       kind: identity
     term_aggregation:
       kind: end_minus_start_per_year
-      min_observations: 2
       units: percentage points per year
   - id: historical_supplemental_poverty_rate_change
     family: poverty
-    label: Historical supplemental poverty rate after taxes and transfers change (first to last attributed year)
+    label: Historical supplemental poverty rate after taxes and transfers change (preceding year to last attributed year)
     inputs:
       series: historical_supplemental_poverty_rate
     period_transform:
       kind: identity
     term_aggregation:
       kind: end_minus_start
-      min_observations: 2
       units: percentage points
   - id: historical_supplemental_poverty_rate_change_per_year
     family: poverty
-    label: Historical supplemental poverty rate after taxes and transfers change per year (first to last attributed year)
+    label: Historical supplemental poverty rate after taxes and transfers change per year (preceding year to last attributed year)
     inputs:
       series: historical_supplemental_poverty_rate
     period_transform:
       kind: identity
     term_aggregation:
       kind: end_minus_start_per_year
-      min_observations: 2
       units: percentage points per year
 
 known_omissions:

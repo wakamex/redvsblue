@@ -230,7 +230,9 @@
     if (!terms || terms.length === 0) return "";
 
     var barH = 18, gap = 3, labelW = 160, gapW = 55, padR = 60, padT = 5, padB = 5;
-    var chartH = padT + terms.length * (barH + gap) - gap + padB;
+    var hasPartial = terms.some(function(t) { return t.partial_coverage; });
+    var plotH = padT + terms.length * (barH + gap) - gap + padB;
+    var chartH = plotH + (hasPartial ? 20 : 0);
 
     // Find extent of values
     var vals = terms.map(function(t) { return t.value; });
@@ -251,13 +253,21 @@
     var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + svgW + '" height="' + chartH + '" style="font-family:system-ui,sans-serif;font-size:11px">';
 
     // Zero line
-    svg += '<line x1="' + zeroX + '" y1="0" x2="' + zeroX + '" y2="' + chartH + '" stroke="#555" stroke-width="1" stroke-dasharray="3,3"/>';
+    svg += '<line x1="' + zeroX + '" y1="0" x2="' + zeroX + '" y2="' + plotH + '" stroke="#555" stroke-width="1" stroke-dasharray="3,3"/>';
 
     for (var i = 0; i < terms.length; i++) {
       var t = terms[i];
       var y = padT + i * (barH + gap);
       var color = t.party === "D" ? COLOR_D : COLOR_R;
-      var label = lastName(t.president) + " " + termYears(t.term_start, t.term_end);
+      var label = lastName(t.president) + " " + (t.partial_coverage
+        ? termYears(t.start_obs_date, t.end_obs_date) + "*"
+        : termYears(t.term_start, t.term_end));
+
+      var dates = t.start_obs_date && t.end_obs_date
+        ? "Observations: " + t.start_obs_date + " to " + t.end_obs_date
+        : t.end_obs_date ? "Observation: " + t.end_obs_date : "";
+      svg += '<g><title>' + esc(t.president + (dates ? "; " + dates : "") +
+        (t.partial_coverage ? "; partial coverage" : "")) + '</title>';
 
       // Label
       svg += '<text x="' + (labelW - 5) + '" y="' + (y + barH / 2 + 4) + '" text-anchor="end" fill="#aaa">' + esc(label) + '</text>';
@@ -280,13 +290,18 @@
       var valX = v >= 0 ? barX + barW + 4 : barX - 4;
       var valAnchor = v >= 0 ? "start" : "end";
       svg += '<text x="' + valX + '" y="' + (y + barH / 2 + 4) + '" text-anchor="' + valAnchor + '" fill="#ccc">' + valLabel + '</text>';
+      svg += '</g>';
+    }
+
+    if (hasPartial) {
+      svg += '<text x="0" y="' + (chartH - 4) + '" fill="#aaa">* Partial coverage; dates show available observations.</text>';
     }
 
     // Party mean vertical lines
     function meanLine(val, color) {
       if (val == null) return "";
       var x = Math.round(barAreaX + ((val - minV) / range) * barAreaW);
-      return '<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + chartH + '" stroke="' + color + '" stroke-width="2" stroke-dasharray="6,3"/>';
+      return '<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + plotH + '" stroke="' + color + '" stroke-width="2" stroke-dasharray="6,3"/>';
     }
     svg += meanLine(dMean, COLOR_D);
     svg += meanLine(rMean, COLOR_R);

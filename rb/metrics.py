@@ -369,6 +369,9 @@ def compute_term_metrics(
     # Attribution defaults.
     defaults = attribution.get("defaults") or {}
     year_basis_days = float(defaults.get("year_basis_days") or 365.25)
+    change_baseline = defaults.get("period_change_baseline", "first_attributed_observation")
+    if change_baseline not in {"first_attributed_observation", "previous_observation", "previous_observation_or_first_available"}:
+        raise ValueError(f"Unsupported period change baseline: {change_baseline!r}")
     period_attr = defaults.get("period_attribution") or {}
     period_rule = str(period_attr.get("rule") or "majority_of_days_in_period")
     tie_breaker = str(period_attr.get("tie_breaker") or "president_on_period_end")
@@ -561,10 +564,9 @@ def compute_term_metrics(
             start_obs_value: float | None = None
             end_obs_value: float | None = None
             error: str = ""
+            baseline_fallback = False
 
             try:
-                if sum(v is not None for _, v in obs) < int(agg.get("min_observations", 0)):
-                    raise ValueError("insufficient observations in attributed window")
                 if agg_kind == "mean":
                     xs = [v for _, v in obs if v is not None]
                     n_obs = len(xs)
@@ -598,11 +600,20 @@ def compute_term_metrics(
                         start_obs_date, start_obs_value = start_sel
                         end_obs_date, end_obs_value = end_sel
                     else:
-                        # Use first/last non-missing observation within the attributed window.
-                        first = next(((d, v) for d, v in obs if v is not None), None)
+                        # Period timestamps label intervals, so use the first attributed
+                        # period as the boundary rather than inauguration day.
+                        if change_baseline in {"previous_observation", "previous_observation_or_first_available"}:
+                            first = _select_last_date_strictly_before(ts, obs[0][0]) if obs else None
+                            if first is None and change_baseline == "previous_observation_or_first_available":
+                                first = next(((d, v) for d, v in obs if v is not None), None)
+                                baseline_fallback = first is not None
+                        else:
+                            first = next(((d, v) for d, v in obs if v is not None), None)
                         last = next(((d, v) for d, v in reversed(obs) if v is not None), None)
                         if not first or not last:
                             raise ValueError("missing boundary observation")
+                        if baseline_fallback and first[0] == last[0]:
+                            raise ValueError("change requires two distinct observations")
                         start_obs_date, start_obs_value = first[0], float(first[1])  # type: ignore[arg-type]
                         end_obs_date, end_obs_value = last[0], float(last[1])  # type: ignore[arg-type]
 
@@ -727,6 +738,7 @@ def compute_term_metrics(
                     "start_obs_value": _fmt_float(start_obs_value),
                     "end_obs_value": _fmt_float(end_obs_value),
                     "error": error,
+                    "baseline_fallback": "true" if baseline_fallback else "",
                 }
             )
 
@@ -753,6 +765,7 @@ def compute_term_metrics(
         "start_obs_value",
         "end_obs_value",
         "error",
+        "baseline_fallback",
     ]
     _write_csv_atomic(output_terms_csv, header=term_header, rows=term_rows)
 

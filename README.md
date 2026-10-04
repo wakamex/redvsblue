@@ -44,6 +44,12 @@ used 4-year blocks; other reviewers have suggested 4, 8, or 20). We default to u
 permutation as the most conservative option. Use `--term-block-years N` for sensitivity
 analysis.
 
+### Change baselines
+
+Monthly, quarterly, and annual endpoint-change metrics use the last nonmissing observation before the first attributed period as their baseline. When that observation is unavailable, they use the first available observation within the term and label the result as partial coverage; two distinct observation dates are required. The endpoint is the last available observation within the term. Annualized changes use the elapsed time between observations. Term averages and daily-market boundary rules are unchanged.
+
+The [baseline comparison report](docs/change-baseline-comparison-2026-10-03.md) records the effect on all 96 metrics using unchanged source data and inference settings.
+
 ## Data freshness
 
 A GitHub Actions workflow re-runs the full pipeline every Sunday at 06:00 UTC and commits
@@ -103,3 +109,22 @@ well below the reported q-values.
 - Literature corpus: `literature/`
 - AI reviews: `reviews/`
 - Website: `site/`
+
+## Chart screenshots
+
+Capture a metric's title and presidential-term chart with [Playwright](https://playwright.dev/python/). Run these commands from the repository root after installing the development dependencies with `uv sync --locked`:
+
+```sh
+uv run --locked playwright install chromium
+uv run --locked python -m rb.screenshot --metric "Real median household income annualized growth"
+```
+
+Images are saved under `reports/screenshots/` in [Portable Network Graphics (PNG)](https://www.w3.org/TR/png/) format. Each image uses the site's existing chart renderer, party colors, values, and mean lines. The script serves the local `site/` directory temporarily on loopback, waits for rendering, and crops to the title and chart. Online data fallback is disabled so captures use the selected local data release. Existing images with the same filename are replaced. Browser installation is a one-time step per Playwright version; Linux hosts may also need its browser system dependencies installed.
+
+```sh
+uv run --locked python -m rb.screenshot --list
+uv run --locked python -m rb.screenshot --all
+uv run --locked python -m rb.screenshot --metric "Official poverty rate change" --agg end_minus_start
+```
+
+Metric matching prefers an exact name, then an unambiguous substring. Use `--agg` when names overlap, or `--index N` for the exact row number shown by `--list`. Filenames include that row number to prevent collisions between identically named metrics. Use `--output-dir PATH` to select another destination or `--site PATH` to capture another local site snapshot. The browser runs headlessly and needs no desktop session.

@@ -7,7 +7,7 @@ description: >
   unit-tested with synthetic data.
 
 notes:
-  - "All aggregations operate on the attributed window produced by the time joiner (see spec/attribution_v1.yaml)."
+  - "Window membership follows spec/attribution_v1.yaml. Endpoint-change metrics may use a preceding baseline outside that window."
   - "Unless otherwise stated, missing values are dropped before aggregation."
   - "Kinds that need a start/end level use the joiner's boundary-resolved start/end observations."
 

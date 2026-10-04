@@ -128,4 +128,4 @@ This avoids silent opinionated pruning.
 - `official_poverty_rate`: covered by percentage-point change and change per year, beginning in 1959.
 - `historical_supplemental_poverty_rate`: covered by percentage-point change and change per year, 1967–2024, after taxes and transfers.
 
-Mean and end-level views are intentionally omitted for these additions to keep the selection compact. Changes retain the existing within-window endpoint rules and require two annual observations. The [measurement rationale](metrics_rationale.md#household-income-inequality-and-poverty) documents sources, release versions, and survey breaks.
+Mean and end-level views are intentionally omitted for these additions to keep the selection compact. Changes compare the preceding annual observation with the last observation in the attributed window, using the shared period change-baseline rule. Where a source starts mid-term, the first available observation supplies the baseline and the shorter window is labeled; a lone observation is insufficient. The [measurement rationale](metrics_rationale.md#household-income-inequality-and-poverty) documents sources, release versions, and survey breaks.
