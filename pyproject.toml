@@ -1,6 +1,8 @@
 [project]
 name = "rb"
 version = "0.1.0"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.13"
 dependencies = [
     "certifi>=2026.1.4",
@@ -23,7 +25,7 @@ rb = "rb.cli:main"
 package = true
 
 [build-system]
-requires = ["setuptools>=70"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]

@@ -52,10 +52,9 @@ The [baseline comparison report](docs/change-baseline-comparison-2026-10-03.md) 
 
 ## Data freshness
 
-A GitHub Actions workflow re-runs the full pipeline every Sunday at 06:00 UTC and commits
-`site/data.json` if anything changed. The live site at [redvsblue.fyi](https://redvsblue.fyi)
-picks up the update automatically. The workflow can also be triggered manually via
-`workflow_dispatch`.
+Production runs a versioned release. Its footer links to the release notes and shows the data-update date and provenance. Weekly refreshes use the version currently deployed, including after a rollback. Code and methodology changes receive a new release; routine data updates do not. Each release regenerates its results from fresh inputs. Source availability and revisions can change results between refreshes.
+
+Development checks run with `uv run --locked pytest -q`. New tests use the standard library's `unittest`; the test runner also discovers the existing pytest tests. Production builds require the configured source credentials, including `FRED_API_KEY`.
 
 ## Quick Start
 
@@ -128,3 +127,7 @@ uv run --locked python -m rb.screenshot --metric "Official poverty rate change" 
 ```
 
 Metric matching prefers an exact name, then an unambiguous substring. Use `--agg` when names overlap, or `--index N` for the exact row number shown by `--list`. Filenames include that row number to prevent collisions between identically named metrics. Use `--output-dir PATH` to select another destination or `--site PATH` to capture another local site snapshot. The browser runs headlessly and needs no desktop session.
+
+## License
+
+Original code and documentation use the [MIT License](LICENSE). Source datasets, quoted material, and source-derived numerical results are excluded from that license grant and retain their providers' terms. The [metric registry](spec/metrics_v1.yaml) identifies publishers and sources, and the [literature index](literature/README.md) links to reference material. Downloaded originals remain local and are not distributed in the repository or website build.

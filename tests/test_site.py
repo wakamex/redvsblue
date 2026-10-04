@@ -12,7 +12,8 @@ def test_homepage_metric_count_comes_from_loaded_data():
     assert 'id="metric-count"' in html
     assert "metricCount.textContent = String(metricsData.length)" in html
     assert "across 83 U.S. economic metrics" not in html
-    assert html.index('load("./data.json")') < html.index("load(CDN)")
+    assert 'load("./data.json")' in html
+    assert "load(CDN)" not in html
 
 
 def test_homepage_explains_and_displays_p_and_q_values():

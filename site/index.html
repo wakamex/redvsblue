@@ -144,6 +144,7 @@
 </div>
 
 <div class="footer">
+  <p id="release-info" hidden></p>
   <p>
     Methodology: unrestricted permutation test (10,000 shuffles) with Benjamini-Hochberg FDR
     correction across all metrics in a single universe. Bootstrap 95% CIs (2,000 resamples).
@@ -159,7 +160,6 @@
 
 <script>
 (function() {
-  var CDN = "https://cdn.jsdelivr.net/gh/wakamex/redvsblue@main/site/data.json";
   var tbody = document.getElementById("tbody");
   var tableWrap = document.querySelector(".table-wrap");
   var table = tableWrap.querySelector("table");
@@ -499,17 +499,34 @@
     });
   }
 
-  // Prefer the JSON deployed alongside this page so a mutable-branch CDN cache
-  // cannot leave the UI showing an older metric set after a publish.
-  load("./data.json")
-    .then(render)
-    .catch(function() {
-      load(CDN)
-        .then(render)
-        .catch(function(err) {
-          status.textContent = "Failed to load data: " + err.message;
-        });
-    });
+  load("./data.json").then(render).catch(function(err) {
+    status.textContent = "Failed to load data: " + err.message;
+  });
+
+  Promise.all([load("./version.json"), load("./provenance.json")]).then(function(values) {
+    var release = values[0], provenance = values[1];
+    if (!provenance.generator || provenance.generator.commit !== release.commit) {
+      throw new Error("Data and website release identities differ");
+    }
+    var info = document.getElementById("release-info");
+    var expected = "https://github.com/wakamex/redvsblue/releases/tag/" + release.tag;
+    if (release.tag && /^v\d+\.\d+\.\d+$/.test(release.tag) && release.release_url === expected) {
+      var link = document.createElement("a");
+      link.href = expected;
+      link.textContent = release.tag + " release notes";
+      info.appendChild(link);
+    } else {
+      info.appendChild(document.createTextNode("Development preview"));
+    }
+    info.appendChild(document.createTextNode(" · Data updated " + provenance.generated_at.slice(0, 10) + " · "));
+    var sources = document.createElement("a");
+    sources.href = "./provenance.json";
+    sources.textContent = "Data provenance";
+    info.appendChild(sources);
+    info.hidden = false;
+  }).catch(function() {
+    // Unversioned local snapshots have no release metadata.
+  });
 })();
 </script>
 </body>
