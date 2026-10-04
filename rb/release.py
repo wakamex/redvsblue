@@ -112,6 +112,7 @@ def build(root: Path, output: Path, tag: str | None) -> None:
         shutil.copytree(root / "site", output,
                         ignore=shutil.ignore_patterns("data.json", "version.json", "provenance.json"))
         shutil.copyfile(work / "site/data.json", output / "data.json")
+        shutil.copyfile(root / "LICENSE", output / "LICENSE")
         write_json_atomic(output / "version.json", release)
         write_json_atomic(output / "provenance.json", provenance)
     print(f"Built {len(data['metrics'])} metrics at {output}")
@@ -125,15 +126,21 @@ def verify_artifact(site: Path, run: dict, root: Path) -> None:
     provenance = json.loads((site / "provenance.json").read_text())
     if provenance.get("generator") != release or provenance.get("data_sha256") != digest(site / "data.json"):
         raise ValueError("Artifact data provenance differs from the release")
-    for path in site.rglob("*"):
+    tracked = git("ls-tree", "-r", "--name-only", release["commit"], "site", root=root).splitlines()
+    expected_files = {name.removeprefix("site/"): name for name in tracked
+                      if name not in {"site/data.json", "site/version.json", "site/provenance.json"}}
+    expected_files["LICENSE"] = "LICENSE"
+    actual_files = {p.relative_to(site).as_posix() for p in site.rglob("*") if p.is_file()}
+    if actual_files != set(expected_files) | {"data.json", "version.json", "provenance.json"}:
+        raise ValueError("Artifact file list differs from the released site")
+    for relative, source in expected_files.items():
+        path = site / relative
         if path.is_symlink():
             raise ValueError("Site artifact contains a symbolic link")
-        if not path.is_file() or path.name in {"data.json", "version.json", "provenance.json"}:
-            continue
-        relative = path.relative_to(site).as_posix()
-        expected = subprocess.check_output(["git", "show", release["commit"] + ":site/" + relative], cwd=root)
+        expected = subprocess.check_output(["git", "show", release["commit"] + ":" + source], cwd=root)
         if path.read_bytes() != expected:
             raise ValueError("Artifact static files differ from the released code")
+
 
 
 def main() -> None:

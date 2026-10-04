@@ -20,6 +20,7 @@ class ReleaseTests(unittest.TestCase):
         (self.root / "pyproject.toml").write_text('[project]\nversion = "0.1.0"\n')
         (self.root / "release-notes").mkdir()
         (self.root / "release-notes/v0.1.0.md").write_text('Synthetic release notes.\n')
+        (self.root / "LICENSE").write_text("Synthetic license fixture")
         (self.root / "site").mkdir()
         (self.root / "site/index.html").write_text('<html>Synthetic site</html>')
         self.git("add", ".")
@@ -71,12 +72,16 @@ class ReleaseTests(unittest.TestCase):
     def test_artifact_rejects_changed_data_and_static_files(self):
         release = identity(self.root, "v0.1.0")
         site = self.root / "site"
+        (site / "LICENSE").write_text("Synthetic license fixture")
         (site / "data.json").write_text('{"metrics": []}')
         (site / "version.json").write_text(json.dumps(release))
         (site / "provenance.json").write_text(json.dumps({
             "generator": release, "data_sha256": hashlib.sha256((site / "data.json").read_bytes()).hexdigest()}))
         run = {"head_sha": release["commit"]}
         verify_artifact(site, run, self.root)
+        (site / "index.html").unlink()
+        with self.assertRaises(ValueError):
+            verify_artifact(site, run, self.root)
         (site / "index.html").write_text('modified')
         with self.assertRaises(ValueError):
             verify_artifact(site, run, self.root)
